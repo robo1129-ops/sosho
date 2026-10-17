@@ -1,35 +1,40 @@
 # sosho
 
-SO-SHOの物理配置を確認しながら編集できる、非公開ブラウザプロトタイプです。
+SO-SHO向けの非公開ブラウザエディタです。想定する物理構成は、右側 = Central / トラックボール、左側 = Peripheral / トラックパッドです。
 
-## 現在できること
+## 実装済み
 
-- SO-SHO左右分割、各22キー、列スタガー、下段スクエア領域を表示
-- Layer 0〜3の切り替え
-- アクションパレットのクリック、キーへのドラッグ＆ドロップ
-- キーマップ割り当てをlocalStorageへ保存、ローカルリセット
-- Web SerialでUSBデバイスを選択し、ZMK Studioのフレーム受信を表示
-- 明示的なUSB書き込みボタン。ただし未検証のRPCは送信せず安全に拒否
-- ローカルマクロの名前、順序付きキー列、各ステップの待ち時間をlocalStorageへ保存・編集・削除
+- SO-SHO 44キー、4レイヤーのレイアウト確認とローカル編集
+- キーマップ割り当てとマクロのブラウザー localStorage 保存
+- 既存のUSB Web Serial接続とZMK Studioフレーム受信を維持
+- Web Bluetooth GATT transportを追加
+- BLE接続、切断、再接続、受信通知、フレーム送信、タイムアウト、状態表示
 
-## USB書き込みの現状
+BLEは公式Studio GATT UUIDを使用します。
 
-公式プロトコルのフレーミングとcore/keymap protobufスキーマは確認済みです。フレームはZMK StudioのSoF 0xAB、エスケープ0xAC、EoF 0xAD方式で受信します。
+- Service: 00000000-0196-6107-c967-c5cfb1c2482a
+- Characteristic: 00000001-0196-6107-c967-c5cfb1c2482a
 
-ZMK Studioのunlockはキーボード側のStudio Unlock Behaviorを物理キーまたはコンボで実行する設計です。ページからのunlock RPCは確認できず、keymap更新RPCのbehavior bindingと実機応答も未検証です。そのため現在は通信と応答待ちの安全な土台だけを提供し、writeKeymapはunsupportedを返して推測したpayloadを送信しません。
+BLEのrequestDevice()は「BLE接続」ボタンを押したユーザー操作からだけ呼び出します。USB経路は削除していません。
 
-公式keymap.protoにマクロRPCはないため、マクロはlocalStorage専用でUSB書き込み対象外です。実機接続・USB書き込みは未検証です。
+## BLEの前提
 
-## 使い方
+GitHub PagesなどのHTTPS、またはlocalhostでChrome/Edgeを使用してください。ブラウザーのデバイス選択画面でキーボードを許可し、ファームウェア側でBLE GATT Studio transportが有効になっている必要があります。初回のファームウェア導入には一度USBフラッシュが必要です。接続後はキーボード側のstudio_unlock bindingを実行してください。
 
-1. index.htmlをWeb Serial対応ブラウザーで開く
-2. 実機検証時のみConnect USB deviceでデバイスを選択する
-3. レイヤーとキーを編集し、必要ならローカルマクロを追加・保存する
-4. USBへ書き込むを明示的に押す。現状は未検証RPCとして送信されません
+## キーマップRPCの状態
 
-公式資料:
+公式のフレーム方式と、studio.proto / keymap.proto の構造は確認済みです。ただし、実機からのkeymap read/write応答、protobufの実装、unlock後の動作はまだ検証できていません。そのため「キーマップを読む」「変更を保存」「USBへ送信」は無効化し、推測したpayloadは送信しません。現時点のBLE/USB実装は transport 段階です。
+
+マクロのRPCは実装しておらず、マクロはブラウザー内だけに保存されます。
+
+## 操作上の注意
+
+紫色の□は物理位置の凡例が未確定なキーです。自動的にBackspaceなどへ割り当てません。位置を変更する場合はページの行・列インスペクターを確認してください。
+
+## 公式資料
 
 - [ZMK Studio RPC protocol](https://github.com/zmkfirmware/zmk/blob/main/docs/docs/development/studio-rpc-protocol.md)
-- [zmk-studio-messages studio.proto](https://github.com/zmkfirmware/zmk-studio-messages/blob/main/proto/zmk/studio.proto)
-- [zmk-studio-messages keymap.proto](https://github.com/zmkfirmware/zmk-studio-messages/blob/main/proto/zmk/keymap.proto)
-- [ZMK Studio UnlockModal](https://github.com/zmkfirmware/zmk-studio/blob/main/src/UnlockModal.tsx)
+- [studio.proto](https://github.com/zmkfirmware/zmk-studio-messages/blob/main/proto/zmk/studio.proto)
+- [keymap.proto](https://github.com/zmkfirmware/zmk-studio-messages/blob/main/proto/zmk/keymap.proto)
+
+このリポジトリの更新では、物理キーボードの操作や再フラッシュは行っていません。
