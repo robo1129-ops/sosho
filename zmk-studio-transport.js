@@ -1,120 +1,125 @@
-(function(global){
-  'use strict';
+const START_OF_FRAME = 0xAB;
+const ESCAPE_BYTE = 0xAC;
+const END_OF_FRAME = 0xAD;
+const DEFAULT_TIMEOUT = 3000;
+const UNSUPPORTED_REASON = '公式 protobuf エンコーダーと unlock/keymap RPC の実装は未検証です。推測したペイロードは送信しません。';
 
-  var START_OF_FRAME=0xAB;
-  var ESCAPE_BYTE=0xAC;
-  var END_OF_FRAME=0xAD;
-
-  function ZmkSerialTransport(options){
-    options=options||{};
-    this.onFrame=typeof options.onFrame==='function'?options.onFrame:function(){};
-    this.onStatus=typeof options.onStatus==='function'?options.onStatus:function(){};
-    this.port=null;
-    this.reader=null;
-    this.reading=false;
-    this._disconnecting=false;
-    this._inFrame=false;
-    this._escaped=false;
-    this._frameBytes=[];
+class ZmkSerialTransport {
+  constructor({ onFrame = () => {}, onStatus = () => {} } = {}) {
+    this.onFrame = onFrame;
+    this.onStatus = onStatus;
+    this.port = null;
+    this.reader = null;
+    this.writer = null;
+    this.reading = false;
+    this.buffer = [];
+    this.escaped = false;
+    this.waiters = new Set();
   }
 
-  Object.defineProperty(ZmkSerialTransport.prototype,'isConnected',{get:function(){return !!this.port&&this.reading;}});
+  get isConnected() { return !!this.port && !!this.writer; }
+  get canWriteKeymap() { return false; }
+  get capabilities() {
+    return { framing: true, responseWait: true, rpc: false, unlock: false, keymapWrite: false, reason: UNSUPPORTED_REASON };
+  }
 
-  ZmkSerialTransport.prototype._setStatus=function(message){
-    try{this.onStatus(message);}catch(e){}
-  };
+  async connect() {
+    if (!('serial' in navigator)) throw new Error('Web Serial is not supported');
+    if (this.isConnected) return true;
+    this.onStatus('USB接続を選択中…');
+    this.port = await navigator.serial.requestPort();
+    await this.port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
+    this.writer = this.port.writable.getWriter();
+    this.reading = true;
+    this.onStatus('USB connected');
+    this._readLoop();
+    return true;
+  }
 
-  ZmkSerialTransport.prototype.connect=async function(){
-    if(this.isConnected)return true;
-    if(typeof navigator==='undefined'||!navigator.serial){
-      this._setStatus('Web Serial is not supported in this browser');
-      return false;
-    }
-    this._disconnecting=false;
-    try{
-      this.port=await navigator.serial.requestPort();
-      await this.port.open({baudRate:115200,dataBits:8,stopBits:1,parity:'none',flowControl:'none'});
-      this.reading=true;
-      this._setStatus('USB connected');
-      this._readLoop();
-      return true;
-    }catch(error){
-      var canceled=error&&(error.name==='AbortError'||error.name==='NotFoundError');
-      this.port=null;
-      this.reader=null;
-      this.reading=false;
-      this._setStatus(canceled?'USB connection canceled':'USB connection failed');
-      return false;
-    }
-  };
+  async disconnect() {
+    this.reading = false;
+    if (this.reader) { try { await this.reader.cancel(); } catch (_) {} try { this.reader.releaseLock(); } catch (_) {} this.reader = null; }
+    if (this.writer) { try { this.writer.releaseLock(); } catch (_) {} this.writer = null; }
+    if (this.port) { try { await this.port.close(); } catch (_) {} this.port = null; }
+    this.buffer = [];
+    this.escaped = false;
+    this._rejectWaiters(new Error('USB disconnected'));
+    this.onStatus('USB disconnected');
+  }
 
-  ZmkSerialTransport.prototype.disconnect=async function(){
-    var hadConnection=!!this.port||!!this.reader;
-    this._disconnecting=true;
-    if(this.reader){try{await this.reader.cancel();}catch(e){}}
-    if(this.port){try{await this.port.close();}catch(e){}}
-    this.reader=null;
-    this.port=null;
-    this.reading=false;
-    this._disconnecting=false;
-    if(hadConnection)this._setStatus('USB disconnected');
-  };
-
-  ZmkSerialTransport.prototype._readLoop=async function(){
-    try{
-      while(this.port&&this.port.readable&&!this._disconnecting){
-        var reader=this.port.readable.getReader();
-        this.reader=reader;
-        try{
-          while(!this._disconnecting){
-            var result=await reader.read();
-            if(result.done)break;
-            if(result.value)this._consume(result.value);
-          }
-        }catch(error){
-          if(!this._disconnecting)this._setStatus('USB read error');
-        }finally{
-          try{reader.releaseLock();}catch(e){}
-          if(this.reader===reader)this.reader=null;
+  async _readLoop() {
+    while (this.reading && this.port && this.port.readable) {
+      this.reader = this.port.readable.getReader();
+      try {
+        while (this.reading) {
+          const { value, done } = await this.reader.read();
+          if (done) break;
+          if (value) this._consume(value);
         }
-        if(!this._disconnecting)break;
-      }
-    }finally{
-      this.reading=false;
-      if(!this._disconnecting&&this.port){
-        var port=this.port;
-        this.port=null;
-        try{await port.close();}catch(e){}
-        this._setStatus('USB disconnected');
+      } catch (error) {
+        if (this.reading) this.onStatus('USB受信エラー: ' + error.message);
+      } finally {
+        try { this.reader.releaseLock(); } catch (_) {}
+        this.reader = null;
       }
     }
-  };
+  }
 
-  ZmkSerialTransport.prototype._consume=function(bytes){
-    for(var i=0;i<bytes.length;i+=1){
-      var byte=bytes[i];
-      if(byte===START_OF_FRAME){
-        this._frameBytes=[];
-        this._inFrame=true;
-        this._escaped=false;
-        continue;
+  _consume(bytes) {
+    for (const byte of bytes) {
+      if (byte === START_OF_FRAME) { this.buffer = []; this.escaped = false; continue; }
+      if (byte === END_OF_FRAME) {
+        if (this.buffer.length) { const frame = new Uint8Array(this.buffer); this.onFrame(frame); this._resolveFrame(frame); }
+        this.buffer = []; this.escaped = false; continue;
       }
-      if(!this._inFrame)continue;
-      if(this._escaped){
-        this._frameBytes.push(byte);
-        this._escaped=false;
-      }else if(byte===ESCAPE_BYTE){
-        this._escaped=true;
-      }else if(byte===END_OF_FRAME){
-        var frame=new Uint8Array(this._frameBytes);
-        this._frameBytes=[];
-        this._inFrame=false;
-        try{this.onFrame(frame);}catch(e){this._setStatus('Frame callback error');}
-      }else{
-        this._frameBytes.push(byte);
-      }
+      if (this.escaped) { this.buffer.push(byte); this.escaped = false; continue; }
+      if (byte === ESCAPE_BYTE) { this.escaped = true; continue; }
+      this.buffer.push(byte);
     }
-  };
+  }
 
-  global.ZmkSerialTransport=ZmkSerialTransport;
-})(window);
+  encodeFrame(payload) {
+    const bytes = payload instanceof Uint8Array ? payload : new Uint8Array(payload || []);
+    const framed = [START_OF_FRAME];
+    for (const byte of bytes) { if (byte === START_OF_FRAME || byte === ESCAPE_BYTE || byte === END_OF_FRAME) framed.push(ESCAPE_BYTE); framed.push(byte); }
+    framed.push(END_OF_FRAME);
+    return new Uint8Array(framed);
+  }
+
+  async sendFrame(payload) {
+    if (!this.writer) throw new Error('USB is not connected');
+    const frame = this.encodeFrame(payload);
+    this.onStatus('USB送信中…');
+    await this.writer.write(frame);
+    this.onStatus('USBフレーム送信済み（応答待ち）');
+    return frame;
+  }
+
+  waitForFrame(predicate = () => true, timeoutMs = DEFAULT_TIMEOUT) {
+    return new Promise((resolve, reject) => {
+      const waiter = { predicate, resolve, reject, timer: setTimeout(() => { this.waiters.delete(waiter); reject(new Error('USB response timeout')); }, timeoutMs) };
+      this.waiters.add(waiter);
+    });
+  }
+
+  async sendFrameAndWait(payload, predicate = () => true, timeoutMs = DEFAULT_TIMEOUT) {
+    await this.sendFrame(payload);
+    return this.waitForFrame(predicate, timeoutMs);
+  }
+
+  _resolveFrame(frame) {
+    for (const waiter of [...this.waiters]) {
+      let matches = false;
+      try { matches = waiter.predicate(frame); } catch (_) {}
+      if (matches) { clearTimeout(waiter.timer); this.waiters.delete(waiter); waiter.resolve(frame); }
+    }
+  }
+
+  _rejectWaiters(error) { for (const waiter of this.waiters) { clearTimeout(waiter.timer); waiter.reject(error); } this.waiters.clear(); }
+
+  async writeKeymap() { return { ok: false, status: 'unsupported', reason: UNSUPPORTED_REASON }; }
+  async unlockAndWriteKeymap() { return this.writeKeymap(); }
+}
+
+window.ZmkSerialTransport = ZmkSerialTransport;
+window.ZmkSerialTransportConstants = { START_OF_FRAME, ESCAPE_BYTE, END_OF_FRAME, DEFAULT_TIMEOUT };
