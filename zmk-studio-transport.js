@@ -1,125 +1,21 @@
-const START_OF_FRAME = 0xAB;
-const ESCAPE_BYTE = 0xAC;
-const END_OF_FRAME = 0xAD;
-const DEFAULT_TIMEOUT = 3000;
-const UNSUPPORTED_REASON = '公式 protobuf エンコーダーと unlock/keymap RPC の実装は未検証です。推測したペイロードは送信しません。';
-
-class ZmkSerialTransport {
-  constructor({ onFrame = () => {}, onStatus = () => {} } = {}) {
-    this.onFrame = onFrame;
-    this.onStatus = onStatus;
-    this.port = null;
-    this.reader = null;
-    this.writer = null;
-    this.reading = false;
-    this.buffer = [];
-    this.escaped = false;
-    this.waiters = new Set();
-  }
-
-  get isConnected() { return !!this.port && !!this.writer; }
-  get canWriteKeymap() { return false; }
-  get capabilities() {
-    return { framing: true, responseWait: true, rpc: false, unlock: false, keymapWrite: false, reason: UNSUPPORTED_REASON };
-  }
-
-  async connect() {
-    if (!('serial' in navigator)) throw new Error('Web Serial is not supported');
-    if (this.isConnected) return true;
-    this.onStatus('USB接続を選択中…');
-    this.port = await navigator.serial.requestPort();
-    await this.port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
-    this.writer = this.port.writable.getWriter();
-    this.reading = true;
-    this.onStatus('USB connected');
-    this._readLoop();
-    return true;
-  }
-
-  async disconnect() {
-    this.reading = false;
-    if (this.reader) { try { await this.reader.cancel(); } catch (_) {} try { this.reader.releaseLock(); } catch (_) {} this.reader = null; }
-    if (this.writer) { try { this.writer.releaseLock(); } catch (_) {} this.writer = null; }
-    if (this.port) { try { await this.port.close(); } catch (_) {} this.port = null; }
-    this.buffer = [];
-    this.escaped = false;
-    this._rejectWaiters(new Error('USB disconnected'));
-    this.onStatus('USB disconnected');
-  }
-
-  async _readLoop() {
-    while (this.reading && this.port && this.port.readable) {
-      this.reader = this.port.readable.getReader();
-      try {
-        while (this.reading) {
-          const { value, done } = await this.reader.read();
-          if (done) break;
-          if (value) this._consume(value);
-        }
-      } catch (error) {
-        if (this.reading) this.onStatus('USB受信エラー: ' + error.message);
-      } finally {
-        try { this.reader.releaseLock(); } catch (_) {}
-        this.reader = null;
-      }
-    }
-  }
-
-  _consume(bytes) {
-    for (const byte of bytes) {
-      if (byte === START_OF_FRAME) { this.buffer = []; this.escaped = false; continue; }
-      if (byte === END_OF_FRAME) {
-        if (this.buffer.length) { const frame = new Uint8Array(this.buffer); this.onFrame(frame); this._resolveFrame(frame); }
-        this.buffer = []; this.escaped = false; continue;
-      }
-      if (this.escaped) { this.buffer.push(byte); this.escaped = false; continue; }
-      if (byte === ESCAPE_BYTE) { this.escaped = true; continue; }
-      this.buffer.push(byte);
-    }
-  }
-
-  encodeFrame(payload) {
-    const bytes = payload instanceof Uint8Array ? payload : new Uint8Array(payload || []);
-    const framed = [START_OF_FRAME];
-    for (const byte of bytes) { if (byte === START_OF_FRAME || byte === ESCAPE_BYTE || byte === END_OF_FRAME) framed.push(ESCAPE_BYTE); framed.push(byte); }
-    framed.push(END_OF_FRAME);
-    return new Uint8Array(framed);
-  }
-
-  async sendFrame(payload) {
-    if (!this.writer) throw new Error('USB is not connected');
-    const frame = this.encodeFrame(payload);
-    this.onStatus('USB送信中…');
-    await this.writer.write(frame);
-    this.onStatus('USBフレーム送信済み（応答待ち）');
-    return frame;
-  }
-
-  waitForFrame(predicate = () => true, timeoutMs = DEFAULT_TIMEOUT) {
-    return new Promise((resolve, reject) => {
-      const waiter = { predicate, resolve, reject, timer: setTimeout(() => { this.waiters.delete(waiter); reject(new Error('USB response timeout')); }, timeoutMs) };
-      this.waiters.add(waiter);
-    });
-  }
-
-  async sendFrameAndWait(payload, predicate = () => true, timeoutMs = DEFAULT_TIMEOUT) {
-    await this.sendFrame(payload);
-    return this.waitForFrame(predicate, timeoutMs);
-  }
-
-  _resolveFrame(frame) {
-    for (const waiter of [...this.waiters]) {
-      let matches = false;
-      try { matches = waiter.predicate(frame); } catch (_) {}
-      if (matches) { clearTimeout(waiter.timer); this.waiters.delete(waiter); waiter.resolve(frame); }
-    }
-  }
-
-  _rejectWaiters(error) { for (const waiter of this.waiters) { clearTimeout(waiter.timer); waiter.reject(error); } this.waiters.clear(); }
-
-  async writeKeymap() { return { ok: false, status: 'unsupported', reason: UNSUPPORTED_REASON }; }
-  async unlockAndWriteKeymap() { return this.writeKeymap(); }
-}
-
-window.ZmkSerialTransport = ZmkSerialTransport;
-window.ZmkSerialTransportConstants = { START_OF_FRAME, ESCAPE_BYTE, END_OF_FRAME, DEFAULT_TIMEOUT };
+(function(global){
+  'use strict';
+  var SOF=0xAB,ESC=0xAC,EOF_BYTE=0xAD;
+  var RPC_SCHEMA_SUPPORTED=false;
+  var RPC_UNSUPPORTED_REASON='公式protoは確認済みですが、unlockは専用RPCではなくStudio Unlock Behaviorで行うため、このページではkeymap RPCの実機送信を未検証のまま実行しません。';
+  function encodeFrame(payload){var source=payload instanceof Uint8Array?payload:new Uint8Array(payload||[]),out=[SOF];for(var i=0;i<source.length;i++){var b=source[i];if(b===SOF||b===ESC||b===EOF_BYTE)out.push(ESC);out.push(b)}out.push(EOF_BYTE);return new Uint8Array(out)}
+  function ZmkSerialTransport(options){options=options||{};this.onFrame=typeof options.onFrame==='function'?options.onFrame:function(){};this.onStatus=typeof options.onStatus==='function'?options.onStatus:function(){};this.port=null;this.reader=null;this.writer=null;this.reading=false;this._disconnecting=false;this._inFrame=false;this._escaped=false;this._frameBytes=[];this._pending=[]}
+  Object.defineProperties(ZmkSerialTransport.prototype,{isConnected:{get:function(){return !!this.port&&this.reading}},canWriteKeymap:{get:function(){return RPC_SCHEMA_SUPPORTED}}});
+  ZmkSerialTransport.prototype._setStatus=function(text){try{this.onStatus(text)}catch(e){}};
+  ZmkSerialTransport.prototype.connect=async function(){if(this.isConnected)return true;if(typeof navigator==='undefined'||!navigator.serial){this._setStatus('Web Serial is not supported in this browser');return false}try{this.port=await navigator.serial.requestPort();await this.port.open({baudRate:115200,dataBits:8,stopBits:1,parity:'none',flowControl:'none'});this.reading=true;this._setStatus('USB connected');this._readLoop();return true}catch(error){this.port=null;this.reader=null;this.reading=false;this._setStatus(error&&error.name==='NotFoundError'?'USB connection canceled':'USB connection failed');return false}};
+  ZmkSerialTransport.prototype.disconnect=async function(){var had=!!this.port||!!this.reader;this._disconnecting=true;try{if(this.reader)await this.reader.cancel()}catch(e){}try{if(this.writer)await this.writer.releaseLock()}catch(e){}try{if(this.port)await this.port.close()}catch(e){}this.reader=null;this.writer=null;this.port=null;this.reading=false;this._disconnecting=false;this._rejectPending(new Error('USB disconnected'));if(had)this._setStatus('USB disconnected')};
+  ZmkSerialTransport.prototype._readLoop=async function(){while(this.port&&this.reading&&!this._disconnecting){try{this.reader=this.port.readable.getReader();while(this.reading&&!this._disconnecting){var result=await this.reader.read();if(result.done)break;if(result.value)this._consume(result.value)}this.reader.releaseLock();this.reader=null}catch(error){if(this.reader)try{this.reader.releaseLock()}catch(e){}this.reader=null;if(!this._disconnecting){this.reading=false;this._setStatus('USB read failed')}}}};
+  ZmkSerialTransport.prototype._consume=function(bytes){for(var i=0;i<bytes.length;i++){var b=bytes[i];if(!this._inFrame){if(b===SOF){this._inFrame=true;this._escaped=false;this._frameBytes=[]}continue}if(this._escaped){this._frameBytes.push(b);this._escaped=false;continue}if(b===ESC){this._escaped=true;continue}if(b===EOF_BYTE){var frame=new Uint8Array(this._frameBytes);this._inFrame=false;this._frameBytes=[];try{this.onFrame(frame)}catch(e){}this._resolvePending(frame);continue}if(b===SOF){this._frameBytes=[];this._escaped=false;continue}this._frameBytes.push(b)}};
+  ZmkSerialTransport.prototype.sendFramedPayload=async function(payload){if(!this.isConnected)throw new Error('USB is not connected');if(!this.port||!this.port.writable)throw new Error('USB writer is unavailable');var writer=this.writer||this.port.writable.getWriter();this.writer=writer;try{await writer.write(encodeFrame(payload));return true}finally{if(!this.writer)try{writer.releaseLock()}catch(e){}}};
+  ZmkSerialTransport.prototype._waitForFrame=function(timeoutMs){var self=this;return new Promise(function(resolve,reject){var timer=setTimeout(function(){self._pending=self._pending.filter(function(item){return item.resolve!==resolve});reject(new Error('Timed out waiting for USB response'))},timeoutMs||3000);self._pending.push({resolve:function(frame){clearTimeout(timer);resolve(frame)}})})};
+  ZmkSerialTransport.prototype._resolvePending=function(frame){var item=this._pending.shift();if(item)item.resolve(frame)};
+  ZmkSerialTransport.prototype._rejectPending=function(error){this._pending.splice(0).forEach(function(item){if(item.reject)item.reject(error)})};
+  ZmkSerialTransport.prototype.requestFramedPayload=async function(payload,options){options=options||{};if(!options.allowRawFrame)throw new Error(RPC_UNSUPPORTED_REASON);await this.sendFramedPayload(payload);return this._waitForFrame(options.timeoutMs)};
+  ZmkSerialTransport.prototype.writeKeymap=async function(){this._setStatus('USB write unsupported: unlock/keymap RPC is unverified');return{ok:false,status:'unsupported',reason:RPC_UNSUPPORTED_REASON}};
+  global.ZmkSerialTransport=ZmkSerialTransport;global.ZmkStudioProtocol={SOF:SOF,ESC:ESC,EOF:EOF_BYTE,encodeFrame:encodeFrame,RPC_SCHEMA_SUPPORTED:RPC_SCHEMA_SUPPORTED,RPC_UNSUPPORTED_REASON:RPC_UNSUPPORTED_REASON};
+})(window);
