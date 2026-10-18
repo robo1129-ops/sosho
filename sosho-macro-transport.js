@@ -7,7 +7,7 @@
   var VERSION = 1;
   var OP = { HELLO: 1, UNLOCK: 2, GET: 3, SET: 4, DELETE: 5, RUN: 6, SET_BEGIN: 7, SET_CHUNK: 8, SET_COMMIT: 9 };
   var STATUS = { OK: 0, BAD_FRAME: 1, BAD_CRC: 2, AUTH_REQUIRED: 3, TOO_LARGE: 4, BAD_VALUE: 5 };
-  var MAX_MACROS = 8;
+  var MAX_MACROS = 16;
   var MAX_STEPS = 8;
   var MAX_WAIT_MS = 60000;
 
