@@ -165,7 +165,7 @@
 
     var palette = document.createElement('section');
     palette.className = 'macro-drag-palette';
-    palette.innerHTML = '<h3>ドラッグでマクロを作成</h3><p>キーを下の手順欄へドラッグしてください。修飾キーを選ぶと、Shift＋Sのような組み合わせを追加できます。</p><div class="macro-key-chips" data-macro-key-chips></div>';
+    palette.innerHTML = '<h3>ドラッグでマクロを作成</h3><p>Remapと同じように、キーコードを下の手順欄へドラッグしてください。クリックは選択だけで、入力は変更しません。</p><div class="macro-palette-tabs"><button type="button" data-macro-palette-tab="basic" aria-pressed="true">BASIC</button><button type="button" data-macro-palette-tab="functions" aria-pressed="false">FUNCTIONS</button><button type="button" data-macro-palette-tab="device" aria-pressed="false">DEVICE</button><button type="button" data-macro-palette-tab="special" aria-pressed="false">SPECIAL</button><button type="button" data-macro-palette-tab="ascii" aria-pressed="false">ASCII</button><input type="search" data-macro-palette-search placeholder="検索" aria-label="マクロキーコード検索"></div><div class="macro-palette-panel" data-macro-palette-panel="basic"><div class="macro-key-chips" data-macro-key-chips></div></div><div class="macro-palette-panel" data-macro-palette-panel="functions" hidden><div class="macro-key-chips" data-macro-functions></div></div><div class="macro-palette-panel" data-macro-palette-panel="device" hidden><div class="macro-key-chips" data-macro-device></div></div><div class="macro-palette-panel" data-macro-palette-panel="special" hidden><div class="macro-key-chips" data-macro-special></div></div><div class="macro-palette-panel" data-macro-palette-panel="ascii" hidden><div class="macro-key-chips" data-macro-ascii></div></div>';
     macroList.insertAdjacentElement('afterend', palette);
 
     var keyEntries = [
@@ -173,8 +173,7 @@
       ['0','0'], ['1','1'], ['2','2'], ['3','3'], ['4','4'], ['5','5'], ['6','6'], ['7','7'], ['8','8'], ['9','9'],
       ['Enter','RET'], ['Backspace','BSPC'], ['Tab','TAB'], ['Escape','ESC'], ['Space','SPACE'], ['←','LEFT'], ['→','RIGHT'], ['↑','UP'], ['↓','DOWN']
     ];
-    var chipContainer = palette.querySelector('[data-macro-key-chips]');
-    keyEntries.forEach(function (entry) {
+    function appendMacroKeyChip(container, entry) {
       var chip = document.createElement('button');
       chip.type = 'button';
       chip.className = 'macro-key-chip';
@@ -185,7 +184,26 @@
       chip.addEventListener('dragstart', function (event) {
         event.dataTransfer.setData('text/plain', 'macro-key:' + entry[1]);
       });
-      chipContainer.appendChild(chip);
+      chip.addEventListener('click', function () { chip.classList.toggle('palette-selected'); });
+      container.appendChild(chip);
+    }
+    var chipContainer = palette.querySelector('[data-macro-key-chips]');
+    keyEntries.forEach(function (entry) { appendMacroKeyChip(chipContainer, entry); });
+    [['Shift','LSHFT'],['Ctrl','LCTRL'],['Alt','LALT'],['GUI','LGUI'],['Enter','RET'],['Backspace','BSPC'],['Tab','TAB'],['Escape','ESC']].forEach(function (entry) { appendMacroKeyChip(palette.querySelector('[data-macro-functions]'), entry); });
+    [['Mouse Left','LCLK'],['Mouse Right','RCLK'],['Mouse Middle','MCLK'],['Wheel Up','WH_U'],['Wheel Down','WH_D'],['Wheel Left','WH_L'],['Wheel Right','WH_R']].forEach(function (entry) { appendMacroKeyChip(palette.querySelector('[data-macro-device]'), entry); });
+    [['RESET','RESET'],['BOOTLOADER','BOOT'],['Scroll Hold','SCROLL_HOLD'],['CPI −','CPI_DOWN'],['CPI ＋','CPI_UP']].forEach(function (entry) { appendMacroKeyChip(palette.querySelector('[data-macro-special]'), entry); });
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.split('').forEach(function (character) { appendMacroKeyChip(palette.querySelector('[data-macro-ascii]'), [character, 'ASCII_' + character]); });
+    palette.querySelectorAll('[data-macro-palette-tab]').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        var category = tab.dataset.macroPaletteTab;
+        palette.querySelectorAll('[data-macro-palette-tab]').forEach(function (other) { other.setAttribute('aria-pressed', String(other === tab)); });
+        palette.querySelectorAll('[data-macro-palette-panel]').forEach(function (panel) { panel.hidden = panel.dataset.macroPalettePanel !== category; });
+      });
+    });
+    var paletteSearch = palette.querySelector('[data-macro-palette-search]');
+    paletteSearch.addEventListener('input', function () {
+      var query = paletteSearch.value.trim().toLowerCase();
+      palette.querySelectorAll('.macro-key-chip').forEach(function (chip) { chip.style.display = !query || chip.textContent.toLowerCase().indexOf(query) >= 0 ? '' : 'none'; });
     });
 
     var modifierNames = [['Shift', 'LSHFT'], ['Ctrl', 'LCTRL'], ['Alt', 'LALT'], ['GUI', 'LGUI']];
@@ -219,15 +237,22 @@
       builder.innerHTML = '<div class="macro-modifiers"><span>修飾キー:</span>' + modifierNames.map(function (entry) { return '<label><input type="checkbox" data-macro-modifier value="' + entry[1] + '">' + entry[0] + '</label>'; }).join('') + '</div><label class="macro-latency">追加時の待ち時間(ms)<input type="number" data-macro-latency min="0" max="60000" step="1" value="1"></label><div class="macro-drop-zone" data-macro-drop-zone>ここへキーをドラッグして追加</div><small>各行の末尾がその操作の待ち時間です。追加後も手順欄で1行ずつ変更できます。</small>';
       stepsLabel.appendChild(builder);
       var dropZone = builder.querySelector('[data-macro-drop-zone]');
-      dropZone.addEventListener('dragover', function (event) { event.preventDefault(); dropZone.classList.add('drop-ready'); });
-      dropZone.addEventListener('dragleave', function () { dropZone.classList.remove('drop-ready'); });
-      dropZone.addEventListener('drop', function (event) {
+      function acceptMacroDrop(event) {
         event.preventDefault();
         dropZone.classList.remove('drop-ready');
+        textarea.classList.remove('drop-ready');
         var data = event.dataTransfer.getData('text/plain');
         var key = data.indexOf('macro-key:') === 0 ? data.slice(10) : '';
         if (key) appendMacroStep(textarea, key);
-      });
+      }
+      function markDropReady(target) { return function (event) { event.preventDefault(); target.classList.add('drop-ready'); }; }
+      function clearDropReady(target) { return function () { target.classList.remove('drop-ready'); }; }
+      dropZone.addEventListener('dragover', markDropReady(dropZone));
+      dropZone.addEventListener('dragleave', clearDropReady(dropZone));
+      dropZone.addEventListener('drop', acceptMacroDrop);
+      textarea.addEventListener('dragover', markDropReady(textarea));
+      textarea.addEventListener('dragleave', clearDropReady(textarea));
+      textarea.addEventListener('drop', acceptMacroDrop);
     }
 
     function enhanceAllMacroItems() {
@@ -250,6 +275,14 @@
     reference.appendChild(badge);
   }
 
+  var layoutSelector = document.getElementById('layout-selector');
+  if (layoutSelector) {
+    layoutSelector.value = localStorage.getItem('sosho-layout-language-v1') || 'Japanese';
+    layoutSelector.addEventListener('change', function () {
+      localStorage.setItem('sosho-layout-language-v1', layoutSelector.value);
+    });
+  }
+
   var hint = document.querySelector('.hint');
   if (hint) {
     hint.textContent = '実機の12列×4行レイアウトに合わせて表示しています。キーを選択し、アクションをクリックまたはドラッグしてください。紫色の□は未設定キーです。';
@@ -266,6 +299,9 @@
     additions.className = 'palette-additions';
     additions.innerHTML = '<details class="palette-group" open><summary>通常キー <span>A / ENTER / 数字 / 記号</span></summary><div class="palette-grid" data-basic-palette></div><p class="palette-help">キーをつかんで、上の実機配列へドラッグ＆ドロップしてください。</p></details>' +
       '<details class="palette-group" open><summary>日本語 / JIS <span>かな・英数・変換</span></summary><div class="palette-grid" data-jis-palette></div><p class="palette-help">Windowsの日本語入力で使うLANG/INTキーです。</p></details>' +
+      '<details class="palette-group" open><summary>レイヤー <span>TO / MO / TG / TT / OSL</span></summary><div class="palette-grid" data-layer-palette></div><p class="palette-help">レイヤー操作をキーへクリックまたはドラッグで割り当てます。</p></details>' +
+      '<details class="palette-group" open><summary>特殊キー <span>RESET / BOOT / SCROLL</span></summary><div class="palette-grid" data-special-palette></div><p class="palette-help">デバイス操作や押下中スクロールを割り当てます。</p></details>' +
+      '<details class="palette-group" open><summary>ASCII <span>文字コード</span></summary><div class="palette-grid" data-ascii-palette></div><p class="palette-help">ASCII文字をキーへ割り当てます。</p></details>' +
       '<details class="palette-group" open><summary>タップダンス <span>1回 / 2回 / 3回 / ホールド</span></summary><div data-tap-dance-list></div><div class="tap-dance-form"><label>名前<input data-td-name value="TD1"></label><label>判定時間(ms)<input data-td-term type="number" min="50" max="1000" step="10" value="200"></label><label>1回<select data-td-single></select></label><label>2回<select data-td-double></select></label><label>3回<select data-td-triple></select></label><label>ホールド<select data-td-hold></select></label><button class="chip wide" type="button" data-add-tap-dance>タップダンスを作成</button></div><p class="palette-help">作成した定義をドラッグすると、選択したキーに割り当てられます。</p></details>';
     palette.appendChild(additions);
 
@@ -278,6 +314,7 @@
       chip.draggable = true;
       chip.textContent = name;
       chip.title = name + 'をキーマップへドラッグ';
+      chip.addEventListener('click', function () { chip.classList.toggle('palette-selected'); });
       chip.addEventListener('dragstart', function (event) {
         event.dataTransfer.setData('text/plain', 'action:' + name);
       });
@@ -302,11 +339,33 @@
       chip.draggable = true;
       chip.textContent = entry[0];
       chip.title = entry[0] + ' (' + entry[1] + ') をキーマップへドラッグ';
+      chip.addEventListener('click', function () { chip.classList.toggle('palette-selected'); });
       chip.addEventListener('dragstart', function (event) {
         event.dataTransfer.setData('text/plain', 'action:' + entry[1]);
       });
       jisPalette.appendChild(chip);
     });
+
+    function appendActionChip(container, label, action, className) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip' + (className ? ' ' + className : '');
+      chip.textContent = label;
+      chip.title = label + 'をキーマップへ割り当て';
+      chip.addEventListener('click', function () { chip.classList.toggle('palette-selected'); });
+      chip.draggable = true;
+      chip.addEventListener('dragstart', function (event) { event.dataTransfer.setData('text/plain', 'action:' + action); });
+      container.appendChild(chip);
+    }
+
+    var layerPalette = additions.querySelector('[data-layer-palette]');
+    [['TO(0)', 'TO 0'], ['TO(1)', 'TO 1'], ['TO(2)', 'TO 2'], ['TO(3)', 'TO 3'], ['TG(0)', 'TG 0'], ['TG(1)', 'TG 1'], ['TG(2)', 'TG 2'], ['TG(3)', 'TG 3'], ['TT(0)', 'TT 0'], ['TT(1)', 'TT 1'], ['TT(2)', 'TT 2'], ['TT(3)', 'TT 3'], ['MO(0)', 'MO 0'], ['MO(1)', 'MO 1'], ['MO(2)', 'MO 2'], ['MO(3)', 'MO 3'], ['OSL(0)', 'OSL 0'], ['OSL(1)', 'OSL 1'], ['DF(0)', 'DF 0'], ['DF(1)', 'DF 1'], ['DF(2)', 'DF 2'], ['DF(3)', 'DF 3']].forEach(function (entry) { appendActionChip(layerPalette, entry[0], entry[1]); });
+
+    var specialPalette = additions.querySelector('[data-special-palette]');
+    [['押下中スクロール', 'SCROLL_HOLD'], ['スクロール切替', 'SCROLL_TOGGLE'], ['CPI −', 'CPI_DOWN'], ['CPI ＋', 'CPI_UP'], ['パッド倍率 −', 'TP_SCALE_DOWN'], ['パッド倍率 ＋', 'TP_SCALE_UP'], ['RESET', 'RESET'], ['BOOTLOADER', 'BOOTLOADER'], ['CapsLock', 'CAPSLOCK'], ['PrintScreen', 'PSCRN']].forEach(function (entry) { appendActionChip(specialPalette, entry[0], entry[1], 'special-chip'); });
+
+    var asciiPalette = additions.querySelector('[data-ascii-palette]');
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.split('').forEach(function (character) { appendActionChip(asciiPalette, character, 'ASCII_' + character, 'ascii-chip'); });
 
     var optionKeys = ['未設定'].concat(basicKeys).concat(['Ctrl', 'Shift', 'Alt', 'GUI', 'MO 1', 'MO 2', 'BT0', 'BT1', 'BT2', 'BT3', 'BT4']);
     var tapDanceState = [];
@@ -387,9 +446,15 @@
 
     var basicDetail = additions.querySelector('[data-basic-palette]').closest('.palette-group');
     var jisDetail = additions.querySelector('[data-jis-palette]').closest('.palette-group');
+    var layerDetail = additions.querySelector('[data-layer-palette]').closest('.palette-group');
+    var specialDetail = additions.querySelector('[data-special-palette]').closest('.palette-group');
+    var asciiDetail = additions.querySelector('[data-ascii-palette]').closest('.palette-group');
     var tapDanceDetail = additions.querySelector('[data-tap-dance-list]').closest('.palette-group');
     basicDetail.dataset.paletteCategory = 'basic';
     jisDetail.dataset.paletteCategory = 'jis';
+    layerDetail.dataset.paletteCategory = 'layer';
+    specialDetail.dataset.paletteCategory = 'special';
+    asciiDetail.dataset.paletteCategory = 'ascii';
     tapDanceDetail.dataset.paletteCategory = 'tap-dance';
 
     var actionPanel = document.getElementById('palette');
@@ -409,9 +474,12 @@
     var categories = [
       ['basic', 'BASIC'],
       ['functions', 'FUNCTIONS'],
+      ['layer', 'LAYER'],
+      ['device', 'DEVICE'],
+      ['special', 'SPECIAL'],
+      ['ascii', 'ASCII'],
       ['jis', '日本語/JIS'],
-      ['tap-dance', 'TAP DANCE'],
-      ['device', 'DEVICE']
+      ['tap-dance', 'TAP DANCE']
     ];
     categories.forEach(function (entry) {
       var tab = document.createElement('button');
@@ -425,8 +493,21 @@
     });
     palette.insertBefore(tabBar, actionPanel);
 
+    var search = document.createElement('input');
+    search.type = 'search';
+    search.className = 'palette-search';
+    search.placeholder = 'キーコードを検索';
+    search.setAttribute('aria-label', 'キーコードを検索');
+    search.addEventListener('input', function () {
+      var query = search.value.trim().toLowerCase();
+      palette.querySelectorAll('.chip').forEach(function (chip) {
+        chip.style.display = !query || chip.textContent.toLowerCase().indexOf(query) >= 0 ? '' : 'none';
+      });
+    });
+    tabBar.appendChild(search);
+
     function showPaletteCategory(category) {
-      [basicDetail, jisDetail, tapDanceDetail, actionPanel, devicePanel].forEach(function (panel) {
+      [basicDetail, jisDetail, layerDetail, specialDetail, asciiDetail, tapDanceDetail, actionPanel, devicePanel].forEach(function (panel) {
         panel.style.display = panel.dataset.paletteCategory === category ? '' : 'none';
       });
       tabBar.querySelectorAll('[data-palette-tab]').forEach(function (tab) {
