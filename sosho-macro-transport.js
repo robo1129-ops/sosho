@@ -76,6 +76,15 @@
     DOT: 0x37, SLASH: 0x38, LCTRL: 0xe0, LSHFT: 0xe1, LALT: 0xe2, LGUI: 0xe3,
     RCTRL: 0xe4, RSHFT: 0xe5, RALT: 0xe6, RGUI: 0xe7
   };
+  Object.assign(keyIds, {
+    INT1: 0x87, INT_RO: 0x87,
+    INT2: 0x88, INT_KATAKANAHIRAGANA: 0x88, INT_KANA: 0x88,
+    INT3: 0x89, INT_YEN: 0x89,
+    INT4: 0x8a, INT_HENKAN: 0x8a,
+    INT5: 0x8b, INT_MUHENKAN: 0x8b,
+    LANG1: 0x90, LANG2: 0x91, LANG3: 0x92, LANG4: 0x93, LANG5: 0x94,
+    LANG_KATAKANA: 0x92, LANG_HIRAGANA: 0x93, LANG_ZENKAKUHANKAKU: 0x94
+  });
   for (var letter = 0; letter < 26; letter++) keyIds[String.fromCharCode(65 + letter)] = 0x04 + letter;
   for (var digit = 0; digit < 10; digit++) keyIds[String(digit)] = digit === 0 ? 0x27 : 0x1d + digit;
   for (var f = 1; f <= 15; f++) keyIds['F' + f] = 0x3a + f - 1;
