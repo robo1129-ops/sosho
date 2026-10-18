@@ -49,6 +49,7 @@ Webページの「カスタムファームウェアZIPを直接ダウンロー�
 
 - BLEはWeb Bluetooth、USBはWeb Serialの接続UIを備える
 - BLE診断でSecure Context、`navigator.bluetooth`、`getAvailability()`、公式GATT UUID、通常検索条件を表示する。全デバイス検索は通常接続から分離した診断専用ボタンでのみ実行する
+- 初回のChrome Device Pickerで許可したSO-SHOは、`navigator.bluetooth.getDevices()` を使う「許可済みBLEに再接続」から選択画面なしで再接続できる。診断には許可済みデバイス数と名称も表示する
 - HTTPSまたはlocalhost、Chrome/Edge、ユーザー操作による接続許可が必要
 - 初回はStudio対応ファームウェアをUSBで一度書き込む必要がある
 - キーボード側の `studio_unlock` を実行してからStudio接続を試す

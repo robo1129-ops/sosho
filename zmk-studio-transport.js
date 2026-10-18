@@ -334,8 +334,18 @@
     var bluetooth = typeof navigator !== 'undefined' && !!navigator.bluetooth;
     var availability = null;
     var availabilityError = '';
+    var authorizedDeviceCount = null;
+    var authorizedDeviceNames = [];
+    var authorizedDevicesError = '';
     if (bluetooth && typeof navigator.bluetooth.getAvailability === 'function') {
       try { availability = await navigator.bluetooth.getAvailability(); } catch (error) { availabilityError = error && error.message ? error.message : String(error); }
+    }
+    if (bluetooth && typeof navigator.bluetooth.getDevices === 'function') {
+      try {
+        var authorizedDevices = await navigator.bluetooth.getDevices();
+        authorizedDeviceCount = authorizedDevices.length;
+        authorizedDeviceNames = authorizedDevices.map(function (device) { return device && device.name ? device.name : '名称なし'; });
+      } catch (error) { authorizedDevicesError = error && error.message ? error.message : String(error); }
     }
     return {
       secureContext: secure,
@@ -343,6 +353,9 @@
       availability: availability,
       availabilityApi: bluetooth && typeof navigator.bluetooth.getAvailability === 'function',
       getDevicesApi: bluetooth && typeof navigator.bluetooth.getDevices === 'function',
+      authorizedDeviceCount: authorizedDeviceCount,
+      authorizedDeviceNames: authorizedDeviceNames,
+      authorizedDevicesError: authorizedDevicesError,
       requestDeviceApi: bluetooth && typeof navigator.bluetooth.requestDevice === 'function',
       deviceName: this.device && this.device.name ? this.device.name : '',
       gattConnected: !!(this.server && this.server.connected),
@@ -382,6 +395,36 @@
     catch (studioError) { var studioName = studioError && studioError.name ? studioError.name : 'Error'; var studioMessage = studioError && studioError.message ? studioError.message : 'GATT service not found'; this._setLog('公式GATT discovery失敗 [' + studioName + ']: ' + studioMessage); try { this._setLog('SO-SHOマクロService discovery開始: ' + MACRO_SERVICE_UUID); this.macroService = await this.server.getPrimaryService(MACRO_SERVICE_UUID); this._setLog('SO-SHOマクロService discovery成功（公式Studio RPCは未接続）'); this.reading = true; this._setStatus('BLE接続済み（SO-SHOマクロサービスのみ）'); return true; } catch (macroError) { var macroName = macroError && macroError.name ? macroError.name : 'Error'; var macroMessage = macroError && macroError.message ? macroError.message : 'GATT service not found'; this._setLog('SO-SHOマクロService discovery失敗 [' + macroName + ']: ' + macroMessage); this._handleDisconnected(); throw new Error('公式ZMK Studioサービスに接続できません: ' + studioMessage); } }
   };
   ZmkBleTransport.prototype._authorizedDevice = async function () { if (typeof navigator.bluetooth.getDevices !== 'function') return null; try { var devices = await navigator.bluetooth.getDevices(); return devices.find(function (device) { var name = device && device.name || ''; return BLE_NAME_PREFIXES.some(function (prefix) { return name.indexOf(prefix) === 0; }); }) || null; } catch (error) { return null; } };
+  ZmkBleTransport.prototype.connectAuthorized = async function () {
+    if (this.isConnected) return true;
+    if (!this.isSupported) { this._setStatus('Web Bluetooth非対応、またはHTTPS/localhostが必要です'); return false; }
+    if (typeof navigator.bluetooth.getDevices !== 'function') { this._setLog('許可済みデバイス再接続不可: getDevices APIがありません'); this._setStatus('許可済みBLE再接続はこのブラウザーでは利用できません'); return false; }
+    if (this._connecting) return false;
+    this._connecting = true;
+    try {
+      this._setStatus('許可済みBLEデバイスを確認中…');
+      this._setLog('getDevices開始（許可済みデバイス再接続）');
+      var devices = await navigator.bluetooth.getDevices();
+      this._setLog('getDevices完了: ' + devices.length + '件');
+      var device = devices.find(function (candidate) {
+        var name = candidate && candidate.name || '';
+        return BLE_NAME_PREFIXES.some(function (prefix) { return name.indexOf(prefix) === 0; });
+      });
+      if (!device) {
+        this._setLog('許可済みSO-SHOデバイスが見つかりません');
+        this._setStatus('許可済みSO-SHOがありません。初回は「BLE接続」で選択してください');
+        return false;
+      }
+      this._setLog('許可済みデバイスを再接続: ' + (device.name || '名称なし'));
+      return await this._attach(device);
+    } catch (error) {
+      var name = error && error.name ? error.name : 'Error';
+      var message = error && error.message ? error.message : 'unknown error';
+      this._setLog('許可済みBLE再接続失敗 [' + name + ']: ' + message);
+      this._setStatus('許可済みBLE再接続失敗 [' + name + ']: ' + message);
+      return false;
+    } finally { this._connecting = false; }
+  };
   ZmkBleTransport.prototype.connect = async function () {
     if (this.isConnected) return true; if (!this.isSupported) { this._setStatus('Web Bluetooth非対応、またはHTTPS/localhostが必要です'); return false; } if (this._connecting) return false; this._connecting = true;
     try {
