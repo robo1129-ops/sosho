@@ -14,10 +14,12 @@ assert.match(html, /USB COM \+ BLE GATT/);
 assert.match(html, /MO 3/);
 assert.match(html, /save-current-as-default/);
 assert.match(html, /restore-firmware-defaults/);
+assert.match(html, /connect-usb-authorized/);
+assert.match(html, /右側Central/);
 assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /defaultKeymap/);
 assert.match(css, /\.remap-palette-tab\[aria-selected=/);
 assert.match(css, /\.keyboard-frame \.bottom-row \.key:nth-child\(4\)/);
 assert.match(fs.readFileSync('sosho-macro-transport.js', 'utf8'), /MAX_MACROS = 16/);
-assert.match(html, /BLEをCOMポートとして扱うことはできません/);
+assert.match(html, /USBはWeb Serial/);
 
 console.log('SO-SHO Remap-like editor UI smoke test passed');

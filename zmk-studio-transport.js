@@ -341,14 +341,61 @@
   };
   Object.defineProperty(FramedTransport.prototype, 'canWriteKeymap', { get: function () { return RPC_SCHEMA_SUPPORTED; } });
 
-  function ZmkSerialTransport(options) { FramedTransport.call(this, options); this.port = null; this.reader = null; this.writer = null; this.reading = false; this._disconnecting = false; }
+  function ZmkSerialTransport(options) { FramedTransport.call(this, options); this.port = null; this.reader = null; this.writer = null; this.reading = false; this._disconnecting = false; this._connecting = false; }
   ZmkSerialTransport.prototype = Object.create(FramedTransport.prototype); ZmkSerialTransport.prototype.constructor = ZmkSerialTransport;
   Object.defineProperty(ZmkSerialTransport.prototype, 'isConnected', { get: function () { return !!this.port && this.reading; } });
+  Object.defineProperty(ZmkSerialTransport.prototype, 'isSupported', { get: function () { return typeof navigator !== 'undefined' && !!navigator.serial && typeof navigator.serial.requestPort === 'function'; } });
+  ZmkSerialTransport.prototype.getDiagnostics = async function () {
+    var supported = this.isSupported;
+    var authorizedPortCount = null;
+    var errorText = '';
+    if (supported && typeof navigator.serial.getPorts === 'function') {
+      try { authorizedPortCount = (await navigator.serial.getPorts()).length; }
+      catch (error) { errorText = error && error.message ? error.message : String(error); }
+    }
+    return {
+      supported: supported,
+      authorizedPortCount: authorizedPortCount,
+      connected: this.isConnected,
+      error: errorText,
+      transport: 'Web Serial / USB CDC-ACM',
+      recommendedDevice: '右側Central（トラックボール側）'
+    };
+  };
+  ZmkSerialTransport.prototype._open = async function (port) {
+    this.port = port;
+    await this.port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
+    this.reading = true;
+    this._setDevice('右側Central / USB');
+    this._setStatus('USB接続済み（右側Central / ZMK Studio RPC）');
+    this._readLoop();
+    return true;
+  };
   ZmkSerialTransport.prototype.connect = async function () {
     if (this.isConnected) return true;
-    if (typeof navigator === 'undefined' || !navigator.serial) { this._setStatus('USB非対応ブラウザーです'); return false; }
-    try { this._setStatus('USBデバイス選択待ち…'); this.port = await navigator.serial.requestPort(); await this.port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' }); this.reading = true; this._setDevice('USB device'); this._setStatus('USB接続済み（ZMK Studio RPC）'); this._readLoop(); return true; }
-    catch (error) { this.port = null; this.reader = null; this.reading = false; this._setDevice('—'); this._setStatus(error && error.name === 'NotFoundError' ? 'USBデバイス選択がキャンセルされました' : 'USB接続失敗: ' + (error && error.message ? error.message : 'unknown error')); return false; }
+    if (!this.isSupported) { this._setStatus('Web Serial非対応ブラウザーです'); return false; }
+    if (this._connecting) return false;
+    this._connecting = true;
+    try { this._setStatus('右側CentralのUSBデバイス選択待ち…'); this._setLog('USB requestPort開始（右側Centralを選択）'); var port = await navigator.serial.requestPort(); this._setLog('USBポート選択完了'); return await this._open(port); }
+    catch (error) { this.port = null; this.reader = null; this.reading = false; this._setDevice('—'); this._setLog('USB接続失敗 [' + (error && error.name ? error.name : 'Error') + ']: ' + (error && error.message ? error.message : 'unknown error')); this._setStatus(error && error.name === 'NotFoundError' ? 'USBデバイス選択がキャンセルされました' : 'USB接続失敗: ' + (error && error.message ? error.message : 'unknown error')); return false; }
+    finally { this._connecting = false; }
+  };
+  ZmkSerialTransport.prototype.connectAuthorized = async function () {
+    if (this.isConnected) return true;
+    if (!this.isSupported || typeof navigator.serial.getPorts !== 'function') { this._setStatus('許可済みUSB再接続はこのブラウザーでは利用できません'); return false; }
+    if (this._connecting) return false;
+    this._connecting = true;
+    try {
+      var ports = await navigator.serial.getPorts();
+      this._setLog('許可済みUSBポート: ' + ports.length + '件');
+      if (!ports.length) { this._setStatus('許可済みUSBポートがありません。初回は「右側USB / COM接続」を押してください'); return false; }
+      return await this._open(ports[0]);
+    } catch (error) {
+      this.port = null; this.reader = null; this.reading = false; this._setDevice('—');
+      this._setLog('許可済みUSB再接続失敗 [' + (error && error.name ? error.name : 'Error') + ']: ' + (error && error.message ? error.message : 'unknown error'));
+      this._setStatus('許可済みUSB再接続失敗: ' + (error && error.message ? error.message : 'unknown error'));
+      return false;
+    } finally { this._connecting = false; }
   };
   ZmkSerialTransport.prototype.disconnect = async function (silent) { var had = !!this.port || !!this.reader; this._disconnecting = true; try { if (this.reader) await this.reader.cancel(); } catch (error) {} try { if (this.writer) this.writer.releaseLock(); } catch (error) {} try { if (this.port) await this.port.close(); } catch (error) {} this.reader = null; this.writer = null; this.port = null; this.reading = false; this._disconnecting = false; this._rejectPending(new Error('USB disconnected')); this._setDevice('—'); if (had && !silent) this._setStatus('USB切断済み'); };
   ZmkSerialTransport.prototype._readLoop = async function () { while (this.port && this.reading && !this._disconnecting) { try { this.reader = this.port.readable.getReader(); while (this.reading && !this._disconnecting) { var result = await this.reader.read(); if (result.done) break; if (result.value) this._consume(result.value); } this.reader.releaseLock(); this.reader = null; } catch (error) { if (this.reader) try { this.reader.releaseLock(); } catch (releaseError) {} this.reader = null; if (!this._disconnecting) { this.reading = false; this._setStatus('USB受信失敗: ' + (error.message || 'unknown error')); } } } };
