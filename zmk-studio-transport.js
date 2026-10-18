@@ -9,6 +9,12 @@
   var MACRO_SERVICE_UUID = '7f5e0000-8a2a-4c2f-b93e-55f4b5d30001';
   var RPC_SCHEMA_SUPPORTED = true;
   var RPC_UNSUPPORTED_REASON = '公式ZMK Studio RPCのprotobufとフレーミングを実装済みです。実機の応答は接続先とファームウェア構成に依存します。';
+  // Keep writes below the default ATT payload (MTU 23 => 20 bytes).  Some
+  // Windows Web Bluetooth stacks negotiate a larger MTU, but relying on that
+  // makes the same page fail on another machine.  The ZMK Studio framing is
+  // stream based, so the receiver can safely reassemble these chunks.
+  var BLE_SAFE_WRITE_CHUNK_SIZE = 20;
+  var BLE_INTER_CHUNK_DELAY_MS = 4;
 
   function concat() {
     var parts = Array.prototype.slice.call(arguments);
@@ -174,7 +180,7 @@
       else if (number === 3 && wireType === 0) result.unsavedChanges = !!value;
       else if (number === 4 && wireType === 2) {
         result.saveChanges = {};
-        new ByteReader(value).fields(function (n, w, v) { if (n === 1 && w === 0) result.saveChanges.ok = !!v; if (n === 2 && w === 0) result.saveChanges.error = v; });
+        new ByteReader(value).fields(function (n, w, v) { if (n === 1 && w === 0) result.saveChanges.ok = !!v; if (n === 2 && w === 0) { result.saveChanges.ok = false; result.saveChanges.error = v; } });
       } else if (number === 5 && wireType === 0) result.discardChanges = !!value;
     });
     return result;
@@ -255,12 +261,25 @@
   StudioRpcClient.prototype.getKeymap = async function () { return (await this.request('keymap', 'getKeymap')).data.keymap; };
   StudioRpcClient.prototype.listBehaviors = async function () { return (await this.request('behaviors', 'listAllBehaviors')).data.behaviors || []; };
   StudioRpcClient.prototype.getBehaviorDetails = async function (id) { return (await this.request('behaviors', 'getBehaviorDetails', id)).data.behaviorDetails; };
-  StudioRpcClient.prototype.setLayerBinding = async function (layerId, keyPosition, binding) { return this.request('keymap', 'setLayerBinding', { layerId: layerId, keyPosition: keyPosition, binding: binding }); };
-  StudioRpcClient.prototype.saveChanges = async function () { return this.request('keymap', 'saveChanges'); };
+  StudioRpcClient.prototype.setLayerBinding = async function (layerId, keyPosition, binding) {
+    var response = await this.request('keymap', 'setLayerBinding', { layerId: layerId, keyPosition: keyPosition, binding: binding });
+    var errorCode = response && response.data && response.data.setLayerBindingError;
+    if (errorCode !== undefined && Number(errorCode) !== 0) { var error = new Error('setLayerBinding failed (' + errorCode + ')'); error.code = errorCode; throw error; }
+    return response;
+  };
+  StudioRpcClient.prototype.saveChanges = async function () {
+    var response = await this.request('keymap', 'saveChanges');
+    var result = response && response.data && response.data.saveChanges;
+    if (result && result.ok === false) { var error = new Error('saveChanges failed' + (result.error !== undefined ? ' (' + result.error + ')' : '')); error.code = result.error; throw error; }
+    return response;
+  };
   StudioRpcClient.prototype.readDeviceState = async function () {
     var info = await this.getDeviceInfo();
     var lockState = await this.getLockState();
     var keymap = await this.getKeymap();
+    if (!keymap || !Array.isArray(keymap.layers) || !keymap.layers.length) throw new Error('キーマップ応答が空です。BLEの通知受信またはZMK Studioサービスを確認してください');
+    var bindingCount = keymap.layers.reduce(function (count, layer) { return count + ((layer && layer.bindings) || []).length; }, 0);
+    if (!bindingCount) throw new Error('キーマップのキー割り当てが0件です。古いGATT応答を受信していないか確認してください');
     var idSet = Object.create(null);
     keymap.layers.forEach(function (layer) { layer.bindings.forEach(function (binding) { idSet[String(binding.behaviorId)] = true; }); });
     var ids = Object.keys(idSet).map(function (id) { return Number(id); });
@@ -280,7 +299,7 @@
     this.onStatus = typeof options.onStatus === 'function' ? options.onStatus : function () {};
     this.onDevice = typeof options.onDevice === 'function' ? options.onDevice : function () {};
     this.onLog = typeof options.onLog === 'function' ? options.onLog : function () {};
-    this._inFrame = false; this._escaped = false; this._frameBytes = []; this._pending = [];
+    this._inFrame = false; this._escaped = false; this._frameBytes = []; this._pending = []; this._frameQueue = [];
   }
   FramedTransport.prototype._setStatus = function (text) { try { this.onStatus(text); } catch (error) {} };
   FramedTransport.prototype._setDevice = function (text) { try { this.onDevice(text || '—'); } catch (error) {} };
@@ -299,15 +318,27 @@
   FramedTransport.prototype._waitForFrame = function (timeoutMs) {
     var self = this;
     return new Promise(function (resolve, reject) {
+      if (self._frameQueue.length) { resolve(self._frameQueue.shift()); return; }
       var entry = { resolve: resolve, reject: reject };
       var timer = setTimeout(function () { self._pending = self._pending.filter(function (item) { return item !== entry; }); reject(new Error('Timed out waiting for framed response')); }, timeoutMs || 3000);
       entry.resolve = function (frame) { clearTimeout(timer); resolve(frame); };
       self._pending.push(entry);
     });
   };
-  FramedTransport.prototype._resolvePending = function (frame) { var item = this._pending.shift(); if (item) item.resolve(frame); };
+  FramedTransport.prototype._resolvePending = function (frame) {
+    var item = this._pending.shift();
+    if (item) item.resolve(frame);
+    else {
+      this._frameQueue.push(frame);
+      if (this._frameQueue.length > 32) this._frameQueue.shift();
+    }
+  };
   FramedTransport.prototype._rejectPending = function (error) { this._pending.splice(0).forEach(function (item) { item.reject(error); }); };
-  FramedTransport.prototype.requestFramedPayload = async function (payload, options) { await this.sendFramedPayload(payload); return this._waitForFrame((options || {}).timeoutMs || 3000); };
+  FramedTransport.prototype.requestFramedPayload = async function (payload, options) {
+    var framePromise = this._waitForFrame((options || {}).timeoutMs || 3000);
+    try { await this.sendFramedPayload(payload); } catch (error) { this._rejectPending(error); throw error; }
+    return framePromise;
+  };
   Object.defineProperty(FramedTransport.prototype, 'canWriteKeymap', { get: function () { return RPC_SCHEMA_SUPPORTED; } });
 
   function ZmkSerialTransport(options) { FramedTransport.call(this, options); this.port = null; this.reader = null; this.writer = null; this.reading = false; this._disconnecting = false; }
@@ -324,11 +355,11 @@
   ZmkSerialTransport.prototype.sendFramedPayload = async function (payload) { if (!this.isConnected) throw new Error('USB未接続です'); if (!this.port || !this.port.writable) throw new Error('USB writer unavailable'); var writer = this.writer || this.port.writable.getWriter(); this.writer = writer; await writer.write(encodeFrame(payload)); return true; };
 
   var BLE_NAME_PREFIXES = ['sosho', 'soho', 'SO-SHO', 'SOHO', 'ZMK'];
-  function ZmkBleTransport(options) { FramedTransport.call(this, options); this.device = null; this.server = null; this.service = null; this.characteristic = null; this.macroService = null; this.studioAvailable = false; this.reading = false; this._connecting = false; this._onValue = this._handleValue.bind(this); this._onDisconnected = this._handleDisconnected.bind(this); }
+  function ZmkBleTransport(options) { options = options || {}; FramedTransport.call(this, options); this.device = null; this.server = null; this.service = null; this.characteristic = null; this.macroService = null; this.studioAvailable = false; this.reading = false; this._connecting = false; this.writeChunkSize = Math.max(1, Math.min(BLE_SAFE_WRITE_CHUNK_SIZE, Number(options.writeChunkSize) || BLE_SAFE_WRITE_CHUNK_SIZE)); this.writeDelayMs = Math.max(0, Number(options.writeDelayMs) || BLE_INTER_CHUNK_DELAY_MS); this._writeChain = Promise.resolve(); this._onValue = this._handleValue.bind(this); this._onDisconnected = this._handleDisconnected.bind(this); }
   ZmkBleTransport.prototype = Object.create(FramedTransport.prototype); ZmkBleTransport.prototype.constructor = ZmkBleTransport;
   Object.defineProperty(ZmkBleTransport.prototype, 'isSupported', { get: function () { return typeof navigator !== 'undefined' && !!navigator.bluetooth && typeof window !== 'undefined' && window.isSecureContext === true; } });
   Object.defineProperty(ZmkBleTransport.prototype, 'isConnected', { get: function () { return !!this.device && !!this.server && this.server.connected && this.reading; } });
-  Object.defineProperty(ZmkBleTransport.prototype, 'canWriteKeymap', { get: function () { return RPC_SCHEMA_SUPPORTED && this.studioAvailable; } });
+  Object.defineProperty(ZmkBleTransport.prototype, 'canWriteKeymap', { get: function () { return RPC_SCHEMA_SUPPORTED && this.studioAvailable && this.reading && !!this.characteristic; } });
   ZmkBleTransport.prototype.getDiagnostics = async function () {
     var secure = typeof window !== 'undefined' && window.isSecureContext === true;
     var bluetooth = typeof navigator !== 'undefined' && !!navigator.bluetooth;
@@ -364,6 +395,9 @@
       studioAvailable: !!this.studioAvailable,
       officialServiceUuid: BLE_SERVICE_UUID,
       officialCharacteristicUuid: BLE_CHARACTERISTIC_UUID,
+      officialNotificationsActive: !!(this.reading && this.characteristic),
+      keymapRpcReady: !!this.canWriteKeymap,
+      writeChunkSize: this.writeChunkSize,
       normalFilterMode: 'namePrefix + official/custom service filters',
       broadFilterMode: 'diagnostic-only acceptAllDevices',
       availabilityError: availabilityError
@@ -394,10 +428,30 @@
   };
   ZmkBleTransport.prototype._handleValue = function (event) { var value = event && event.target && event.target.value; if (value) this._consume(new Uint8Array(value.buffer, value.byteOffset, value.byteLength)); };
   ZmkBleTransport.prototype._handleDisconnected = function () { this.reading = false; this.studioAvailable = false; this.server = null; this.service = null; this.macroService = null; this.characteristic = null; this._rejectPending(new Error('BLE disconnected')); this._setLog('GATT切断イベントを受信'); this._setStatus('BLE切断: キーボードが見つかりません'); this._setDevice(this.device && this.device.name ? this.device.name : '—'); };
+  ZmkBleTransport.prototype._findService = async function (server, uuid) {
+    try { return await server.getPrimaryService(uuid); }
+    catch (error) {
+      if (typeof server.getPrimaryServices !== 'function') throw error;
+      var services = await server.getPrimaryServices();
+      var expected = String(uuid).toLowerCase();
+      for (var i = 0; i < services.length; i++) if (services[i] && String(services[i].uuid).toLowerCase() === expected) return services[i];
+      throw error;
+    }
+  };
+  ZmkBleTransport.prototype._findCharacteristic = async function (service, uuid) {
+    try { return await service.getCharacteristic(uuid); }
+    catch (error) {
+      if (typeof service.getCharacteristics !== 'function') throw error;
+      var characteristics = await service.getCharacteristics();
+      var expected = String(uuid).toLowerCase();
+      for (var i = 0; i < characteristics.length; i++) if (characteristics[i] && String(characteristics[i].uuid).toLowerCase() === expected) return characteristics[i];
+      throw error;
+    }
+  };
   ZmkBleTransport.prototype._attach = async function (device) {
-    this.device = device; this.device.addEventListener('gattserverdisconnected', this._onDisconnected); this._setDevice(device.name || 'sosho'); this._setLog('デバイス選択完了: ' + (device.name || '名称なし')); if (!device.gatt) throw new Error('GATT unavailable'); this._setLog('GATT接続開始'); this.server = await device.gatt.connect(); this._setLog('GATT接続成功'); this.service = null; this.characteristic = null; this.macroService = null; this.studioAvailable = false;
-    try { this._setLog('公式Service discovery開始: ' + BLE_SERVICE_UUID); this.service = await this.server.getPrimaryService(BLE_SERVICE_UUID); this._setLog('公式Service discovery成功'); this._setLog('公式Characteristic discovery開始: ' + BLE_CHARACTERISTIC_UUID); this.characteristic = await this.service.getCharacteristic(BLE_CHARACTERISTIC_UUID); this._setLog('公式Characteristic discovery成功'); this.characteristic.addEventListener('characteristicvaluechanged', this._onValue); this._setLog('公式Characteristic notifications開始'); await this.characteristic.startNotifications(); this.reading = true; this.studioAvailable = true; this._setLog('Studio RPC transport準備完了'); this._setStatus('BLE接続済み（公式ZMK Studioサービス）'); return true; }
-    catch (studioError) { var studioName = studioError && studioError.name ? studioError.name : 'Error'; var studioMessage = studioError && studioError.message ? studioError.message : 'GATT service not found'; this._setLog('公式GATT discovery失敗 [' + studioName + ']: ' + studioMessage); try { this._setLog('SO-SHOマクロService discovery開始: ' + MACRO_SERVICE_UUID); this.macroService = await this.server.getPrimaryService(MACRO_SERVICE_UUID); this._setLog('SO-SHOマクロService discovery成功（公式Studio RPCは未接続）'); this.reading = true; this._setStatus('BLE接続済み（SO-SHOマクロサービスのみ）'); return true; } catch (macroError) { var macroName = macroError && macroError.name ? macroError.name : 'Error'; var macroMessage = macroError && macroError.message ? macroError.message : 'GATT service not found'; this._setLog('SO-SHOマクロService discovery失敗 [' + macroName + ']: ' + macroMessage); this._handleDisconnected(); throw new Error('公式ZMK Studioサービスに接続できません: ' + studioMessage); } }
+    this.device = device; try { if (this.device.removeEventListener) this.device.removeEventListener('gattserverdisconnected', this._onDisconnected); } catch (error) {} if (this.device.addEventListener) this.device.addEventListener('gattserverdisconnected', this._onDisconnected); this._setDevice(device.name || 'sosho'); this._setLog('デバイス選択完了: ' + (device.name || '名称なし')); if (!device.gatt) throw new Error('GATT unavailable'); this._setLog('GATT接続開始'); this.server = await device.gatt.connect(); this._setLog('GATT接続成功'); this.service = null; this.characteristic = null; this.macroService = null; this.studioAvailable = false; this.reading = false;
+    try { this._setLog('公式Service discovery開始: ' + BLE_SERVICE_UUID); this.service = await this._findService(this.server, BLE_SERVICE_UUID); this._setLog('公式Service discovery成功: ' + (this.service.uuid || BLE_SERVICE_UUID)); this._setLog('公式Characteristic discovery開始: ' + BLE_CHARACTERISTIC_UUID); this.characteristic = await this._findCharacteristic(this.service, BLE_CHARACTERISTIC_UUID); this._setLog('公式Characteristic discovery成功: ' + (this.characteristic.uuid || BLE_CHARACTERISTIC_UUID)); this.characteristic.addEventListener('characteristicvaluechanged', this._onValue); this._setLog('公式Characteristic notifications開始'); await this.characteristic.startNotifications(); this.reading = true; this.studioAvailable = true; this._setLog('Studio RPC transport準備完了（通知受信 + 分割書き込み）'); this._setStatus('BLE接続済み（公式ZMK Studioサービス / RPC準備完了）'); return true; }
+    catch (studioError) { var studioName = studioError && studioError.name ? studioError.name : 'Error'; var studioMessage = studioError && studioError.message ? studioError.message : 'GATT service not found'; this._setLog('公式GATT discovery失敗 [' + studioName + ']: ' + studioMessage); try { this._setLog('SO-SHOマクロService discovery開始: ' + MACRO_SERVICE_UUID); this.macroService = await this._findService(this.server, MACRO_SERVICE_UUID); this._setLog('SO-SHOマクロService discovery成功（公式Studio RPCは未接続）'); this.reading = true; this._setStatus('BLE接続済み（SO-SHOマクロサービスのみ）'); return true; } catch (macroError) { var macroName = macroError && macroError.name ? macroError.name : 'Error'; var macroMessage = macroError && macroError.message ? macroError.message : 'GATT service not found'; this._setLog('SO-SHOマクロService discovery失敗 [' + macroName + ']: ' + macroMessage); this._handleDisconnected(); throw new Error('公式ZMK Studioサービスに接続できません: ' + studioMessage); } }
   };
   ZmkBleTransport.prototype._authorizedDevice = async function () { if (typeof navigator.bluetooth.getDevices !== 'function') return null; try { var devices = await navigator.bluetooth.getDevices(); return devices.find(function (device) { var name = device && device.name || ''; return BLE_NAME_PREFIXES.some(function (prefix) { return name.indexOf(prefix) === 0; }); }) || null; } catch (error) { return null; } };
   ZmkBleTransport.prototype.connectAuthorized = async function () {
@@ -451,10 +505,28 @@
   };
   ZmkBleTransport.prototype.reconnect = async function () { await this.disconnect(true); return this.connect(); };
   ZmkBleTransport.prototype.disconnect = async function (silent) { var had = !!this.device || !!this.server; try { if (this.characteristic) await this.characteristic.stopNotifications(); } catch (error) {} try { if (this.characteristic) this.characteristic.removeEventListener('characteristicvaluechanged', this._onValue); } catch (error) {} try { if (this.device) this.device.removeEventListener('gattserverdisconnected', this._onDisconnected); } catch (error) {} try { if (this.device && this.device.gatt && this.device.gatt.connected) this.device.gatt.disconnect(); } catch (error) {} this.reading = false; this.studioAvailable = false; this.server = null; this.service = null; this.macroService = null; this.characteristic = null; this._rejectPending(new Error('BLE disconnected')); if (!silent && had) this._setStatus('BLE切断済み'); if (!silent) this._setDevice('—'); };
-  ZmkBleTransport.prototype.sendFramedPayload = async function (payload) { if (!this.isConnected || !this.studioAvailable) throw new Error('公式ZMK Studio BLEサービスに未接続です'); var bytes = encodeFrame(payload); if (this.characteristic.writeValueWithResponse) await this.characteristic.writeValueWithResponse(bytes); else await this.characteristic.writeValue(bytes); return true; };
+  ZmkBleTransport.prototype.sendFramedPayload = function (payload) {
+    var self = this;
+    var task = this._writeChain.then(async function () {
+      if (!self.isConnected || !self.studioAvailable) throw new Error('公式ZMK Studio BLEサービスに未接続です');
+      if (!self.characteristic) throw new Error('公式ZMK Studio書き込みCharacteristicがありません');
+      var bytes = encodeFrame(payload);
+      var write = typeof self.characteristic.writeValueWithResponse === 'function' ? self.characteristic.writeValueWithResponse.bind(self.characteristic) : typeof self.characteristic.writeValue === 'function' ? self.characteristic.writeValue.bind(self.characteristic) : typeof self.characteristic.writeValueWithoutResponse === 'function' ? self.characteristic.writeValueWithoutResponse.bind(self.characteristic) : null;
+      if (!write) throw new Error('BLE Characteristicに書き込みAPIがありません');
+      for (var offset = 0; offset < bytes.length; offset += self.writeChunkSize) {
+        var chunk = bytes.slice(offset, Math.min(bytes.length, offset + self.writeChunkSize));
+        await write(chunk);
+        if (offset + chunk.length < bytes.length && self.writeDelayMs) await new Promise(function (resolve) { setTimeout(resolve, self.writeDelayMs); });
+      }
+      self._setLog('RPC送信完了: ' + bytes.length + ' bytes / ' + Math.ceil(bytes.length / self.writeChunkSize) + ' chunks');
+      return true;
+    });
+    this._writeChain = task.catch(function () {});
+    return task;
+  };
 
   global.ZmkSerialTransport = ZmkSerialTransport;
   global.ZmkBleTransport = ZmkBleTransport;
   global.ZmkStudioRpc = StudioRpcClient;
-  global.ZmkStudioProtocol = { SOF: SOF, ESC: ESC, EOF: EOF_BYTE, BLE_SERVICE_UUID: BLE_SERVICE_UUID, BLE_CHARACTERISTIC_UUID: BLE_CHARACTERISTIC_UUID, MACRO_SERVICE_UUID: MACRO_SERVICE_UUID, BLE_NAME_PREFIXES: BLE_NAME_PREFIXES, encodeFrame: encodeFrame, RPC_SCHEMA_SUPPORTED: RPC_SCHEMA_SUPPORTED, RPC_UNSUPPORTED_REASON: RPC_UNSUPPORTED_REASON, decodeStudioResponse: decodeStudioResponse };
+  global.ZmkStudioProtocol = { SOF: SOF, ESC: ESC, EOF: EOF_BYTE, BLE_SERVICE_UUID: BLE_SERVICE_UUID, BLE_CHARACTERISTIC_UUID: BLE_CHARACTERISTIC_UUID, MACRO_SERVICE_UUID: MACRO_SERVICE_UUID, BLE_NAME_PREFIXES: BLE_NAME_PREFIXES, BLE_SAFE_WRITE_CHUNK_SIZE: BLE_SAFE_WRITE_CHUNK_SIZE, encodeFrame: encodeFrame, RPC_SCHEMA_SUPPORTED: RPC_SCHEMA_SUPPORTED, RPC_UNSUPPORTED_REASON: RPC_UNSUPPORTED_REASON, decodeStudioResponse: decodeStudioResponse };
 })(window);

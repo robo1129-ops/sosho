@@ -52,6 +52,8 @@
 
   function mapDeviceState() {
     var keymap = deviceState.keymap;
+    rawById = Object.create(null);
+    labelById = Object.create(null);
     keymap.layers.forEach(function (layer, layerIndex) {
       var uiLayer = editor.getLayers()[layerIndex];
       if (uiLayer && layer.name) uiLayer.name = layer.name;
@@ -77,7 +79,8 @@
       (deviceState.behaviors || []).forEach(function (detail) { behaviorById[String(detail.id)] = detail; });
       mapDeviceState();
       global.soshoStudioState = { rpc: rpc, deviceState: deviceState, rawById: rawById, labelById: labelById };
-      setStatus('読み取り成功: ' + (deviceState.info && deviceState.info.name ? deviceState.info.name : 'sosho') + ' / ' + deviceState.keymap.layers.length + ' layers');
+      var lockText = deviceState.lockState === 1 ? 'Studioロック解除済み' : deviceState.lockState === 0 ? 'Studioロック中（キーボードの&studio_unlockを押すと保存可能）' : 'lockState=' + deviceState.lockState;
+      setStatus('読み取り成功: ' + (deviceState.info && deviceState.info.name ? deviceState.info.name : 'sosho') + ' / ' + deviceState.keymap.layers.length + ' layers / ' + lockText);
     } catch (error) {
       deviceState = null; setStatus('公式RPC読み取り失敗: ' + (error.message || error));
     } finally { updateButtons(); }
@@ -106,6 +109,7 @@
   async function writeKeymap() {
     var transport = editor.getTransport();
     if (!deviceState || !transport || !transport.isConnected || !transport.canWriteKeymap) { setStatus('先にキーマップを読み取り、公式RPC接続を確認してください'); return; }
+    if (deviceState.lockState !== 1) { setStatus('Studioロック中です。キーボードのLayer 3にある&studio_unlockを押してから、もう一度読み取りを実行してください'); return; }
     var changes = [];
     try {
       deviceState.keymap.layers.forEach(function (layer, layerIndex) {
@@ -125,7 +129,8 @@
       var verified = await rpc.readDeviceState();
       deviceState = verified;
       mapDeviceState();
-      setStatus('保存・再読み取り成功: ' + changes.length + '件');
+      var lockText = verified.lockState === 1 ? 'Studioロック解除済み' : verified.lockState === 0 ? 'Studioロック中' : 'lockState=' + verified.lockState;
+      setStatus('保存・再読み取り成功: ' + changes.length + '件 / ' + lockText);
     } catch (error) { setStatus('公式RPC書き込み失敗: ' + (error.message || error)); }
     finally { updateButtons(); }
   }
@@ -133,8 +138,9 @@
   function updateButtons() {
     var transport = editor.getTransport();
     var ready = !!(transport && transport.isConnected && transport.canWriteKeymap);
+    if (!ready && deviceState) { deviceState = null; global.soshoStudioState = null; }
     readButton.disabled = !ready;
-    writeButton.disabled = !ready || !deviceState;
+    writeButton.disabled = !ready || !deviceState || deviceState.lockState !== 1;
   }
 
   readButton.addEventListener('click', readKeymap);
