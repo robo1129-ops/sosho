@@ -166,9 +166,7 @@
     var palette = document.createElement('section');
     palette.className = 'macro-drag-palette';
     palette.innerHTML = '<h3>ドラッグでマクロを作成</h3><p>キーを下の手順欄へドラッグしてください。修飾キーを選ぶと、Shift＋Sのような組み合わせを追加できます。</p><div class="macro-key-chips" data-macro-key-chips></div>';
-    var contract = macroPanel.querySelector('.macro-contract');
-    if (contract) contract.insertAdjacentElement('afterend', palette);
-    else macroPanel.insertBefore(palette, macroList);
+    macroList.insertAdjacentElement('afterend', palette);
 
     var keyEntries = [
       ['A','A'], ['B','B'], ['C','C'], ['D','D'], ['E','E'], ['F','F'], ['G','G'], ['H','H'], ['I','I'], ['J','J'], ['K','K'], ['L','L'], ['M','M'], ['N','N'], ['O','O'], ['P','P'], ['Q','Q'], ['R','R'], ['S','S'], ['T','T'], ['U','U'], ['V','V'], ['W','W'], ['X','X'], ['Y','Y'], ['Z','Z'],
