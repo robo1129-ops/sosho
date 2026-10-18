@@ -26,7 +26,7 @@ const fakeTransport = {
     setTimeout(() => {
       const name = new Uint8Array([0x0A, 5, 115, 111, 115, 104, 111]);
       const core = new Uint8Array([0x0A, name.length, ...name]);
-      const requestResponse = new Uint8Array([0x08, 1, 0x1A, core.length, ...core]);
+      const requestResponse = new Uint8Array([0x08, 0, 0x1A, core.length, ...core]);
       this.resolver(new Uint8Array([0x0A, requestResponse.length, ...requestResponse]));
     }, 0);
   },
