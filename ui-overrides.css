@@ -4,6 +4,69 @@
   --physical-gap: clamp(5px, 0.62vw, 8px);
 }
 
+/* Remap-like palette: category tabs and search stay above the draggable keys. */
+.remap-palette-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.remap-palette-tabs {
+  display: flex;
+  gap: 4px;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+}
+
+.remap-palette-tab {
+  border: 0;
+  border-radius: 7px;
+  padding: 8px 11px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: .75rem;
+  font-weight: 750;
+  letter-spacing: .04em;
+}
+
+.remap-palette-tab:hover,
+.remap-palette-tab[aria-selected="true"] {
+  background: #c7d2fe33;
+  color: var(--text);
+}
+
+.remap-palette-search {
+  width: min(230px, 100%);
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  padding: 7px 10px;
+}
+
+.keyboard-frame .key-row {
+  display: grid;
+  grid-template-columns: repeat(6, var(--physical-key));
+  gap: var(--physical-gap);
+  justify-content: center;
+}
+
+.keyboard-frame .bottom-row .key:nth-child(1) { grid-column: 1; }
+.keyboard-frame .bottom-row .key:nth-child(2) { grid-column: 2; }
+.keyboard-frame .bottom-row .key:nth-child(3) { grid-column: 5; }
+.keyboard-frame .bottom-row .key:nth-child(4) { grid-column: 6; }
+
+.transport-note {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: .75rem;
+}
+
 .download-card {
   display: flex;
   align-items: center;
