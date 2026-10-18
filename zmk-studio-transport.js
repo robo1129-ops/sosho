@@ -278,18 +278,29 @@
     return response;
   };
   StudioRpcClient.prototype.readDeviceState = async function () {
-    var info = await this.getDeviceInfo();
-    var lockState = await this.getLockState();
-    var keymap = await this.getKeymap();
-    if (!keymap || !Array.isArray(keymap.layers) || !keymap.layers.length) throw new Error('キーマップ応答が空です。BLEの通知受信またはZMK Studioサービスを確認してください');
-    var bindingCount = keymap.layers.reduce(function (count, layer) { return count + ((layer && layer.bindings) || []).length; }, 0);
-    if (!bindingCount) throw new Error('キーマップのキー割り当てが0件です。古いGATT応答を受信していないか確認してください');
-    var idSet = Object.create(null);
-    keymap.layers.forEach(function (layer) { layer.bindings.forEach(function (binding) { idSet[String(binding.behaviorId)] = true; }); });
-    var ids = Object.keys(idSet).map(function (id) { return Number(id); });
-    var details = [];
-    for (var i = 0; i < ids.length; i++) { try { details.push(await this.getBehaviorDetails(ids[i])); } catch (error) {} }
-    return { info: info, lockState: lockState, keymap: keymap, behaviors: details };
+    var self = this;
+    var readAll = async function () {
+      var info = await self.getDeviceInfo();
+      var lockState = await self.getLockState();
+      var keymap = await self.getKeymap();
+      if (!keymap || !Array.isArray(keymap.layers) || !keymap.layers.length) throw new Error('キーマップ応答が空です。BLEの通知受信またはZMK Studioサービスを確認してください');
+      var bindingCount = keymap.layers.reduce(function (count, layer) { return count + ((layer && layer.bindings) || []).length; }, 0);
+      if (!bindingCount) throw new Error('キーマップのキー割り当てが0件です。古いGATT応答を受信していないか確認してください');
+      var idSet = Object.create(null);
+      keymap.layers.forEach(function (layer) { layer.bindings.forEach(function (binding) { idSet[String(binding.behaviorId)] = true; }); });
+      var ids = Object.keys(idSet).map(function (id) { return Number(id); });
+      var details = [];
+      for (var i = 0; i < ids.length; i++) { try { details.push(await self.getBehaviorDetails(ids[i])); } catch (error) {} }
+      return { info: info, lockState: lockState, keymap: keymap, behaviors: details };
+    };
+    try { return await readAll(); }
+    catch (error) {
+      if (error && /Timed out waiting for framed response/.test(String(error.message || error)) && self.transport && typeof self.transport.tryAlternateBaud === 'function' && !self.transport._rpcBaudRetried) {
+        self.transport._rpcBaudRetried = true;
+        if (await self.transport.tryAlternateBaud()) return readAll();
+      }
+      throw error;
+    }
   };
   StudioRpcClient.prototype.writeKeymap = async function (changes) {
     for (var i = 0; i < changes.length; i++) await this.setLayerBinding(changes[i].layerId, changes[i].keyPosition, changes[i].binding);
@@ -345,7 +356,7 @@
   };
   Object.defineProperty(FramedTransport.prototype, 'canWriteKeymap', { get: function () { return RPC_SCHEMA_SUPPORTED; } });
 
-  function ZmkSerialTransport(options) { FramedTransport.call(this, options); this.port = null; this.reader = null; this.writer = null; this.reading = false; this._disconnecting = false; this._connecting = false; }
+  function ZmkSerialTransport(options) { FramedTransport.call(this, options); this.port = null; this.reader = null; this.writer = null; this.reading = false; this._disconnecting = false; this._connecting = false; this.baudRate = 12500; this._rpcBaudRetried = false; }
   ZmkSerialTransport.prototype = Object.create(FramedTransport.prototype); ZmkSerialTransport.prototype.constructor = ZmkSerialTransport;
   Object.defineProperty(ZmkSerialTransport.prototype, 'isConnected', { get: function () { return !!this.port && this.reading; } });
   Object.defineProperty(ZmkSerialTransport.prototype, 'isSupported', { get: function () { return typeof navigator !== 'undefined' && !!navigator.serial && typeof navigator.serial.requestPort === 'function'; } });
@@ -363,7 +374,8 @@
       connected: this.isConnected,
       error: errorText,
       transport: 'Web Serial / USB CDC-ACM',
-      recommendedDevice: '右側Central（トラックボール側）'
+      recommendedDevice: '右側Central（トラックボール側）',
+      baudRate: this.baudRate
     };
   };
   ZmkSerialTransport.prototype._open = async function (port) {
@@ -371,11 +383,34 @@
     // ZMK Studio's studio-rpc-usb-uart transport uses 12500 baud.  The
     // endpoint is a CDC/ACM serial stream, but the baud value is still used by
     // the firmware-side UART transport to select the Studio RPC path.
-    await this.port.open({ baudRate: 12500, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
+    await this.port.open({ baudRate: this.baudRate, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
     this.reading = true;
     this._setDevice('右側Central / USB');
-    this._setStatus('USB接続済み（右側Central / ZMK Studio RPC）');
+    this._setStatus('USB接続済み（右側Central / ZMK Studio RPC / ' + this.baudRate + ' baud）');
     this._readLoop();
+    return true;
+  };
+  ZmkSerialTransport.prototype.tryAlternateBaud = async function () {
+    if (!this.port || this._disconnecting || this.baudRate !== 12500) return false;
+    var port = this.port;
+    this._setLog('RPC応答なし: USBを115200 baudへ切り替えて再試行');
+    this.reading = false;
+    this._disconnecting = true;
+    try {
+      if (this.reader) await this.reader.cancel();
+      if (this.reader) try { this.reader.releaseLock(); } catch (error) {}
+      this.reader = null;
+      if (this.writer) try { this.writer.releaseLock(); } catch (error) {}
+      this.writer = null;
+      await port.close();
+    } catch (error) {
+      this._setLog('USB baud切替前の切断に失敗: ' + (error.message || error));
+      return false;
+    } finally { this._disconnecting = false; }
+    this.port = null;
+    this.baudRate = 115200;
+    this._inFrame = false; this._escaped = false; this._frameBytes = []; this._frameQueue = [];
+    await this._open(port);
     return true;
   };
   ZmkSerialTransport.prototype.connect = async function () {
