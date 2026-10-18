@@ -114,10 +114,11 @@
     exportButton.addEventListener('click', function () {
       var payload = {
         format: 'sosho-keymap',
-        schemaVersion: 1,
+        schemaVersion: 2,
         layout: 'sosho-44',
         exportedAt: new Date().toISOString(),
         keymap: validKeymap(readJsonStorage('sosho-local-keymap-v1', {})),
+        defaultKeymap: validKeymap(readJsonStorage('sosho-default-keymap-v1', {})),
         macros: validMacros(readJsonStorage('sosho-local-macros-v1', [])),
         tapDance: validTapDance(readJsonStorage('sosho-tap-dance-v1', [])),
         deviceSettings: validDeviceSettings(readJsonStorage('sosho-device-settings-v1', {}))
@@ -140,10 +141,11 @@
       if (!file) return;
       file.text().then(function (text) {
         var payload = JSON.parse(text);
-        if (!payload || payload.format !== 'sosho-keymap' || Number(payload.schemaVersion) !== 1) {
+        if (!payload || payload.format !== 'sosho-keymap' || ![1, 2].includes(Number(payload.schemaVersion))) {
           throw new Error('SO-SHO用のJSONではありません');
         }
         writeJsonStorage('sosho-local-keymap-v1', validKeymap(payload.keymap || payload.assignments));
+        writeJsonStorage('sosho-default-keymap-v1', validKeymap(payload.defaultKeymap));
         writeJsonStorage('sosho-local-macros-v1', validMacros(payload.macros));
         writeJsonStorage('sosho-tap-dance-v1', validTapDance(payload.tapDance));
         writeJsonStorage('sosho-device-settings-v1', validDeviceSettings(payload.deviceSettings));
