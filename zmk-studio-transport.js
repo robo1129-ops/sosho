@@ -226,7 +226,11 @@
     return concat(fieldVarint(1, requestId), fieldMessage(tag, body));
   }
 
-  function StudioRpcClient(transport) { this.transport = transport; this.requestId = 1; this.serial = Promise.resolve(); }
+  // Match the reference zmk-studio-ts-client, which starts the monotonically
+  // increasing request id at zero.  The firmware accepts any uint32 id, but
+  // matching the reference client keeps diagnostics and response correlation
+  // identical when a device has persisted an RPC session state.
+  function StudioRpcClient(transport) { this.transport = transport; this.requestId = 0; this.serial = Promise.resolve(); }
   StudioRpcClient.prototype._requestNow = async function (subsystem, operation, payload, timeoutMs) {
     var id = this.requestId++;
     if (this.requestId > 0x7FFFFFFF) this.requestId = 1;

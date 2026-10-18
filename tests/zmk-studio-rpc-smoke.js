@@ -22,7 +22,7 @@ const fakeTransport = {
     });
   },
   async sendFramedPayload(request) {
-    assert.deepStrictEqual(Array.from(request.slice(0, 3)), [0x08, 0x01, 0x1A]);
+    assert.deepStrictEqual(Array.from(request.slice(0, 3)), [0x08, 0x00, 0x1A]);
     setTimeout(() => {
       const name = new Uint8Array([0x0A, 5, 115, 111, 115, 104, 111]);
       const core = new Uint8Array([0x0A, name.length, ...name]);
