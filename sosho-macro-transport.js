@@ -73,6 +73,7 @@
   var keyIds = {
     BACKSPACE: 0x2a, BSPC: 0x2a, ENTER: 0x28, RET: 0x28, ESCAPE: 0x29, ESC: 0x29, TAB: 0x2b, SPACE: 0x2c,
     MINUS: 0x2d, EQUAL: 0x2e, LBKT: 0x2f, RBKT: 0x30, BSLH: 0x31, SEMI: 0x33, SQT: 0x34, COMMA: 0x36,
+    LEFT: 0x50, RIGHT: 0x4f, UP: 0x52, DOWN: 0x51,
     DOT: 0x37, SLASH: 0x38, LCTRL: 0xe0, LSHFT: 0xe1, LALT: 0xe2, LGUI: 0xe3,
     RCTRL: 0xe4, RSHFT: 0xe5, RALT: 0xe6, RGUI: 0xe7
   };
@@ -103,7 +104,7 @@
     var name = utf8((macro && macro.name) || '新しいマクロ');
     var target = utf8((macro && macro.target) || '');
     if (name.length > 24 || target.length > 32) throw new Error('マクロ名または割り当て先が長すぎます');
-    var lines = String((macro && macro.steps) || 'A|tap|0').split(/\r?\n/).filter(Boolean);
+    var lines = String((macro && macro.steps) || 'A|tap|1').split(/\r?\n/).filter(Boolean);
     if (lines.length > MAX_STEPS) throw new Error('マクロのステップ数は8個までです');
     var out = new Uint8Array(4 + name.length + target.length + lines.length * 7);
     out[0] = id; out[1] = lines.length; out[2] = name.length; out[3] = target.length;

@@ -60,7 +60,7 @@
       return {
         name: stringValue(macro.name, '新しいマクロ', 100),
         target: stringValue(macro.target, '', 128),
-        steps: stringValue(macro.steps, 'A|tap|0', 8000)
+        steps: stringValue(macro.steps, 'A|tap|1', 8000)
       };
     });
   }
@@ -146,6 +146,93 @@
   }
 
   setupJsonTransfer();
+
+  function setupMacroDragBuilder() {
+    var macroPanel = document.querySelector('.macro-panel');
+    var macroList = document.getElementById('macro-list');
+    if (!macroPanel || !macroList || macroPanel.dataset.macroBuilderReady) return;
+    macroPanel.dataset.macroBuilderReady = 'true';
+
+    var palette = document.createElement('section');
+    palette.className = 'macro-drag-palette';
+    palette.innerHTML = '<h3>ドラッグでマクロを作成</h3><p>キーを下の手順欄へドラッグしてください。修飾キーを選ぶと、Shift＋Sのような組み合わせを追加できます。</p><div class="macro-key-chips" data-macro-key-chips></div>';
+    var contract = macroPanel.querySelector('.macro-contract');
+    if (contract) contract.insertAdjacentElement('afterend', palette);
+    else macroPanel.insertBefore(palette, macroList);
+
+    var keyEntries = [
+      ['A','A'], ['B','B'], ['C','C'], ['D','D'], ['E','E'], ['F','F'], ['G','G'], ['H','H'], ['I','I'], ['J','J'], ['K','K'], ['L','L'], ['M','M'], ['N','N'], ['O','O'], ['P','P'], ['Q','Q'], ['R','R'], ['S','S'], ['T','T'], ['U','U'], ['V','V'], ['W','W'], ['X','X'], ['Y','Y'], ['Z','Z'],
+      ['0','0'], ['1','1'], ['2','2'], ['3','3'], ['4','4'], ['5','5'], ['6','6'], ['7','7'], ['8','8'], ['9','9'],
+      ['Enter','RET'], ['Backspace','BSPC'], ['Tab','TAB'], ['Escape','ESC'], ['Space','SPACE'], ['←','LEFT'], ['→','RIGHT'], ['↑','UP'], ['↓','DOWN']
+    ];
+    var chipContainer = palette.querySelector('[data-macro-key-chips]');
+    keyEntries.forEach(function (entry) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'macro-key-chip';
+      chip.draggable = true;
+      chip.textContent = entry[0];
+      chip.title = entry[1] + 'をマクロへ追加';
+      chip.dataset.macroKey = entry[1];
+      chip.addEventListener('dragstart', function (event) {
+        event.dataTransfer.setData('text/plain', 'macro-key:' + entry[1]);
+      });
+      chipContainer.appendChild(chip);
+    });
+
+    var modifierNames = [['Shift', 'LSHFT'], ['Ctrl', 'LCTRL'], ['Alt', 'LALT'], ['GUI', 'LGUI']];
+    function appendMacroStep(textarea, key) {
+      var builder = textarea.closest('.macro-builder');
+      var latencyInput = builder.querySelector('[data-macro-latency]');
+      var latency = Math.max(0, Math.min(60000, Number(latencyInput.value) || 1));
+      latencyInput.value = latency;
+      var modifiers = Array.prototype.slice.call(builder.querySelectorAll('[data-macro-modifier]:checked')).map(function (input) { return input.value; });
+      var lines = [];
+      if (modifiers.length) {
+        modifiers.forEach(function (modifier) { lines.push(modifier + '|press|' + latency); });
+        lines.push(key + '|tap|' + latency);
+        modifiers.slice().reverse().forEach(function (modifier) { lines.push(modifier + '|release|' + latency); });
+      } else {
+        lines.push(key + '|tap|' + latency);
+      }
+      var current = textarea.value.trim();
+      textarea.value = current ? current + '\n' + lines.join('\n') : lines.join('\n');
+      textarea.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function enhanceMacroItem(item) {
+      if (item.dataset.macroBuilderReady === 'true') return;
+      var textarea = item.querySelector('textarea');
+      var stepsLabel = textarea && textarea.closest('label');
+      if (!textarea || !stepsLabel) return;
+      item.dataset.macroBuilderReady = 'true';
+      var builder = document.createElement('div');
+      builder.className = 'macro-builder';
+      builder.innerHTML = '<div class="macro-modifiers"><span>修飾キー:</span>' + modifierNames.map(function (entry) { return '<label><input type="checkbox" data-macro-modifier value="' + entry[1] + '">' + entry[0] + '</label>'; }).join('') + '</div><label class="macro-latency">追加時の待ち時間(ms)<input type="number" data-macro-latency min="0" max="60000" step="1" value="1"></label><div class="macro-drop-zone" data-macro-drop-zone>ここへキーをドラッグして追加</div><small>各行の末尾がその操作の待ち時間です。追加後も手順欄で1行ずつ変更できます。</small>';
+      stepsLabel.appendChild(builder);
+      var dropZone = builder.querySelector('[data-macro-drop-zone]');
+      dropZone.addEventListener('dragover', function (event) { event.preventDefault(); dropZone.classList.add('drop-ready'); });
+      dropZone.addEventListener('dragleave', function () { dropZone.classList.remove('drop-ready'); });
+      dropZone.addEventListener('drop', function (event) {
+        event.preventDefault();
+        dropZone.classList.remove('drop-ready');
+        var data = event.dataTransfer.getData('text/plain');
+        var key = data.indexOf('macro-key:') === 0 ? data.slice(10) : '';
+        if (key) appendMacroStep(textarea, key);
+      });
+    }
+
+    function enhanceAllMacroItems() {
+      macroList.querySelectorAll('.macro-item').forEach(enhanceMacroItem);
+    }
+    enhanceAllMacroItems();
+    if (typeof MutationObserver === 'function') {
+      var observer = new MutationObserver(enhanceAllMacroItems);
+      observer.observe(macroList, { childList: true });
+    }
+  }
+
+  setupMacroDragBuilder();
 
   var reference = document.querySelector('.reference-note');
   if (reference) {
@@ -400,7 +487,7 @@
       cluster.className = 'encoder-cluster';
       cluster.dataset.layer = String(layer);
       cluster.innerHTML = '<span class="encoder-title">ロータリーエンコーダー</span>';
-      [['ccw', '↺ 左回転'], ['press', '押下'], ['cw', '↻ 右回転']].forEach(function (entry) {
+      [['ccw', '↺ 左回転'], ['cw', '↻ 右回転']].forEach(function (entry) {
         var target = 'l' + layer + '-' + side + '-encoder-' + entry[0];
         var button = document.createElement('button');
         button.type = 'button';
