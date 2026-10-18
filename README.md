@@ -52,7 +52,7 @@ Webページの「カスタムファームウェアZIPを直接ダウンロー�
 - 初回はStudio対応ファームウェアをUSBで一度書き込む必要がある
 - キーボード側の `studio_unlock` を実行してからStudio接続を試す
 - BLE接続後に、マクロサービスの検出、暗号化リンク、送信・読み戻し・実行の状態を表示する
-- 公式Studio keymap RPCは、未検証のpayloadを送信しないため対象外
+- 公式Studio RPCのprotobufフレームを実装し、接続後にデバイス情報・ロック状態・キーマップ・使用中behaviorを読み取る。変更時は`set_layer_binding`→`save_changes`→再読み取りで検証する。実機のBLE応答とWindowsブラウザーでの互換性は、実機テストが完了するまでNOT_VERIFIEDとする
 
 参考実装: [Keyball keycodes](https://github.com/Yowkees/keyball/blob/main/qmk_firmware/keyboards/keyball/lib/keyball/keycodes.md)、[Keyball firmware implementation](https://github.com/Yowkees/keyball/blob/main/qmk_firmware/keyboards/keyball/lib/keyball/keyball.c)
 
@@ -60,7 +60,15 @@ Webページの「カスタムファームウェアZIPを直接ダウンロー�
 
 BLE検出はGATTサービスUUIDだけに限定せず、`sosho` / `soho` / `SO-SHO` / `SOHO` / `ZMK` のデバイス名プレフィックスも対象にしています。対応ブラウザーでは、このページへ許可済みのデバイスへの再接続も試みます。
 
-WindowsのBluetooth設定でペアリング済みでも、Web Bluetoothから利用するには、キーボードがBLE広告中であることと、ブラウザー側の接続許可が必要です。今回の調整はWebアプリ側だけで行い、ファームウェアは変更していません。
+WindowsのBluetooth設定でペアリング済みでも、Web Bluetoothから利用するには、キーボードがBLE広告中であることと、ブラウザー側の接続許可が必要です。ZMK公式ドキュメントでは、StudioのBLE WebアプリはLinux向け、Windows/macOSはネイティブアプリ向けと説明されています。そのためWindows Chromeでの公式Studio GATT接続は`NOT_VERIFIED`として扱い、ページ上でも公式RPCサービス未接続と表示します。今回のWeb側調整だけでWindowsのOS制限を解消できるとは断定しません。
+
+## RPCの自動テスト
+
+公式Studioのprotobufフレーム生成・SOF/ESC/EOFエスケープ・応答デコードは、Node.jsで次を実行して確認できます。
+
+```text
+node tests/zmk-studio-rpc-smoke.js
+```
 
 ## 検証と公開の受け入れ条件
 
