@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "SO-SHO BLE diagnostics",
+  "version": "0.1.0",
+  "description": "Independent Web Bluetooth diagnostics for SO-SHO ZMK Studio GATT connectivity.",
+  "action": {
+    "default_title": "SO-SHO BLE diagnostics",
+    "default_popup": "popup.html"
+  },
+  "permissions": ["storage"],
+  "minimum_chrome_version": "110"
+}

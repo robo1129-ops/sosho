@@ -72,6 +72,24 @@ WindowsのBluetooth設定でペアリング済みでも、Web Bluetoothから利
 node tests/zmk-studio-rpc-smoke.js
 ```
 
+## Chrome拡張によるBLE診断
+
+`chrome-extension/` に、公開ページと独立してWeb Bluetoothの検出・GATT接続を確認するManifest V3拡張を収録しています。WindowsのネイティブBluetoothスタックを置き換えるものではなく、公開ページのOriginやページ状態に依存しない切り分け用です。
+
+1. `chrome://extensions` を開く
+2. デベロッパーモードを有効にする
+3. 「パッケージ化されていない拡張機能を読み込む」で、リポジトリの `chrome-extension` フォルダーを選ぶ
+4. 拡張のポップアップで「ブラウザー診断」を実行し、「soshoへ接続」を押す
+5. Device PickerでSO-SHOを選び、公式StudioサービスとCharacteristicの検出結果をログで確認する
+
+Windowsでは `chrome.bluetoothLowEnergy` が提供されないため、この拡張もWeb Bluetoothのユーザー許可とOS側のBLE可視性が必要です。拡張で検出できない場合は、Webサイトの実装だけでWindowsのBLE制限を回避できたとは扱いません。
+
+拡張の静的検証は次で実行します。
+
+```text
+node tests/chrome-extension-smoke.js
+```
+
 ## 検証と公開の受け入れ条件
 
 1. GitHub Actionsで右Centralトラックボール / 左Peripheralトラックパッドのビルド成果物を確認する

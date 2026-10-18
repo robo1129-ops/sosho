@@ -1,0 +1,22 @@
+:root{color-scheme:dark;--bg:#0d1117;--panel:#161b22;--line:#30363d;--text:#f0f6fc;--muted:#8b949e;--accent:#58a6ff;--ok:#3fb950;--warn:#d29922;--bad:#f85149}
+*{box-sizing:border-box}
+body{width:390px;margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI","Noto Sans JP",sans-serif}
+main{padding:18px}
+header{margin-bottom:14px}
+.eyebrow{margin:0;color:var(--accent);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+h1{margin:3px 0 4px;font-size:21px}
+h2{margin:0;font-size:14px}
+.muted,.footnote{color:var(--muted)}
+.muted{margin:0;font-size:12px}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0 10px}
+button{border:1px solid #48515c;border-radius:7px;background:#21262d;color:var(--text);padding:7px 9px;font:inherit;font-weight:650;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--accent);background:#1f6feb22}
+button:disabled{opacity:.5;cursor:not-allowed}
+.status{border:1px solid var(--line);border-radius:7px;padding:8px 9px;margin:0 0 12px;color:var(--warn);font-size:12px}
+.log-card{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:11px}
+.log-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.log-heading button{padding:4px 7px;font-size:11px}
+ol{margin:9px 0 0;padding-left:24px;max-height:280px;overflow:auto}
+li{padding:3px 0;color:#c9d1d9;font-size:11px;overflow-wrap:anywhere}
+li time{color:var(--muted);margin-right:6px}
+.footnote{font-size:11px;margin:12px 0 0}
