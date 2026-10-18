@@ -2,6 +2,8 @@
   'use strict';
 
   var notice = document.querySelector('.notice');
+  var subtitle = document.querySelector('.subtitle');
+  if (subtitle) subtitle.textContent = 'SO-SHO実機配列に合わせたキーマップ・マクロ編集ページ';
   if (notice) {
     var card = document.createElement('section');
     card.className = 'download-card';
@@ -158,5 +160,166 @@
       renderTapDanceDefinitions();
     });
     renderTapDanceDefinitions();
+
+    var basicDetail = additions.querySelector('[data-basic-palette]').closest('.palette-group');
+    var jisDetail = additions.querySelector('[data-jis-palette]').closest('.palette-group');
+    var tapDanceDetail = additions.querySelector('[data-tap-dance-list]').closest('.palette-group');
+    basicDetail.dataset.paletteCategory = 'basic';
+    jisDetail.dataset.paletteCategory = 'jis';
+    tapDanceDetail.dataset.paletteCategory = 'tap-dance';
+
+    var actionPanel = document.getElementById('palette');
+    actionPanel.dataset.paletteCategory = 'functions';
+    var devicePanel = document.createElement('div');
+    devicePanel.className = 'device-settings-panel';
+    devicePanel.dataset.paletteCategory = 'device';
+    devicePanel.innerHTML = '<section class="device-settings-card"><h4>右モジュール · トラックボール</h4><p>移動量の感度（CPI）を調整します。</p><div class="device-setting-actions"><button type="button" data-trackball-step="-100">感度 −</button><button type="button" data-trackball-step="0">標準</button><button type="button" data-trackball-step="100">感度 ＋</button><span class="device-setting-value" data-trackball-value></span></div></section>' +
+      '<section class="device-settings-card"><h4>左モジュール · トラックパッド</h4><p>カーソル移動倍率を調整します。</p><div class="device-setting-actions"><button type="button" data-trackpad-step="-0.25">倍率 −</button><button type="button" data-trackpad-step="0">標準</button><button type="button" data-trackpad-step="0.25">倍率 ＋</button><span class="device-setting-value" data-trackpad-value></span></div></section>' +
+      '<p class="device-setting-note">設定値はこのブラウザーに保存します。実機のCPI/移動倍率へ反映するには、対応するファームウェア設定またはデバイス設定通信が必要です。</p>';
+    palette.appendChild(devicePanel);
+
+    var tabBar = document.createElement('div');
+    tabBar.className = 'palette-tabs';
+    var categories = [
+      ['basic', 'BASIC'],
+      ['functions', 'FUNCTIONS'],
+      ['jis', '日本語/JIS'],
+      ['tap-dance', 'TAP DANCE'],
+      ['device', 'DEVICE']
+    ];
+    categories.forEach(function (entry) {
+      var tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'palette-tab';
+      tab.textContent = entry[1];
+      tab.dataset.paletteTab = entry[0];
+      tab.setAttribute('aria-pressed', 'false');
+      tab.addEventListener('click', function () { showPaletteCategory(entry[0]); });
+      tabBar.appendChild(tab);
+    });
+    palette.insertBefore(tabBar, actionPanel);
+
+    function showPaletteCategory(category) {
+      [basicDetail, jisDetail, tapDanceDetail, actionPanel, devicePanel].forEach(function (panel) {
+        panel.style.display = panel.dataset.paletteCategory === category ? '' : 'none';
+      });
+      tabBar.querySelectorAll('[data-palette-tab]').forEach(function (tab) {
+        tab.setAttribute('aria-pressed', String(tab.dataset.paletteTab === category));
+      });
+    }
+
+    var deviceSettings = { trackballCpi: 600, trackpadScale: 1 };
+    try {
+      deviceSettings = Object.assign(deviceSettings, JSON.parse(localStorage.getItem('sosho-device-settings-v1') || '{}'));
+    } catch (error) {
+      // Use the safe defaults when localStorage contains invalid data.
+    }
+    function saveDeviceSettings() {
+      try { localStorage.setItem('sosho-device-settings-v1', JSON.stringify(deviceSettings)); } catch (error) {}
+      devicePanel.querySelector('[data-trackball-value]').textContent = deviceSettings.trackballCpi + ' CPI';
+      devicePanel.querySelector('[data-trackpad-value]').textContent = deviceSettings.trackpadScale.toFixed(2) + '×';
+    }
+    devicePanel.querySelectorAll('[data-trackball-step]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var step = Number(button.dataset.trackballStep);
+        deviceSettings.trackballCpi = step === 0 ? 600 : Math.max(200, Math.min(1200, deviceSettings.trackballCpi + step));
+        saveDeviceSettings();
+      });
+    });
+    devicePanel.querySelectorAll('[data-trackpad-step]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var step = Number(button.dataset.trackpadStep);
+        deviceSettings.trackpadScale = step === 0 ? 1 : Math.max(.5, Math.min(2, Number((deviceSettings.trackpadScale + step).toFixed(2))));
+        saveDeviceSettings();
+      });
+    });
+    saveDeviceSettings();
+    showPaletteCategory('basic');
   }
+
+  function readAssignments() {
+    try { return JSON.parse(localStorage.getItem('sosho-local-keymap-v1') || '{}') || {}; } catch (error) { return {}; }
+  }
+
+  function writeAssignments(assignments) {
+    try { localStorage.setItem('sosho-local-keymap-v1', JSON.stringify(assignments)); } catch (error) {}
+  }
+
+  function activeLayerIndex() {
+    var buttons = document.querySelectorAll('.layer-button');
+    for (var i = 0; i < buttons.length; i++) if (buttons[i].getAttribute('aria-pressed') === 'true') return i;
+    return 0;
+  }
+
+  function updateInspector(target, value) {
+    var position = document.getElementById('selected-position');
+    var action = document.getElementById('selected-action');
+    if (position) position.textContent = '選択中: ' + target;
+    if (action) action.textContent = value || '未設定';
+  }
+
+  function createEncoderTargets() {
+    var layer = activeLayerIndex();
+    document.querySelectorAll('#keyboard .half').forEach(function (half) {
+      var existing = half.querySelector('.encoder-cluster');
+      if (existing && existing.dataset.layer === String(layer)) return;
+      if (existing) existing.remove();
+      var oldMarker = half.querySelector('.device-marker');
+      if (oldMarker) oldMarker.remove();
+      var side = half.classList.contains('left') ? 'left' : 'right';
+      var cluster = document.createElement('div');
+      cluster.className = 'encoder-cluster';
+      cluster.dataset.layer = String(layer);
+      cluster.innerHTML = '<span class="encoder-title">ロータリーエンコーダー</span>';
+      [['ccw', '↺ 左回転'], ['press', '押下'], ['cw', '↻ 右回転']].forEach(function (entry) {
+        var target = 'l' + layer + '-' + side + '-encoder-' + entry[0];
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'encoder-target';
+        button.dataset.target = target;
+        button.innerHTML = entry[1] + '<span class="encoder-assignment"></span>';
+        button.addEventListener('click', function () {
+          var assignments = readAssignments();
+          updateInspector(target, assignments[target]);
+        });
+        button.addEventListener('dragover', function (event) {
+          event.preventDefault();
+          button.classList.add('drop-ready');
+        });
+        button.addEventListener('dragleave', function () { button.classList.remove('drop-ready'); });
+        button.addEventListener('drop', function (event) {
+          event.preventDefault();
+          button.classList.remove('drop-ready');
+          var data = event.dataTransfer.getData('text/plain');
+          var assignments = readAssignments();
+          if (data.indexOf('action:') === 0) assignments[target] = data.slice(7);
+          if (data.indexOf('macro:') === 0) assignments[target] = 'Macro ' + data.slice(6);
+          writeAssignments(assignments);
+          renderEncoderAssignment(button, target);
+          updateInspector(target, assignments[target]);
+        });
+        cluster.appendChild(button);
+        renderEncoderAssignment(button, target);
+      });
+      half.appendChild(cluster);
+
+      var marker = document.createElement('div');
+      marker.className = 'device-marker';
+      marker.innerHTML = side === 'left' ? '<strong>左 · トラックパッド</strong><span>移動倍率はDEVICEで設定</span>' : '<strong>右 · トラックボール</strong><span>CPIはDEVICEで設定</span>';
+      half.appendChild(marker);
+    });
+  }
+
+  function renderEncoderAssignment(button, target) {
+    var assignments = readAssignments();
+    var value = button.querySelector('.encoder-assignment');
+    if (value) value.textContent = assignments[target] || '未設定';
+  }
+
+  var keyboard = document.getElementById('keyboard');
+  if (keyboard && typeof MutationObserver === 'function') {
+    var observer = new MutationObserver(function () { createEncoderTargets(); });
+    observer.observe(keyboard, { childList: true, subtree: true });
+  }
+  createEncoderTargets();
 })();

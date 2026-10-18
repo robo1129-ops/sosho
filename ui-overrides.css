@@ -256,6 +256,151 @@
   font-size: .76rem;
 }
 
+.palette-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 10px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.palette-tab {
+  flex: 0 0 auto;
+  border: 1px solid #48515c;
+  border-radius: 8px;
+  background: #21262d;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 8px 12px;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.palette-tab[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: #1f6feb44;
+  color: var(--text);
+}
+
+.encoder-cluster {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(3, minmax(64px, 1fr));
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  padding: 10px;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  background: #161b22cc;
+}
+
+.encoder-title {
+  color: var(--muted);
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+}
+
+.encoder-target {
+  min-height: 42px;
+  border: 1px solid #48515c;
+  border-radius: 8px;
+  background: #21262d;
+  color: var(--text);
+  cursor: pointer;
+  font-size: .7rem;
+  line-height: 1.15;
+  padding: 6px;
+}
+
+.encoder-target:hover,
+.encoder-target.drop-ready {
+  border-color: var(--accent);
+  background: #1f6feb33;
+}
+
+.encoder-target .encoder-assignment {
+  display: block;
+  margin-top: 3px;
+  color: #9ecbff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.device-marker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: #0d1117;
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+.device-marker strong {
+  color: var(--text);
+}
+
+.device-settings-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.device-settings-card {
+  padding: 12px;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  background: #0d111799;
+}
+
+.device-settings-card h4 {
+  margin: 0;
+}
+
+.device-settings-card p {
+  margin: 4px 0 8px;
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+.device-setting-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.device-setting-actions button {
+  border: 1px solid #48515c;
+  border-radius: 7px;
+  background: #21262d;
+  color: var(--text);
+  cursor: pointer;
+  padding: 7px 9px;
+  font-size: .75rem;
+}
+
+.device-setting-value {
+  min-width: 62px;
+  color: #9ecbff;
+  font-size: .8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.device-setting-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: .74rem;
+}
+
 @media (max-width: 850px) {
   .palette-additions {
     grid-template-columns: 1fr;
@@ -270,5 +415,19 @@
 
   .keyboard-frame {
     justify-content: flex-start;
+  }
+
+  .device-settings-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1050px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  :root {
+    --physical-key: clamp(38px, 5vw, 50px);
   }
 }
