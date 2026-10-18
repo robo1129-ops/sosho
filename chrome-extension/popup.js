@@ -110,7 +110,8 @@
       var name = error && error.name ? error.name : 'Error';
       var message = error && error.message ? error.message : String(error);
       log('接続失敗 [' + name + ']: ' + message);
-      setStatus('接続失敗 [' + name + ']');
+      setStatus(name === 'NotFoundError' ? 'Device Pickerで選択されず終了（キャンセルまたは対象未検出）' : '接続失敗 [' + name + ']');
+      if (name === 'NotFoundError') log('soshoを一覧で選択するまでGATT接続は開始されません。ファームウェアの成否は未判定です。');
       device = null;
       server = null;
       characteristic = null;

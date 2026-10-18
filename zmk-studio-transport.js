@@ -383,7 +383,12 @@
       var name = error && error.name ? error.name : 'Error';
       var message = error && error.message ? error.message : 'unknown error';
       this._setLog('診断接続失敗 [' + name + ']: ' + message);
-      this._setStatus('BLE診断失敗 [' + name + ']: ' + message);
+      if (name === 'NotFoundError') {
+        this._setStatus('BLE診断: Device Pickerで選択されず終了（キャンセルまたは対象未検出）');
+        this._setLog('ファームウェア/GATT未検証: Device Pickerで対象デバイスを選択するまで接続処理は開始されません');
+      } else {
+        this._setStatus('BLE診断失敗 [' + name + ']: ' + message);
+      }
       return false;
     } finally { this._connecting = false; }
   };
@@ -441,7 +446,7 @@
       this._setLog('Device Picker選択: ' + (device && device.name ? device.name : '名称なし'));
       return await this._attach(device);
     }
-    catch (error) { this.reading = false; this.studioAvailable = false; this.server = null; this.service = null; this.macroService = null; this.characteristic = null; var name = error && error.name; var message = error && error.message ? error.message : 'unknown error'; this._setLog('BLE接続失敗 [' + (name || 'Error') + ']: ' + message); if (name === 'NotFoundError') this._setStatus('BLEデバイス選択がキャンセルされました。通常フィルターで一致しません'); else if (name === 'SecurityError' || name === 'NotAllowedError') this._setStatus('BLE権限が拒否されました [' + name + ']: ' + message); else this._setStatus('BLE接続失敗 [' + (name || 'Error') + ']: ' + message); return false; }
+    catch (error) { this.reading = false; this.studioAvailable = false; this.server = null; this.service = null; this.macroService = null; this.characteristic = null; var name = error && error.name; var message = error && error.message ? error.message : 'unknown error'; this._setLog('BLE接続失敗 [' + (name || 'Error') + ']: ' + message); if (name === 'NotFoundError') { this._setStatus('BLE: Device Pickerで選択されず終了（キャンセルまたは対象未検出）'); this._setLog('ファームウェア/GATT未検証: Device Pickerでsoshoを選択するまで接続処理は開始されません'); } else if (name === 'SecurityError' || name === 'NotAllowedError') this._setStatus('BLE権限が拒否されました [' + name + ']: ' + message); else this._setStatus('BLE接続失敗 [' + (name || 'Error') + ']: ' + message); return false; }
     finally { this._connecting = false; }
   };
   ZmkBleTransport.prototype.reconnect = async function () { await this.disconnect(true); return this.connect(); };
