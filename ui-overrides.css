@@ -415,6 +415,65 @@
   font-size: .76rem;
 }
 
+.device-settings-card-wide {
+  grid-column: 1 / -1;
+}
+
+.device-setting-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.device-setting-form label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+.device-setting-form input[type="number"],
+.device-setting-form select {
+  min-width: 88px;
+  border: 1px solid #48515c;
+  border-radius: 7px;
+  background: #21262d;
+  color: var(--text);
+  padding: 6px 8px;
+  font: inherit;
+}
+
+.device-setting-checkbox {
+  color: var(--text) !important;
+  cursor: pointer;
+}
+
+.device-setting-checkbox input {
+  accent-color: var(--accent);
+}
+
+.device-action-chip {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  border: 1px solid #8b5cf6;
+  border-radius: 8px;
+  background: #271c3f;
+  color: #e9d5ff;
+  cursor: grab;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.device-action-chip:hover {
+  border-color: var(--accent);
+  background: #1f6feb33;
+}
+
 .device-setting-actions {
   display: flex;
   align-items: center;

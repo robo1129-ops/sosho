@@ -83,9 +83,19 @@
 
   function validDeviceSettings(value) {
     value = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    var timeout = Number(value.autoMouseTimeoutMs);
+    if (!Number.isFinite(timeout)) timeout = 300;
     return {
       trackballCpi: Math.max(200, Math.min(1200, Number(value.trackballCpi) || 600)),
-      trackpadScale: Math.max(.5, Math.min(2, Number(value.trackpadScale) || 1))
+      trackpadScale: Math.max(.5, Math.min(2, Number(value.trackpadScale) || 1)),
+      autoMouseEnabled: value.autoMouseEnabled !== false,
+      autoMouseLayer: Math.max(0, Math.min(3, Number.isInteger(Number(value.autoMouseLayer)) ? Number(value.autoMouseLayer) : 1)),
+      autoMouseTimeoutMs: Math.max(0, Math.min(60000, timeout)),
+      scrollMode: 'hold',
+      scrollDiagonal: value.scrollDiagonal !== false,
+      scrollAxisLock: value.scrollAxisLock !== false,
+      scrollAxisThreshold: Math.max(1.1, Math.min(4, Number(value.scrollAxisThreshold) || 1.8)),
+      scrollDivider: Math.max(1, Math.min(16, Number(value.scrollDivider) || 4))
     };
   }
 
@@ -389,9 +399,11 @@
     var devicePanel = document.createElement('div');
     devicePanel.className = 'device-settings-panel';
     devicePanel.dataset.paletteCategory = 'device';
-    devicePanel.innerHTML = '<section class="device-settings-card"><h4>右モジュール · トラックボール</h4><p>移動量の感度（CPI）を調整します。</p><div class="device-setting-actions"><button type="button" data-trackball-step="-100">感度 −</button><button type="button" data-trackball-step="0">標準</button><button type="button" data-trackball-step="100">感度 ＋</button><span class="device-setting-value" data-trackball-value></span></div></section>' +
-      '<section class="device-settings-card"><h4>左モジュール · トラックパッド</h4><p>カーソル移動倍率を調整します。</p><div class="device-setting-actions"><button type="button" data-trackpad-step="-0.25">倍率 −</button><button type="button" data-trackpad-step="0">標準</button><button type="button" data-trackpad-step="0.25">倍率 ＋</button><span class="device-setting-value" data-trackpad-value></span></div></section>' +
-      '<p class="device-setting-note">設定値はこのブラウザーに保存します。実機のCPI/移動倍率へ反映するには、対応するファームウェア設定またはデバイス設定通信が必要です。</p>';
+    devicePanel.innerHTML = '<section class="device-settings-card"><h4>右モジュール · トラックボール</h4><p>移動量のCPIを調整します。</p><div class="device-setting-actions"><button type="button" data-trackball-step="-100">CPI −</button><button type="button" data-trackball-step="0">標準</button><button type="button" data-trackball-step="100">CPI ＋</button><span class="device-setting-value" data-trackball-value></span></div></section>' +
+      '<section class="device-settings-card"><h4>左モジュール · トラックパッド</h4><p>カーソル移動倍率を調整します。</p><div class="device-setting-actions"><button type="button" data-trackpad-step="-0.25">移動倍率 −</button><button type="button" data-trackpad-step="0">標準</button><button type="button" data-trackpad-step="0.25">移動倍率 ＋</button><span class="device-setting-value" data-trackpad-value></span></div></section>' +
+      '<section class="device-settings-card device-settings-card-wide"><h4>オートマウスレイヤー</h4><p>トラックボール／トラックパッドが動いている間と、停止後の指定時間だけ指定レイヤーを保持します。</p><div class="device-setting-form"><label class="device-setting-checkbox"><input type="checkbox" data-auto-mouse-enabled>オートマウスを有効にする</label><label>保持するレイヤー<select data-auto-mouse-layer><option value="0">Layer 0</option><option value="1">Layer 1</option><option value="2">Layer 2</option><option value="3">Layer 3</option></select></label><label>停止後の保持時間(ms)<input type="number" data-auto-mouse-timeout min="0" max="60000" step="10"></label></div></section>' +
+      '<section class="device-settings-card device-settings-card-wide"><h4>スクロールモード</h4><p>下のボタンをキーへドラッグして割り当てると、押している間だけトラックボール／トラックパッドをスクロールモードにします。</p><button type="button" class="device-action-chip" draggable="true" data-scroll-hold-action>押している間だけスクロール</button><div class="device-setting-form"><label class="device-setting-checkbox"><input type="checkbox" data-scroll-diagonal>斜めスクロールを許可</label><label class="device-setting-checkbox"><input type="checkbox" data-scroll-axis-lock>明確な縦横入力を軸ロック</label><label>軸ロック判定<select data-scroll-axis-threshold><option value="1.5">弱め (1.5×)</option><option value="1.8">標準 (1.8×)</option><option value="2.2">強め (2.2×)</option><option value="3">かなり強め (3×)</option></select></label><div class="device-setting-actions"><button type="button" data-scroll-divider-step="-1">分割 −</button><button type="button" data-scroll-divider-step="0">標準</button><button type="button" data-scroll-divider-step="1">分割 ＋</button><span class="device-setting-value" data-scroll-divider-value></span></div></div></section>' +
+      '<p class="device-setting-note">Keyballのオートマウス層・押下中スクロール・軸ロック／スクロール分割の考え方を設定モデルに反映しています。値はJSONとこのブラウザーへ保存します。実機へ反映するには、同じ項目を扱うファームウェア通信が必要です。</p>';
     palette.appendChild(devicePanel);
 
     var tabBar = document.createElement('div');
@@ -424,16 +436,35 @@
       });
     }
 
-    var deviceSettings = { trackballCpi: 600, trackpadScale: 1 };
+    var deviceSettings = {
+      trackballCpi: 600,
+      trackpadScale: 1,
+      autoMouseEnabled: true,
+      autoMouseLayer: 1,
+      autoMouseTimeoutMs: 300,
+      scrollMode: 'hold',
+      scrollDiagonal: true,
+      scrollAxisLock: true,
+      scrollAxisThreshold: 1.8,
+      scrollDivider: 4
+    };
     try {
-      deviceSettings = Object.assign(deviceSettings, JSON.parse(localStorage.getItem('sosho-device-settings-v1') || '{}'));
+      deviceSettings = validDeviceSettings(Object.assign(deviceSettings, JSON.parse(localStorage.getItem('sosho-device-settings-v1') || '{}')));
     } catch (error) {
       // Use the safe defaults when localStorage contains invalid data.
     }
     function saveDeviceSettings() {
+      deviceSettings = validDeviceSettings(deviceSettings);
       try { localStorage.setItem('sosho-device-settings-v1', JSON.stringify(deviceSettings)); } catch (error) {}
       devicePanel.querySelector('[data-trackball-value]').textContent = deviceSettings.trackballCpi + ' CPI';
       devicePanel.querySelector('[data-trackpad-value]').textContent = deviceSettings.trackpadScale.toFixed(2) + '×';
+      devicePanel.querySelector('[data-auto-mouse-enabled]').checked = deviceSettings.autoMouseEnabled;
+      devicePanel.querySelector('[data-auto-mouse-layer]').value = String(deviceSettings.autoMouseLayer);
+      devicePanel.querySelector('[data-auto-mouse-timeout]').value = String(deviceSettings.autoMouseTimeoutMs);
+      devicePanel.querySelector('[data-scroll-diagonal]').checked = deviceSettings.scrollDiagonal;
+      devicePanel.querySelector('[data-scroll-axis-lock]').checked = deviceSettings.scrollAxisLock;
+      devicePanel.querySelector('[data-scroll-axis-threshold]').value = String(deviceSettings.scrollAxisThreshold);
+      devicePanel.querySelector('[data-scroll-divider-value]').textContent = '分割 ' + deviceSettings.scrollDivider;
     }
     devicePanel.querySelectorAll('[data-trackball-step]').forEach(function (button) {
       button.addEventListener('click', function () {
@@ -448,6 +479,41 @@
         deviceSettings.trackpadScale = step === 0 ? 1 : Math.max(.5, Math.min(2, Number((deviceSettings.trackpadScale + step).toFixed(2))));
         saveDeviceSettings();
       });
+    });
+    devicePanel.querySelector('[data-auto-mouse-enabled]').addEventListener('change', function (event) {
+      deviceSettings.autoMouseEnabled = event.target.checked;
+      saveDeviceSettings();
+    });
+    devicePanel.querySelector('[data-auto-mouse-layer]').addEventListener('change', function (event) {
+      deviceSettings.autoMouseLayer = Number(event.target.value);
+      saveDeviceSettings();
+    });
+    devicePanel.querySelector('[data-auto-mouse-timeout]').addEventListener('change', function (event) {
+      deviceSettings.autoMouseTimeoutMs = Number(event.target.value);
+      saveDeviceSettings();
+    });
+    devicePanel.querySelector('[data-scroll-diagonal]').addEventListener('change', function (event) {
+      deviceSettings.scrollDiagonal = event.target.checked;
+      saveDeviceSettings();
+    });
+    devicePanel.querySelector('[data-scroll-axis-lock]').addEventListener('change', function (event) {
+      deviceSettings.scrollAxisLock = event.target.checked;
+      saveDeviceSettings();
+    });
+    devicePanel.querySelector('[data-scroll-axis-threshold]').addEventListener('change', function (event) {
+      deviceSettings.scrollAxisThreshold = Number(event.target.value);
+      saveDeviceSettings();
+    });
+    devicePanel.querySelectorAll('[data-scroll-divider-step]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var step = Number(button.dataset.scrollDividerStep);
+        deviceSettings.scrollDivider = step === 0 ? 4 : Math.max(1, Math.min(16, deviceSettings.scrollDivider + step));
+        saveDeviceSettings();
+      });
+    });
+    var scrollHoldAction = devicePanel.querySelector('[data-scroll-hold-action]');
+    scrollHoldAction.addEventListener('dragstart', function (event) {
+      event.dataTransfer.setData('text/plain', 'action:SCROLL_HOLD');
     });
     saveDeviceSettings();
     showPaletteCategory('basic');
