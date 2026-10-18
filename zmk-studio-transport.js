@@ -364,7 +364,10 @@
   };
   ZmkSerialTransport.prototype._open = async function (port) {
     this.port = port;
-    await this.port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
+    // ZMK Studio's studio-rpc-usb-uart transport uses 12500 baud.  The
+    // endpoint is a CDC/ACM serial stream, but the baud value is still used by
+    // the firmware-side UART transport to select the Studio RPC path.
+    await this.port.open({ baudRate: 12500, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
     this.reading = true;
     this._setDevice('右側Central / USB');
     this._setStatus('USB接続済み（右側Central / ZMK Studio RPC）');
