@@ -5,7 +5,7 @@
   var COMMAND_UUID = '7f5e0001-8a2a-4c2f-b93e-55f4b5d30001';
   var RESPONSE_UUID = '7f5e0002-8a2a-4c2f-b93e-55f4b5d30001';
   var VERSION = 1;
-  var OP = { HELLO: 1, UNLOCK: 2, GET: 3, SET: 4, DELETE: 5, RUN: 6 };
+  var OP = { HELLO: 1, UNLOCK: 2, GET: 3, SET: 4, DELETE: 5, RUN: 6, SET_BEGIN: 7, SET_CHUNK: 8, SET_COMMIT: 9 };
   var STATUS = { OK: 0, BAD_FRAME: 1, BAD_CRC: 2, AUTH_REQUIRED: 3, TOO_LARGE: 4, BAD_VALUE: 5 };
   var MAX_MACROS = 8;
   var MAX_STEPS = 8;
@@ -176,10 +176,31 @@
 
   MacroProtocol.prototype.hello = async function () { return this.request(OP.HELLO, new Uint8Array(0)); };
   MacroProtocol.prototype.unlock = async function () { return this.request(OP.UNLOCK, new Uint8Array(0)); };
-  MacroProtocol.prototype.getMacro = async function (id) { return decodeMacro(await this.request(OP.GET, new Uint8Array([id]))); };
+  MacroProtocol.prototype.getMacro = async function (id) {
+    var offset = 0, total = null, chunks = [];
+    while (total === null || offset < total) {
+      var request = new Uint8Array([id, offset & 0xff, (offset >>> 8) & 0xff]);
+      var response = await this.request(OP.GET, request);
+      if (response.length < 5 || response[0] !== id || get16(response, 1) !== offset) throw new Error('BLEからのマクロ読み込み位置が不正です');
+      total = get16(response, 3);
+      var data = response.slice(5);
+      chunks.push(data);
+      offset += data.length;
+      if (data.length === 0) break;
+    }
+    var blob = new Uint8Array(offset), cursor = 0;
+    chunks.forEach(function (chunk) { blob.set(chunk, cursor); cursor += chunk.length; });
+    return decodeMacro(blob);
+  };
   MacroProtocol.prototype.setMacro = async function (macro, id) {
-    var blob = encodeMacro(macro, id), payload = new Uint8Array(blob.length + 1); payload[0] = id; payload.set(blob, 1);
-    await this.request(OP.SET, payload); return true;
+    var blob = encodeMacro(macro, id), begin = new Uint8Array([id, blob.length & 0xff, (blob.length >>> 8) & 0xff]);
+    await this.request(OP.SET_BEGIN, begin);
+    for (var offset = 0; offset < blob.length; offset += 3) {
+      var length = Math.min(3, blob.length - offset), chunk = new Uint8Array(3 + length);
+      chunk[0] = id; chunk[1] = offset & 0xff; chunk[2] = (offset >>> 8) & 0xff; chunk.set(blob.slice(offset, offset + length), 3);
+      await this.request(OP.SET_CHUNK, chunk);
+    }
+    await this.request(OP.SET_COMMIT, new Uint8Array([id])); return true;
   };
   MacroProtocol.prototype.deleteMacro = async function (id) { await this.request(OP.DELETE, new Uint8Array([id])); return true; };
   MacroProtocol.prototype.runMacro = async function (id) { await this.request(OP.RUN, new Uint8Array([id])); return true; };
