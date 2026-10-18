@@ -150,6 +150,52 @@
   white-space: nowrap;
 }
 
+.map-transfer {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.map-transfer h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.map-transfer p {
+  margin: 4px 0 9px;
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+.map-transfer-actions {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.map-transfer-actions button {
+  border: 1px solid #48515c;
+  border-radius: 8px;
+  background: #21262d;
+  color: var(--text);
+  cursor: pointer;
+  padding: 8px 10px;
+  font-size: .76rem;
+  font-weight: 650;
+}
+
+.map-transfer-actions button:hover {
+  border-color: var(--accent);
+  background: #1f6feb22;
+}
+
+.map-transfer-status {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: .72rem;
+}
+
 .palette-additions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

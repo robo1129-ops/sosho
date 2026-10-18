@@ -4,6 +4,13 @@
   var notice = document.querySelector('.notice');
   var subtitle = document.querySelector('.subtitle');
   if (subtitle) subtitle.textContent = 'SO-SHO実機配列に合わせたキーマップ・マクロ編集ページ';
+  var firmwareRepoLink = document.querySelector('a[href="https://github.com/robo1129-ops/sosho-firmware"]');
+  var firmwareZipUrl = 'https://github.com/robo1129-ops/sosho-firmware/releases/download/latest/sosho-firmware-latest.zip';
+  if (firmwareRepoLink) {
+    firmwareRepoLink.href = firmwareZipUrl;
+    firmwareRepoLink.textContent = 'カスタムファームウェアZIPを直接ダウンロード';
+    firmwareRepoLink.setAttribute('download', 'sosho-firmware-latest.zip');
+  }
   if (notice) {
     var card = document.createElement('section');
     card.className = 'download-card';
@@ -12,11 +19,133 @@
       '<div><strong id="firmware-download-heading">カスタムファームウェア（全パターン）</strong>' +
       '<span>右/左 × トラックボール/トラックパッドの4構成とsettings_resetを、成功ビルドごとに1つのZIPへまとめています。</span></div>' +
       '<div class="download-actions">' +
-      '<a href="https://github.com/robo1129-ops/sosho-firmware/releases/download/latest/sosho-firmware-latest.zip" target="_blank" rel="noopener">最新ZIPをダウンロード</a>' +
+      '<a href="' + firmwareZipUrl + '" download="sosho-firmware-latest.zip" rel="noopener">最新ZIPをダウンロード</a>' +
       '<a href="https://github.com/robo1129-ops/sosho-firmware/actions/workflows/package-firmware.yml" target="_blank" rel="noopener">ビルド履歴</a>' +
       '</div>';
     notice.insertAdjacentElement('afterend', card);
   }
+
+  function readJsonStorage(key, fallback) {
+    try {
+      var value = JSON.parse(localStorage.getItem(key) || 'null');
+      return value === null ? fallback : value;
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  function writeJsonStorage(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function stringValue(value, fallback, maxLength) {
+    if (typeof value !== 'string') return fallback;
+    return value.slice(0, maxLength);
+  }
+
+  function validKeymap(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+    var result = {};
+    Object.keys(value).slice(0, 256).forEach(function (key) {
+      if (typeof value[key] === 'string') result[String(key).slice(0, 128)] = value[key].slice(0, 160);
+    });
+    return result;
+  }
+
+  function validMacros(value) {
+    if (!Array.isArray(value)) return [];
+    return value.slice(0, 32).filter(function (macro) {
+      return macro && typeof macro === 'object' && !Array.isArray(macro);
+    }).map(function (macro) {
+      return {
+        name: stringValue(macro.name, '新しいマクロ', 100),
+        target: stringValue(macro.target, '', 128),
+        steps: stringValue(macro.steps, 'A|tap|0', 8000)
+      };
+    });
+  }
+
+  function validTapDance(value) {
+    if (!Array.isArray(value)) return [];
+    return value.slice(0, 64).filter(function (definition) {
+      return definition && typeof definition === 'object' && !Array.isArray(definition);
+    }).map(function (definition) {
+      return {
+        name: stringValue(definition.name, 'TD', 100),
+        term: Math.max(50, Math.min(1000, Number(definition.term) || 200)),
+        single: stringValue(definition.single, '', 80),
+        double: stringValue(definition.double, '', 80),
+        triple: stringValue(definition.triple, '', 80),
+        hold: stringValue(definition.hold, '', 80)
+      };
+    });
+  }
+
+  function validDeviceSettings(value) {
+    value = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    return {
+      trackballCpi: Math.max(200, Math.min(1200, Number(value.trackballCpi) || 600)),
+      trackpadScale: Math.max(.5, Math.min(2, Number(value.trackpadScale) || 1))
+    };
+  }
+
+  function setupJsonTransfer() {
+    var inspector = document.querySelector('.inspector');
+    if (!inspector) return;
+    var transfer = document.createElement('section');
+    transfer.className = 'map-transfer';
+    transfer.innerHTML = '<h3>設定ファイル</h3><p>キーマップ、マクロ、タップダンス、デバイス設定を1つのJSONに保存できます。</p><div class="map-transfer-actions"><button type="button" data-export-map>JSONをダウンロード</button><button type="button" data-import-map>JSONを読み込む</button></div><input type="file" accept="application/json,.json" data-import-map-file hidden><span class="map-transfer-status" role="status" aria-live="polite">ブラウザー内にも自動保存されます。</span>';
+    inspector.insertBefore(transfer, inspector.querySelector('.footer-note'));
+    var exportButton = transfer.querySelector('[data-export-map]');
+    var importButton = transfer.querySelector('[data-import-map]');
+    var fileInput = transfer.querySelector('[data-import-map-file]');
+    var status = transfer.querySelector('.map-transfer-status');
+
+    exportButton.addEventListener('click', function () {
+      var payload = {
+        format: 'sosho-keymap',
+        schemaVersion: 1,
+        layout: 'sosho-44',
+        exportedAt: new Date().toISOString(),
+        keymap: validKeymap(readJsonStorage('sosho-local-keymap-v1', {})),
+        macros: validMacros(readJsonStorage('sosho-local-macros-v1', [])),
+        tapDance: validTapDance(readJsonStorage('sosho-tap-dance-v1', [])),
+        deviceSettings: validDeviceSettings(readJsonStorage('sosho-device-settings-v1', {}))
+      };
+      var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = 'sosho-keymap-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      status.textContent = 'JSONをダウンロードしました。';
+    });
+
+    importButton.addEventListener('click', function () { fileInput.click(); });
+    fileInput.addEventListener('change', function () {
+      var file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      file.text().then(function (text) {
+        var payload = JSON.parse(text);
+        if (!payload || payload.format !== 'sosho-keymap' || Number(payload.schemaVersion) !== 1) {
+          throw new Error('SO-SHO用のJSONではありません');
+        }
+        writeJsonStorage('sosho-local-keymap-v1', validKeymap(payload.keymap || payload.assignments));
+        writeJsonStorage('sosho-local-macros-v1', validMacros(payload.macros));
+        writeJsonStorage('sosho-tap-dance-v1', validTapDance(payload.tapDance));
+        writeJsonStorage('sosho-device-settings-v1', validDeviceSettings(payload.deviceSettings));
+        status.textContent = 'JSONを読み込みました。画面を更新します。';
+        window.setTimeout(function () { window.location.reload(); }, 250);
+      }).catch(function (error) {
+        status.textContent = '読み込み失敗: ' + (error && error.message ? error.message : 'JSONを確認してください');
+      }).then(function () { fileInput.value = ''; });
+    });
+  }
+
+  setupJsonTransfer();
 
   var reference = document.querySelector('.reference-note');
   if (reference) {
