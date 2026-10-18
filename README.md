@@ -48,6 +48,7 @@ Webページの「カスタムファームウェアZIPを直接ダウンロー�
 ## 接続とStudio
 
 - BLEはWeb Bluetooth、USBはWeb Serialの接続UIを備える
+- BLE診断でSecure Context、`navigator.bluetooth`、`getAvailability()`、公式GATT UUID、通常検索条件を表示する。全デバイス検索は通常接続から分離した診断専用ボタンでのみ実行する
 - HTTPSまたはlocalhost、Chrome/Edge、ユーザー操作による接続許可が必要
 - 初回はStudio対応ファームウェアをUSBで一度書き込む必要がある
 - キーボード側の `studio_unlock` を実行してからStudio接続を試す
@@ -60,7 +61,7 @@ Webページの「カスタムファームウェアZIPを直接ダウンロー�
 
 BLE検出はGATTサービスUUIDだけに限定せず、`sosho` / `soho` / `SO-SHO` / `SOHO` / `ZMK` のデバイス名プレフィックスも対象にしています。対応ブラウザーでは、このページへ許可済みのデバイスへの再接続も試みます。
 
-WindowsのBluetooth設定でペアリング済みでも、Web Bluetoothから利用するには、キーボードがBLE広告中であることと、ブラウザー側の接続許可が必要です。ZMK公式ドキュメントでは、StudioのBLE WebアプリはLinux向け、Windows/macOSはネイティブアプリ向けと説明されています。そのためWindows Chromeでの公式Studio GATT接続は`NOT_VERIFIED`として扱い、ページ上でも公式RPCサービス未接続と表示します。今回のWeb側調整だけでWindowsのOS制限を解消できるとは断定しません。
+WindowsのBluetooth設定でペアリング済みでも、Web Bluetoothから利用するには、キーボードがBLE広告中であることと、ブラウザー側の接続許可が必要です。通常の接続は、SO-SHO/ZMKの名前プレフィックスまたは公式・専用GATTサービスUUIDで検索します。全デバイス検索は通常経路へ混ぜず、診断ボタンからだけ実行できます。ZMK公式ドキュメントでは、StudioのBLE WebアプリはLinux向け、Windows/macOSはネイティブアプリ向けと説明されています。そのためWindows Chromeでの公式Studio GATT接続は`NOT_VERIFIED`として扱い、ページ上でも公式RPCサービス未接続と表示します。今回のWeb側調整だけでWindowsのOS制限を解消できるとは断定しません。
 
 ## RPCの自動テスト
 

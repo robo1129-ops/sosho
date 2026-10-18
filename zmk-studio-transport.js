@@ -324,9 +324,46 @@
   var BLE_NAME_PREFIXES = ['sosho', 'soho', 'SO-SHO', 'SOHO', 'ZMK'];
   function ZmkBleTransport(options) { FramedTransport.call(this, options); this.device = null; this.server = null; this.service = null; this.characteristic = null; this.macroService = null; this.studioAvailable = false; this.reading = false; this._connecting = false; this._onValue = this._handleValue.bind(this); this._onDisconnected = this._handleDisconnected.bind(this); }
   ZmkBleTransport.prototype = Object.create(FramedTransport.prototype); ZmkBleTransport.prototype.constructor = ZmkBleTransport;
-  Object.defineProperty(ZmkBleTransport.prototype, 'isSupported', { get: function () { return typeof navigator !== 'undefined' && !!navigator.bluetooth && typeof window !== 'undefined' && window.isSecureContext !== false; } });
+  Object.defineProperty(ZmkBleTransport.prototype, 'isSupported', { get: function () { return typeof navigator !== 'undefined' && !!navigator.bluetooth && typeof window !== 'undefined' && window.isSecureContext === true; } });
   Object.defineProperty(ZmkBleTransport.prototype, 'isConnected', { get: function () { return !!this.device && !!this.server && this.server.connected && this.reading; } });
   Object.defineProperty(ZmkBleTransport.prototype, 'canWriteKeymap', { get: function () { return RPC_SCHEMA_SUPPORTED && this.studioAvailable; } });
+  ZmkBleTransport.prototype.getDiagnostics = async function () {
+    var secure = typeof window !== 'undefined' && window.isSecureContext === true;
+    var bluetooth = typeof navigator !== 'undefined' && !!navigator.bluetooth;
+    var availability = null;
+    var availabilityError = '';
+    if (bluetooth && typeof navigator.bluetooth.getAvailability === 'function') {
+      try { availability = await navigator.bluetooth.getAvailability(); } catch (error) { availabilityError = error && error.message ? error.message : String(error); }
+    }
+    return {
+      secureContext: secure,
+      webBluetooth: bluetooth,
+      availability: availability,
+      availabilityApi: bluetooth && typeof navigator.bluetooth.getAvailability === 'function',
+      getDevicesApi: bluetooth && typeof navigator.bluetooth.getDevices === 'function',
+      requestDeviceApi: bluetooth && typeof navigator.bluetooth.requestDevice === 'function',
+      officialServiceUuid: BLE_SERVICE_UUID,
+      officialCharacteristicUuid: BLE_CHARACTERISTIC_UUID,
+      normalFilterMode: 'namePrefix + official/custom service filters',
+      broadFilterMode: 'diagnostic-only acceptAllDevices',
+      availabilityError: availabilityError
+    };
+  };
+  ZmkBleTransport.prototype.diagnosticConnect = async function () {
+    if (!this.isSupported) { this._setStatus('診断失敗: HTTPS/localhostまたはWeb Bluetoothが必要です'); return false; }
+    if (this._connecting) return false;
+    this._connecting = true;
+    try {
+      this._setStatus('BLE診断: 全デバイス検索の許可待ち…');
+      var device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: [BLE_SERVICE_UUID, MACRO_SERVICE_UUID] });
+      return await this._attach(device);
+    } catch (error) {
+      var name = error && error.name ? error.name : 'Error';
+      var message = error && error.message ? error.message : 'unknown error';
+      this._setStatus('BLE診断失敗 [' + name + ']: ' + message);
+      return false;
+    } finally { this._connecting = false; }
+  };
   ZmkBleTransport.prototype._handleValue = function (event) { var value = event && event.target && event.target.value; if (value) this._consume(new Uint8Array(value.buffer, value.byteOffset, value.byteLength)); };
   ZmkBleTransport.prototype._handleDisconnected = function () { this.reading = false; this.studioAvailable = false; this.server = null; this.service = null; this.macroService = null; this.characteristic = null; this._rejectPending(new Error('BLE disconnected')); this._setStatus('BLE切断: キーボードが見つかりません'); this._setDevice(this.device && this.device.name ? this.device.name : '—'); };
   ZmkBleTransport.prototype._attach = async function (device) {
@@ -337,8 +374,8 @@
   ZmkBleTransport.prototype._authorizedDevice = async function () { if (typeof navigator.bluetooth.getDevices !== 'function') return null; try { var devices = await navigator.bluetooth.getDevices(); return devices.find(function (device) { var name = device && device.name || ''; return BLE_NAME_PREFIXES.some(function (prefix) { return name.indexOf(prefix) === 0; }); }) || null; } catch (error) { return null; } };
   ZmkBleTransport.prototype.connect = async function () {
     if (this.isConnected) return true; if (!this.isSupported) { this._setStatus('Web Bluetooth非対応、またはHTTPS/localhostが必要です'); return false; } if (this._connecting) return false; this._connecting = true;
-    try { if (this.device && this.device.gatt && !this.device.gatt.connected) { try { return await this._attach(this.device); } catch (reconnectError) { this._handleDisconnected(); } } var authorized = await this._authorizedDevice(); if (authorized) { this._setStatus('許可済みのsoshoへ接続中…'); try { return await this._attach(authorized); } catch (authorizedError) { this._handleDisconnected(); } } this._setStatus('BLEデバイス選択待ち…'); var filters = BLE_NAME_PREFIXES.map(function (prefix) { return { namePrefix: prefix }; }).concat([{ services: [BLE_SERVICE_UUID] }, { services: [MACRO_SERVICE_UUID] }]); var device = await navigator.bluetooth.requestDevice({ filters: filters, optionalServices: [BLE_SERVICE_UUID, MACRO_SERVICE_UUID] }); return await this._attach(device); }
-    catch (error) { this.reading = false; this.studioAvailable = false; this.server = null; this.service = null; this.macroService = null; this.characteristic = null; var name = error && error.name; if (name === 'NotFoundError') this._setStatus('BLEデバイス選択がキャンセルされました。Windows版ChromeではWeb Bluetoothが制限される場合があります'); else if (name === 'SecurityError' || name === 'NotAllowedError') this._setStatus('BLE権限が拒否されました'); else this._setStatus('BLE接続失敗: ' + (error && error.message ? error.message : 'unknown error')); return false; }
+    try { var diagnostics = await this.getDiagnostics(); if (!diagnostics.availability && diagnostics.availability !== null) { this._setStatus('BLE利用不可: navigator.bluetooth.getAvailability()=false'); return false; } if (this.device && this.device.gatt && !this.device.gatt.connected) { try { return await this._attach(this.device); } catch (reconnectError) { this._handleDisconnected(); } } var authorized = await this._authorizedDevice(); if (authorized) { this._setStatus('許可済みのsoshoへ接続中…'); try { return await this._attach(authorized); } catch (authorizedError) { this._handleDisconnected(); } } this._setStatus('BLEデバイス選択待ち…（通常フィルター）'); var filters = BLE_NAME_PREFIXES.map(function (prefix) { return { namePrefix: prefix }; }).concat([{ services: [BLE_SERVICE_UUID] }, { services: [MACRO_SERVICE_UUID] }]); var device = await navigator.bluetooth.requestDevice({ filters: filters, optionalServices: [BLE_SERVICE_UUID, MACRO_SERVICE_UUID] }); return await this._attach(device); }
+    catch (error) { this.reading = false; this.studioAvailable = false; this.server = null; this.service = null; this.macroService = null; this.characteristic = null; var name = error && error.name; var message = error && error.message ? error.message : 'unknown error'; if (name === 'NotFoundError') this._setStatus('BLEデバイス選択がキャンセルされました。通常フィルターで一致しません'); else if (name === 'SecurityError' || name === 'NotAllowedError') this._setStatus('BLE権限が拒否されました [' + name + ']: ' + message); else this._setStatus('BLE接続失敗 [' + (name || 'Error') + ']: ' + message); return false; }
     finally { this._connecting = false; }
   };
   ZmkBleTransport.prototype.reconnect = async function () { await this.disconnect(true); return this.connect(); };
