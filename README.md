@@ -11,6 +11,15 @@
 - 編集値をブラウザーのlocalStorageへ保存する
 - BLE接続後、専用サービスへマクロを保存・読み戻し・実行する
 
+## ファームウェアのダウンロード
+
+- [全パターン入りの最新ZIP](https://github.com/robo1129-ops/sosho-firmware/releases/download/latest/sosho-firmware-latest.zip)
+- [ビルド履歴とZIP生成](https://github.com/robo1129-ops/sosho-firmware/actions/workflows/package-firmware.yml)
+
+ZIPには、右/左のトラックボール・トラックパッド構成と `settings_reset` を含む全5イメージが入ります。通常構成は右Centralトラックボール + 左Peripheralトラックパッドです。
+
+キーマップ画面は `sosho.layout.json` / `sosho-layouts.dtsi` の実機配置に合わせ、12列×4行、最下段の外側2キー + 内側2キーの空きも含めて表示します。
+
 ## マクロの反映範囲
 
 公式Studio keymap schemaにはマクロ定義の作成・編集・削除RPCがないため、`sosho-firmware`に専用BLE GATTサービスを実装しています。初回だけBLE対応版ファームウェアをUSBで導入し、その後のマクロ編集はWeb Bluetoothから実行時に保存するため、編集のたびの再ビルドは不要です。

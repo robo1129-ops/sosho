@@ -1,0 +1,162 @@
+/* Physical SO-SHO layout derived from sosho.layout.json / sosho-layouts.dtsi. */
+:root {
+  --physical-key: clamp(42px, 4.1vw, 56px);
+  --physical-gap: clamp(5px, 0.62vw, 8px);
+}
+
+.download-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 12px;
+  padding: 16px 18px;
+  border: 1px solid #2f81f7;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1f6feb22, #161b22ee 58%);
+}
+
+.download-card strong,
+.download-card span {
+  display: block;
+}
+
+.download-card span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: .82rem;
+}
+
+.download-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.download-actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 9px 13px;
+  border: 1px solid #58a6ff;
+  border-radius: 9px;
+  background: #1f6feb33;
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.download-actions a:hover {
+  background: #1f6feb66;
+}
+
+.keyboard-frame {
+  align-items: flex-start;
+  gap: clamp(18px, 5vw, 72px);
+  padding: 18px 8px 24px;
+}
+
+.half {
+  min-width: calc(6 * var(--physical-key) + 5 * var(--physical-gap) + 28px);
+  padding: 14px;
+  border: 1px solid #30363d;
+  border-radius: 16px;
+  background: #0d111799;
+}
+
+.half.left {
+  border-color: #2f81f766;
+}
+
+.half.right {
+  border-color: #a371f766;
+}
+
+.half-title {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: .78rem;
+  letter-spacing: .11em;
+  text-align: left;
+}
+
+.half-title {
+  font-size: 0;
+}
+
+.half.left .half-title::after,
+.half.right .half-title::after {
+  font-size: .78rem;
+}
+
+.half.left .half-title::after {
+  content: 'LEFT MODULE · TRACKPAD · 22 KEYS';
+}
+
+.half.right .half-title::after {
+  content: 'RIGHT MODULE · TRACKBALL · 22 KEYS';
+}
+
+.key-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--physical-gap);
+}
+
+.key-row {
+  display: grid;
+  grid-template-columns: repeat(6, var(--physical-key));
+  gap: var(--physical-gap);
+  justify-content: start;
+}
+
+/* The fourth physical row has two outer and two inner thumb keys, with a two-key gap. */
+.key-row:last-child .key:nth-child(1) { grid-column: 1; }
+.key-row:last-child .key:nth-child(2) { grid-column: 2; }
+.key-row:last-child .key:nth-child(3) { grid-column: 5; }
+.key-row:last-child .key:nth-child(4) { grid-column: 6; }
+
+.key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--physical-key);
+  min-width: var(--physical-key);
+  height: var(--physical-key);
+  padding: 5px;
+  font-size: clamp(.68rem, 1vw, .86rem);
+  line-height: 1.15;
+}
+
+.base,
+.assigned-label {
+  max-width: 100%;
+  text-align: center;
+}
+
+.reference-note {
+  max-width: 72ch;
+}
+
+.layout-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 7px;
+  border: 1px solid #58a6ff66;
+  border-radius: 999px;
+  color: #9ecbff;
+  font-size: .72rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 850px) {
+  .download-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .keyboard-frame {
+    justify-content: flex-start;
+  }
+}
