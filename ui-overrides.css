@@ -140,6 +140,81 @@
   font-size: .72rem;
 }
 
+.connection-log {
+  margin-bottom: 12px;
+  padding: 14px 18px;
+}
+
+.connection-log-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.connection-log-head strong,
+.connection-log-head span {
+  display: block;
+}
+
+.connection-log-head span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+.connection-log-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 7px;
+}
+
+.connection-log-actions button {
+  border: 1px solid #48515c;
+  border-radius: 8px;
+  background: #21262d;
+  color: var(--text);
+  cursor: pointer;
+  padding: 7px 10px;
+  font-size: .74rem;
+  font-weight: 650;
+}
+
+.connection-log-actions button:hover {
+  border-color: var(--accent);
+  background: #1f6feb22;
+}
+
+.connection-log-list {
+  display: grid;
+  gap: 4px;
+  max-height: 180px;
+  margin: 11px 0 0;
+  padding: 10px 12px 10px 30px;
+  overflow: auto;
+  border-top: 1px solid var(--line);
+  background: #0d111799;
+  color: var(--muted);
+  font: .72rem/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.connection-log-list li {
+  display: grid;
+  grid-template-columns: 78px 76px minmax(0, 1fr);
+  gap: 7px;
+  min-width: 0;
+}
+
+.connection-log-list time,
+.connection-log-list strong {
+  color: #9ecbff;
+  font-weight: 650;
+}
+
+.connection-log-list span {
+  overflow-wrap: anywhere;
+}
+
 .keyboard-frame {
   align-items: flex-start;
   gap: clamp(18px, 5vw, 72px);
@@ -1013,6 +1088,10 @@
     flex-direction: column;
   }
 
+  .connection-log-head {
+    flex-direction: column;
+  }
+
   .ble-diagnostics-actions {
     width: 100%;
   }
@@ -1023,6 +1102,19 @@
 
   .ble-diagnostics-result {
     grid-template-columns: 1fr;
+  }
+
+  .connection-log-actions {
+    width: 100%;
+  }
+
+  .connection-log-actions button {
+    flex: 1 1 auto;
+  }
+
+  .connection-log-list li {
+    grid-template-columns: 68px 60px minmax(0, 1fr);
+    gap: 5px;
   }
 }
 

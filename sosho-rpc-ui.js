@@ -48,7 +48,7 @@
     return !!a && !!b && a.behaviorId === b.behaviorId && a.param1 === b.param1 && a.param2 === b.param2;
   }
 
-  function setStatus(text) { status.textContent = text; }
+  function setStatus(text) { status.textContent = text; if (typeof global.soshoLog === 'function') global.soshoLog('rpc', text); }
 
   function mapDeviceState() {
     var keymap = deviceState.keymap;
