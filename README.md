@@ -27,10 +27,10 @@
 
 ## ファームウェアのダウンロード
 
-- [全パターン入りの最新ZIP](https://github.com/robo1129-ops/sosho-firmware/releases/download/latest/sosho-firmware-latest.zip)
+- [通常版・タッチプロファイルを含む最新ZIP](https://github.com/robo1129-ops/sosho-firmware/releases/download/latest/sosho-firmware-latest.zip)
 - [ビルド履歴とZIP生成](https://github.com/robo1129-ops/sosho-firmware/actions/workflows/package-firmware.yml)
 
-ZIPには、右/左のトラックボール・トラックパッド構成と `settings_reset` を含む全5イメージが入ります。通常構成は右Centralトラックボール + 左Peripheralトラックパッドです。
+ZIPには、右/左のトラックボール・トラックパッド構成、一次タップ／ドラッグ対応のタッチプロファイル、`settings_reset` が入ります。通常構成は右Centralトラックボール + 左Peripheralトラックパッドです。タッチプロファイルは `sosho_R_trackball_touch` と `sosho_L_trackpad_touch` を左右セットで使用します。
 
 Webページの「カスタムファームウェアZIPを直接ダウンロード」または「最新ZIPをダウンロード」から、同じリリースZIPを直接取得できます。
 

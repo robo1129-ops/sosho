@@ -17,7 +17,7 @@
     card.setAttribute('aria-labelledby', 'firmware-download-heading');
     card.innerHTML = '' +
       '<div><strong id="firmware-download-heading">カスタムファームウェア（全パターン）</strong>' +
-      '<span>右/左 × トラックボール/トラックパッドの4構成とsettings_resetを、成功ビルドごとに1つのZIPへまとめています。</span></div>' +
+      '<span>通常版に加えて、公式Cirque Pinnacleドライバの一次タップ・ドラッグ対応タッチプロファイルも含むZIPです。</span></div>' +
       '<div class="download-actions">' +
       '<a href="' + firmwareZipUrl + '" download="sosho-firmware-latest.zip" rel="noopener">最新ZIPをダウンロード</a>' +
       '<a href="https://github.com/robo1129-ops/sosho-firmware/actions/workflows/package-firmware.yml" target="_blank" rel="noopener">ビルド履歴</a>' +
