@@ -1016,9 +1016,16 @@
     tapDanceDetail.dataset.paletteCategory = 'tap-dance';
 
     var actionPanel = document.getElementById('palette');
-    /* Remove the legacy toolbar/chip container.  The enhanced tab bar below
-     * is the only palette navigation shown to users. */
-    if (actionPanel && actionPanel.parentElement === palette) actionPanel.remove();
+    /* The base editor still needs the legacy #palette node while it boots,
+     * but it must never remain visible beside the enhanced palette.  Do not
+     * rely on a particular parent relationship here: static hosting can
+     * insert wrappers during hydration and that previously left a second
+     * BASIC/FUNCTIONS menu visible in the deployed page. */
+    if (actionPanel && actionPanel !== palette) {
+      actionPanel.hidden = true;
+      actionPanel.setAttribute('aria-hidden', 'true');
+      actionPanel.replaceChildren();
+    }
     var devicePanel = document.createElement('div');
     devicePanel.className = 'device-settings-panel';
     devicePanel.dataset.paletteCategory = 'device';

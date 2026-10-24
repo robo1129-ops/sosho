@@ -94,5 +94,7 @@ assert.match(enhancements, /var changed = false;/);
 assert.match(enhancements, /if \(changed && typeof window\.soshoRefreshDeviceMarkers/);
 assert.match(enhancements, /workspace\.insertAdjacentElement\('beforebegin', downloadCard\)/);
 assert.doesNotMatch(enhancements, /package-firmware\.yml/);
+assert.match(enhancements, /actionPanel\.hidden = true/);
+assert.match(enhancements, /actionPanel\.replaceChildren\(\)/);
 
 console.log('SO-SHO Remap-like editor UI smoke test passed');
