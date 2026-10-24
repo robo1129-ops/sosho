@@ -39,5 +39,10 @@ assert.match(html, /ZmkBleTransport/);
 assert.match(html, /sosho-macro-transport/);
 assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /sleepMode/);
 assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /data-sleep-minutes/);
+assert.match(html, /現在のレイアウトを読み込む/);
+assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /data-left-module/);
+assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /encoderLeftCcw/);
+assert.match(fs.readFileSync('sosho-rpc-ui.js', 'utf8'), /hidUsageLabel/);
+assert.match(css, /module-selection-grid/);
 
 console.log('SO-SHO Remap-like editor UI smoke test passed');

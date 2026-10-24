@@ -44,13 +44,13 @@
     de: { connection: 'Verbindung', log: 'Verbindungsprotokoll', read: 'Keymap lesen', write: 'Keymap speichern', noticeTitle: 'Rechtes Central per USB oder unterstütztem BLE verbinden', noticeBody: 'USB-Bearbeitung unterstützt nur das rechte Central. Für BLE sind Firmware mit dem offiziellen ZMK-Studio-GATT-Transport und ein unterstützter Browser nötig. Das linke Peripheral wird per USB abgewiesen.', connectionDescription: 'USB verwendet den CDC-ACM-Port des rechten Central; BLE verwendet den offiziellen ZMK-Studio-GATT-Dienst.', transportNote: 'USB verwendet den CDC-ACM-Port des rechten Central; BLE verwendet den offiziellen ZMK-Studio-GATT-Dienst.', logDescription: 'Bewahrt Zustände vor und nach USB-, BLE- und RPC-Aktionen auf.', rpcDescription: 'Gerät nach dem Verbinden lesen, Keymap über das offizielle ZMK-Studio-RPC speichern und zur Prüfung erneut lesen.', usbConnect: 'USB verbinden', usbReconnect: 'Autorisiertes USB erneut verbinden', bleConnect: 'BLE verbinden', bleReconnect: 'Autorisiertes BLE erneut verbinden', deviceProfile: 'Zeigegeräte-Layout', deviceProfileDescription: 'Linke/rechte Sensoranordnung der Hardware auswählen.', profileRightBall: 'Rechts: Trackball / Links: Trackpad', profileLeftBall: 'Links: Trackball / Rechts: Trackpad', scrollScale: 'Scrollmenge', deviceBuildNote: 'CPI, Scrollmenge und Sensorposition sind Firmware-Build-Einstellungen. Das offizielle ZMK-Studio-RPC bearbeitet Keymaps; nach Änderungen das gewählte Profil neu bauen.' }
   };
   var physicalCopy = {
-    ja: { leftModule: '左モジュール', rightModule: '右モジュール', ballShort: 'トラックボール', padShort: 'トラックパッド' },
-    en: { leftModule: 'LEFT MODULE', rightModule: 'RIGHT MODULE', ballShort: 'TRACKBALL', padShort: 'TRACKPAD' },
-    'zh-CN': { leftModule: '左侧模块', rightModule: '右侧模块', ballShort: '轨迹球', padShort: '触控板' },
-    ko: { leftModule: '왼쪽 모듈', rightModule: '오른쪽 모듈', ballShort: '트랙볼', padShort: '트랙패드' },
-    th: { leftModule: 'โมดูลซ้าย', rightModule: 'โมดูลขวา', ballShort: 'แทร็กบอล', padShort: 'แทร็กแพด' },
-    es: { leftModule: 'MÓDULO IZQUIERDO', rightModule: 'MÓDULO DERECHO', ballShort: 'TRACKBALL', padShort: 'TRACKPAD' },
-    de: { leftModule: 'LINKES MODUL', rightModule: 'RECHTES MODUL', ballShort: 'TRACKBALL', padShort: 'TRACKPAD' }
+    ja: { leftModule: '左モジュール', rightModule: '右モジュール', ballShort: 'トラックボール', padShort: 'トラックパッド', noneShort: 'NONE' },
+    en: { leftModule: 'LEFT MODULE', rightModule: 'RIGHT MODULE', ballShort: 'TRACKBALL', padShort: 'TRACKPAD', noneShort: 'NONE' },
+    'zh-CN': { leftModule: '左侧模块', rightModule: '右侧模块', ballShort: '轨迹球', padShort: '触控板', noneShort: 'NONE' },
+    ko: { leftModule: '왼쪽 모듈', rightModule: '오른쪽 모듈', ballShort: '트랙볼', padShort: '트랙패드', noneShort: 'NONE' },
+    th: { leftModule: 'โมดูลซ้าย', rightModule: 'โมดูลขวา', ballShort: 'แทร็กบอล', padShort: 'แทร็กแพด', noneShort: 'NONE' },
+    es: { leftModule: 'MÓDULO IZQUIERDO', rightModule: 'MÓDULO DERECHO', ballShort: 'TRACKBALL', padShort: 'TRACKPAD', noneShort: 'NONE' },
+    de: { leftModule: 'LINKES MODUL', rightModule: 'RECHTES MODUL', ballShort: 'TRACKBALL', padShort: 'TRACKPAD', noneShort: 'NONE' }
   };
   var sleepCopy = {
     ja: { sleepTitle: '自動スリープ', sleepDescription: '分指定で自動スリープするか、スリープを無効にします。', sleepMode: 'モード', sleepMinutes: 'スリープまで（分）', sleepTimed: '時間指定', sleepOff: 'オフ' },
@@ -60,6 +60,15 @@
     th: { sleepTitle: 'พักเครื่องอัตโนมัติ', sleepDescription: 'กำหนดเวลาเป็นนาทีหรือปิดการพักเครื่องอัตโนมัติ', sleepMode: 'โหมด', sleepMinutes: 'พักเครื่องหลัง (นาที)', sleepTimed: 'กำหนดเวลา', sleepOff: 'ปิด' },
     es: { sleepTitle: 'Suspensión automática', sleepDescription: 'Elige un tiempo en minutos o desactiva la suspensión automática.', sleepMode: 'Modo', sleepMinutes: 'Suspender después de (minutos)', sleepTimed: 'Temporizado', sleepOff: 'Desactivado' },
     de: { sleepTitle: 'Automatischer Ruhezustand', sleepDescription: 'Minuten festlegen oder den automatischen Ruhezustand deaktivieren.', sleepMode: 'Modus', sleepMinutes: 'Ruhezustand nach (Minuten)', sleepTimed: 'Zeitgesteuert', sleepOff: 'Aus' }
+  };
+  var deviceCopy = {
+    ja: { readCurrent: '現在のレイアウトを読み込む', moduleLayout: 'モジュール配置', moduleDescription: '左・右を個別に選択できます。ブランクのダミーモジュールは None を選んでください。', leftModule: '左モジュール', rightModule: '右モジュール', none: 'None（ダミー）', trackball: 'トラックボール', trackpad: 'トラックパッド', encoderTitle: 'ロータリーエンコーダー（押下なし）', encoderLeft: '左回転', encoderRight: '右回転', encoderAssignment: '割り当て', scrollUp: '上下スクロール（上）', scrollDown: '上下スクロール（下）', scrollLeft: '左右スクロール（左）', scrollRight: '左右スクロール（右）', encoderNone: '未設定' },
+    en: { readCurrent: 'Load current layout', moduleLayout: 'Module layout', moduleDescription: 'Choose each side independently. Select None for a blank dummy module.', leftModule: 'Left module', rightModule: 'Right module', none: 'None (dummy)', trackball: 'Trackball', trackpad: 'Trackpad', encoderTitle: 'Rotary encoder (no press)', encoderLeft: 'Counter-clockwise', encoderRight: 'Clockwise', encoderAssignment: 'Assignment', scrollUp: 'Vertical scroll (up)', scrollDown: 'Vertical scroll (down)', scrollLeft: 'Horizontal scroll (left)', scrollRight: 'Horizontal scroll (right)', encoderNone: 'Unassigned' },
+    'zh-CN': { readCurrent: '读取当前布局', moduleLayout: '模块布局', moduleDescription: '可以分别选择左右模块。空白占位模块请选择 None。', leftModule: '左侧模块', rightModule: '右侧模块', none: 'None（占位）', trackball: '轨迹球', trackpad: '触控板', encoderTitle: '旋转编码器（不可按下）', encoderLeft: '逆时针', encoderRight: '顺时针', encoderAssignment: '分配', scrollUp: '垂直滚动（上）', scrollDown: '垂直滚动（下）', scrollLeft: '水平滚动（左）', scrollRight: '水平滚动（右）', encoderNone: '未设置' },
+    ko: { readCurrent: '현재 레이아웃 불러오기', moduleLayout: '모듈 배열', moduleDescription: '왼쪽과 오른쪽을 개별로 선택합니다. 빈 더미 모듈은 None을 선택하세요.', leftModule: '왼쪽 모듈', rightModule: '오른쪽 모듈', none: 'None(더미)', trackball: '트랙볼', trackpad: '트랙패드', encoderTitle: '로터리 인코더(누름 없음)', encoderLeft: '반시계 방향', encoderRight: '시계 방향', encoderAssignment: '할당', scrollUp: '세로 스크롤(위)', scrollDown: '세로 스크롤(아래)', scrollLeft: '가로 스크롤(왼쪽)', scrollRight: '가로 스크롤(오른쪽)', encoderNone: '미설정' },
+    th: { readCurrent: 'โหลดเลย์เอาต์ปัจจุบัน', moduleLayout: 'การจัดวางโมดูล', moduleDescription: 'เลือกแต่ละด้านแยกกัน หากเป็นโมดูลว่างให้เลือก None', leftModule: 'โมดูลซ้าย', rightModule: 'โมดูลขวา', none: 'None (โมดูลว่าง)', trackball: 'แทร็กบอล', trackpad: 'แทร็กแพด', encoderTitle: 'โรตารีเอนโคเดอร์ (กดไม่ได้)', encoderLeft: 'ทวนเข็มนาฬิกา', encoderRight: 'ตามเข็มนาฬิกา', encoderAssignment: 'การกำหนดค่า', scrollUp: 'เลื่อนแนวตั้ง (ขึ้น)', scrollDown: 'เลื่อนแนวตั้ง (ลง)', scrollLeft: 'เลื่อนแนวนอน (ซ้าย)', scrollRight: 'เลื่อนแนวนอน (ขวา)', encoderNone: 'ยังไม่ตั้งค่า' },
+    es: { readCurrent: 'Cargar distribución actual', moduleLayout: 'Distribución de módulos', moduleDescription: 'Elige cada lado por separado. Selecciona None para un módulo vacío.', leftModule: 'Módulo izquierdo', rightModule: 'Módulo derecho', none: 'None (vacío)', trackball: 'Trackball', trackpad: 'Trackpad', encoderTitle: 'Encoder rotatorio (sin pulsación)', encoderLeft: 'Antihorario', encoderRight: 'Horario', encoderAssignment: 'Asignación', scrollUp: 'Desplazamiento vertical (arriba)', scrollDown: 'Desplazamiento vertical (abajo)', scrollLeft: 'Desplazamiento horizontal (izquierda)', scrollRight: 'Desplazamiento horizontal (derecha)', encoderNone: 'Sin asignar' },
+    de: { readCurrent: 'Aktuelles Layout laden', moduleLayout: 'Modullayout', moduleDescription: 'Linke und rechte Seite getrennt auswählen. Für ein leeres Dummy-Modul None wählen.', leftModule: 'Linkes Modul', rightModule: 'Rechtes Modul', none: 'None (Dummy)', trackball: 'Trackball', trackpad: 'Trackpad', encoderTitle: 'Drehencoder (ohne Druckfunktion)', encoderLeft: 'Gegen den Uhrzeigersinn', encoderRight: 'Im Uhrzeigersinn', encoderAssignment: 'Zuordnung', scrollUp: 'Vertikales Scrollen (auf)', scrollDown: 'Vertikales Scrollen (ab)', scrollLeft: 'Horizontales Scrollen (links)', scrollRight: 'Horizontales Scrollen (rechts)', encoderNone: 'Nicht zugewiesen' }
   };
 
   function storedLanguage() {
@@ -77,7 +86,8 @@
 
   function applyLanguage(language) {
     language = Object.prototype.hasOwnProperty.call(languageCatalog, language) ? language : 'ja';
-    var copy = Object.assign({}, languageCatalog.ja, languageCatalog[language], transportCopy[language] || transportCopy.en, physicalCopy[language] || physicalCopy.en, sleepCopy[language] || sleepCopy.en);
+    var copy = Object.assign({}, languageCatalog.ja, languageCatalog[language], transportCopy[language] || transportCopy.en, physicalCopy[language] || physicalCopy.en, sleepCopy[language] || sleepCopy.en, deviceCopy[language] || deviceCopy.en);
+    window.soshoCurrentCopy = copy;
     document.documentElement.lang = language;
     document.title = copy.title;
     function setText(selector, value) {
@@ -130,7 +140,7 @@
     var rpcHeading = document.getElementById('rpc-heading');
     if (rpcHeading) rpcHeading.textContent = copy.connection + ' / ZMK Studio RPC ' + copy.editor;
     var read = document.getElementById('read-keymap');
-    if (read) read.textContent = copy.read;
+    if (read) read.textContent = copy.readCurrent || copy.read;
     var write = document.getElementById('write-keymap');
     if (write) write.textContent = copy.write;
     var macro = document.getElementById('macro-heading');
@@ -201,18 +211,26 @@
     setText('.macro-library-head p', copy.macroLibraryDescription);
     setText('.macro-library-count', copy.macroLibraryCount);
     setText('.palette-help', copy.paletteHelp);
-    setText('[data-pointer-profile-title]', copy.deviceProfile);
-    setText('[data-pointer-profile-description]', copy.deviceProfileDescription);
-    var profileSelect = document.querySelector('[data-pointer-profile]');
-    if (profileSelect && profileSelect.options.length >= 2) { profileSelect.options[0].textContent = copy.profileRightBall; profileSelect.options[1].textContent = copy.profileLeftBall; }
+    setText('[data-pointer-profile-title]', copy.moduleLayout);
+    setText('[data-pointer-profile-description]', copy.moduleDescription);
+    setText('[data-module-layout-title]', copy.moduleLayout);
+    setText('[data-module-layout-description]', copy.moduleDescription);
+    setText('[data-left-module-label]', copy.leftModule);
+    setText('[data-right-module-label]', copy.rightModule);
+    setText('[data-encoder-title]', copy.encoderTitle);
+    setText('[data-encoder-assignment-label]', copy.encoderAssignment);
+    var moduleOptions = document.querySelectorAll('[data-left-module] option, [data-right-module] option');
+    moduleOptions.forEach(function (option) { option.textContent = option.value === 'none' ? copy.none : option.value === 'trackball' ? copy.trackball : copy.trackpad; });
+    var encoderOptions = document.querySelectorAll('[data-encoder-left-ccw] option, [data-encoder-left-cw] option, [data-encoder-right-ccw] option, [data-encoder-right-cw] option');
+    encoderOptions.forEach(function (option) { var labels = { 'scroll-up': copy.scrollUp, 'scroll-down': copy.scrollDown, 'scroll-left': copy.scrollLeft, 'scroll-right': copy.scrollRight, none: copy.encoderNone }; option.textContent = labels[option.value] || option.value; });
     setText('[data-device-ball-title]', copy.deviceBall);
     setText('[data-device-ball-description]', copy.deviceBallDesc);
     setText('[data-device-pad-title]', copy.devicePad);
     setText('[data-device-pad-description]', copy.devicePadDesc);
-    setText('.device-settings-card:nth-of-type(4) h4', copy.autoMouse);
-    setText('.device-settings-card:nth-of-type(4) p', copy.autoMouseDesc);
-    setText('.device-settings-card:nth-of-type(5) h4', copy.scrollMode);
-    setText('.device-settings-card:nth-of-type(5) p', copy.scrollDesc);
+    setText('[data-auto-mouse-card] h4', copy.autoMouse);
+    setText('[data-auto-mouse-card] p', copy.autoMouseDesc);
+    setText('[data-scroll-card] h4', copy.scrollMode);
+    setText('[data-scroll-card] p', copy.scrollDesc);
     setText('[data-sleep-title]', copy.sleepTitle);
     setText('[data-sleep-description]', copy.sleepDescription);
     setText('[data-sleep-mode-label]', copy.sleepMode);
@@ -224,15 +242,8 @@
     if (typeof window.soshoRefreshPhysicalTitles === 'function') window.soshoRefreshPhysicalTitles(copy);
     var leftMarker = document.querySelector('#keyboard .half.left .device-marker');
     var rightMarker = document.querySelector('#keyboard .half.right .device-marker');
-    var reverseProfile = false;
-    try { reverseProfile = JSON.parse(localStorage.getItem('sosho-device-settings-v1') || '{}').pointerProfile === 'left-ball-right-pad'; } catch (error) {}
-    if (leftMarker) {
-      setText('#keyboard .half.left .device-marker strong', reverseProfile ? copy.ballMarker : copy.padMarker);
-      setText('#keyboard .half.left .device-marker span', reverseProfile ? copy.ballMarkerDesc : copy.padMarkerDesc);
-    }
-    if (rightMarker) {
-      setText('#keyboard .half.right .device-marker strong', reverseProfile ? copy.padMarker : copy.ballMarker);
-      setText('#keyboard .half.right .device-marker span', reverseProfile ? copy.padMarkerDesc : copy.ballMarkerDesc);
+    if (leftMarker || rightMarker) {
+      if (typeof window.soshoRefreshDeviceMarkers === 'function') window.soshoRefreshDeviceMarkers(copy);
     }
     setText('.macro-modifiers > span', copy.macroModifiers || 'Modifiers:');
     setFirstText('.macro-latency', copy.macroLatency || 'Delay per added step (ms)');
@@ -355,13 +366,27 @@
     value = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
     var timeout = Number(value.autoMouseTimeoutMs);
     if (!Number.isFinite(timeout)) timeout = 300;
-    var pointerProfile = value.pointerProfile === 'left-ball-right-pad' ? 'left-ball-right-pad' : 'right-ball-left-pad';
+    var legacyReverse = value.pointerProfile === 'left-ball-right-pad';
+    function moduleValue(input, fallback) {
+      return ['trackpad', 'trackball', 'none'].indexOf(input) >= 0 ? input : fallback;
+    }
+    var leftModule = moduleValue(value.leftModule, legacyReverse ? 'trackball' : 'trackpad');
+    var rightModule = moduleValue(value.rightModule, legacyReverse ? 'trackpad' : 'trackball');
+    function encoderValue(input, fallback) {
+      return ['scroll-up', 'scroll-down', 'scroll-left', 'scroll-right', 'none'].indexOf(input) >= 0 ? input : fallback;
+    }
     var scrollScale = Number(value.scrollScalePercent);
     if (!Number.isFinite(scrollScale)) scrollScale = 35;
     var sleepMinutes = Number(value.sleepMinutes);
     if (!Number.isFinite(sleepMinutes)) sleepMinutes = 60;
     return {
-      pointerProfile: pointerProfile,
+      pointerProfile: leftModule === 'trackball' && rightModule === 'trackpad' ? 'left-ball-right-pad' : 'right-ball-left-pad',
+      leftModule: leftModule,
+      rightModule: rightModule,
+      encoderLeftCcw: encoderValue(value.encoderLeftCcw, 'scroll-left'),
+      encoderLeftCw: encoderValue(value.encoderLeftCw, 'scroll-right'),
+      encoderRightCcw: encoderValue(value.encoderRightCcw, 'scroll-down'),
+      encoderRightCw: encoderValue(value.encoderRightCw, 'scroll-up'),
       trackballCpi: Math.max(200, Math.min(1200, Number(value.trackballCpi) || 200)),
       trackpadScale: Math.max(.5, Math.min(2, Number(value.trackpadScale) || 1)),
       autoMouseEnabled: value.autoMouseEnabled !== false,
@@ -754,6 +779,20 @@
       '<section class="device-settings-card device-settings-card-wide"><h4 data-sleep-title>自動スリープ</h4><p data-sleep-description>分指定で自動スリープするか、スリープを無効にします。</p><div class="device-setting-form"><label><span data-sleep-mode-label>モード</span><select data-sleep-mode><option value="minutes">時間指定</option><option value="off">オフ</option></select></label><label><span data-sleep-minutes-label>スリープまで（分）</span><input type="number" data-sleep-minutes min="1" max="1440" step="1"></label></div></section>' +
       '<p class="device-setting-note">値はJSONとこのブラウザーへ保存します。CPI・スクロール量・左右センサー配置・自動スリープはファームウェアのビルド設定です。公式ZMK Studioの標準RPCはキーマップ編集用のため、これらを実機へ反映するには選択したプロファイルでファームウェアを再ビルドします。</p>';
     palette.appendChild(devicePanel);
+    var legacyProfilePanel = devicePanel.querySelector('[data-pointer-profile-title]');
+    if (legacyProfilePanel && legacyProfilePanel.parentElement) legacyProfilePanel.parentElement.hidden = true;
+    var modulePanel = document.createElement('section');
+    modulePanel.className = 'device-settings-card device-settings-card-wide';
+    modulePanel.innerHTML = '<h4 data-module-layout-title>モジュール配置</h4><p data-module-layout-description>左・右を個別に選択できます。ブランクのダミーモジュールは None を選んでください。</p><div class="device-setting-form module-selection-grid"><label><span data-left-module-label>左モジュール</span><select data-left-module><option value="trackpad">トラックパッド</option><option value="trackball">トラックボール</option><option value="none">None（ダミー）</option></select></label><label><span data-right-module-label>右モジュール</span><select data-right-module><option value="trackball">トラックボール</option><option value="trackpad">トラックパッド</option><option value="none">None（ダミー）</option></select></label></div>';
+    devicePanel.insertBefore(modulePanel, devicePanel.firstChild);
+    var encoderPanel = document.createElement('section');
+    encoderPanel.className = 'device-settings-card device-settings-card-wide';
+    encoderPanel.innerHTML = '<h4 data-encoder-title>ロータリーエンコーダー（押下なし）</h4><p>ロータリーエンコーダーは押下できません。回転方向ごとにアクションを設定します。</p><div class="encoder-settings-grid"><fieldset><legend data-left-module-label>左モジュール</legend><label><span>反時計回り</span><select data-encoder-left-ccw><option value="scroll-left">左右スクロール（左）</option><option value="scroll-right">左右スクロール（右）</option><option value="scroll-up">上下スクロール（上）</option><option value="scroll-down">上下スクロール（下）</option><option value="none">未設定</option></select></label><label><span>時計回り</span><select data-encoder-left-cw><option value="scroll-right">左右スクロール（右）</option><option value="scroll-left">左右スクロール（左）</option><option value="scroll-up">上下スクロール（上）</option><option value="scroll-down">上下スクロール（下）</option><option value="none">未設定</option></select></label></fieldset><fieldset><legend data-right-module-label>右モジュール</legend><label><span>反時計回り</span><select data-encoder-right-ccw><option value="scroll-down">上下スクロール（下）</option><option value="scroll-up">上下スクロール（上）</option><option value="scroll-left">左右スクロール（左）</option><option value="scroll-right">左右スクロール（右）</option><option value="none">未設定</option></select></label><label><span>時計回り</span><select data-encoder-right-cw><option value="scroll-up">上下スクロール（上）</option><option value="scroll-down">上下スクロール（下）</option><option value="scroll-left">左右スクロール（左）</option><option value="scroll-right">左右スクロール（右）</option><option value="none">未設定</option></select></label></fieldset></div>';
+    devicePanel.insertBefore(encoderPanel, modulePanel.nextSibling);
+    var autoMouseCard = devicePanel.querySelector('[data-auto-mouse-enabled]');
+    if (autoMouseCard && autoMouseCard.closest) autoMouseCard.closest('section').dataset.autoMouseCard = 'true';
+    var scrollCard = devicePanel.querySelector('[data-scroll-diagonal]');
+    if (scrollCard && scrollCard.closest) scrollCard.closest('section').dataset.scrollCard = 'true';
 
     var tabBar = document.createElement('div');
     tabBar.className = 'palette-tabs';
@@ -803,6 +842,12 @@
 
     var deviceSettings = {
       pointerProfile: 'right-ball-left-pad',
+      leftModule: 'trackpad',
+      rightModule: 'trackball',
+      encoderLeftCcw: 'scroll-left',
+      encoderLeftCw: 'scroll-right',
+      encoderRightCcw: 'scroll-down',
+      encoderRightCw: 'scroll-up',
       trackballCpi: 200,
       trackpadScale: 1,
       autoMouseEnabled: true,
@@ -826,6 +871,12 @@
       deviceSettings = validDeviceSettings(deviceSettings);
       try { localStorage.setItem('sosho-device-settings-v1', JSON.stringify(deviceSettings)); } catch (error) {}
       devicePanel.querySelector('[data-pointer-profile]').value = deviceSettings.pointerProfile;
+      devicePanel.querySelector('[data-left-module]').value = deviceSettings.leftModule;
+      devicePanel.querySelector('[data-right-module]').value = deviceSettings.rightModule;
+      devicePanel.querySelector('[data-encoder-left-ccw]').value = deviceSettings.encoderLeftCcw;
+      devicePanel.querySelector('[data-encoder-left-cw]').value = deviceSettings.encoderLeftCw;
+      devicePanel.querySelector('[data-encoder-right-ccw]').value = deviceSettings.encoderRightCcw;
+      devicePanel.querySelector('[data-encoder-right-cw]').value = deviceSettings.encoderRightCw;
       devicePanel.querySelector('[data-trackball-value]').textContent = deviceSettings.trackballCpi + ' CPI';
       devicePanel.querySelector('[data-trackpad-value]').textContent = deviceSettings.trackpadScale.toFixed(2) + '×';
       devicePanel.querySelector('[data-auto-mouse-enabled]').checked = deviceSettings.autoMouseEnabled;
@@ -840,14 +891,31 @@
       devicePanel.querySelector('[data-sleep-mode]').value = deviceSettings.sleepMode;
       devicePanel.querySelector('[data-sleep-minutes]').value = String(deviceSettings.sleepMinutes);
       devicePanel.querySelector('[data-sleep-minutes]').disabled = deviceSettings.sleepMode === 'off';
-      var reverse = deviceSettings.pointerProfile === 'left-ball-right-pad';
-      devicePanel.querySelector('[data-device-ball-title]').textContent = reverse ? '左モジュール · トラックボール' : '右モジュール · トラックボール';
-      devicePanel.querySelector('[data-device-pad-title]').textContent = reverse ? '右モジュール · トラックパッド' : '左モジュール · トラックパッド';
+      devicePanel.querySelector('[data-device-ball-title]').textContent = 'トラックボール';
+      devicePanel.querySelector('[data-device-pad-title]').textContent = 'トラックパッド';
+      if (typeof window.soshoRefreshPhysicalTitles === 'function') window.soshoRefreshPhysicalTitles(window.soshoCurrentCopy);
+      if (typeof window.soshoRefreshDeviceMarkers === 'function') window.soshoRefreshDeviceMarkers(window.soshoCurrentCopy);
+      document.querySelectorAll('.encoder-target').forEach(function (button) { renderEncoderAssignment(button, button.dataset.target); });
     }
     devicePanel.querySelector('[data-pointer-profile]').addEventListener('change', function (event) {
       deviceSettings.pointerProfile = event.target.value;
       saveDeviceSettings();
       createEncoderTargets();
+    });
+    ['left', 'right'].forEach(function (side) {
+      devicePanel.querySelector('[data-' + side + '-module]').addEventListener('change', function (event) {
+        deviceSettings[side + 'Module'] = event.target.value;
+        saveDeviceSettings();
+        createEncoderTargets();
+      });
+    });
+    [['left', 'ccw'], ['left', 'cw'], ['right', 'ccw'], ['right', 'cw']].forEach(function (entry) {
+      var field = 'encoder' + entry[0].charAt(0).toUpperCase() + entry[0].slice(1) + entry[1].charAt(0).toUpperCase() + entry[1].slice(1);
+      devicePanel.querySelector('[data-encoder-' + entry[0] + '-' + entry[1] + ']').addEventListener('change', function (event) {
+        deviceSettings[field] = event.target.value;
+        saveDeviceSettings();
+        createEncoderTargets();
+      });
     });
     devicePanel.querySelectorAll('[data-trackball-step]').forEach(function (button) {
       button.addEventListener('click', function () {
@@ -910,6 +978,16 @@
     scrollHoldAction.addEventListener('dragstart', function (event) {
       event.dataTransfer.setData('text/plain', 'action:SCROLL_HOLD');
     });
+    window.soshoDeviceSettings = {
+      get: function () { return Object.assign({}, deviceSettings); },
+      setEncoder: function (side, direction, value) {
+        var field = 'encoder' + String(side).charAt(0).toUpperCase() + String(side).slice(1) + String(direction).charAt(0).toUpperCase() + String(direction).slice(1);
+        if (Object.prototype.hasOwnProperty.call(deviceSettings, field)) {
+          deviceSettings[field] = value;
+          saveDeviceSettings();
+        }
+      }
+    };
     saveDeviceSettings();
     showPaletteCategory('basic');
   }
@@ -957,7 +1035,7 @@
         button.innerHTML = entry[1] + '<span class="encoder-assignment"></span>';
         button.addEventListener('click', function () {
           var assignments = readAssignments();
-          updateInspector(target, assignments[target]);
+          updateInspector(target, assignments[target] || encoderSetting(side, entry[0]));
         });
         button.addEventListener('dragover', function (event) {
           event.preventDefault();
@@ -969,11 +1047,15 @@
           button.classList.remove('drop-ready');
           var data = event.dataTransfer.getData('text/plain');
           var assignments = readAssignments();
-          if (data.indexOf('action:') === 0) assignments[target] = data.slice(7);
-          if (data.indexOf('macro:') === 0) assignments[target] = 'Macro ' + data.slice(6);
-          writeAssignments(assignments);
+          var action = data.indexOf('action:') === 0 ? data.slice(7) : data.indexOf('macro:') === 0 ? 'Macro ' + data.slice(6) : '';
+          if (action && window.soshoDeviceSettings && typeof window.soshoDeviceSettings.setEncoder === 'function') {
+            window.soshoDeviceSettings.setEncoder(side, entry[0], action);
+          } else if (action) {
+            assignments[target] = action;
+            writeAssignments(assignments);
+          }
           renderEncoderAssignment(button, target);
-          updateInspector(target, assignments[target]);
+          updateInspector(target, action || assignments[target] || encoderSetting(side, entry[0]));
         });
         cluster.appendChild(button);
         renderEncoderAssignment(button, target);
@@ -982,18 +1064,24 @@
 
       var marker = document.createElement('div');
       marker.className = 'device-marker';
-      var reverse = false;
-      try { reverse = JSON.parse(localStorage.getItem('sosho-device-settings-v1') || '{}').pointerProfile === 'left-ball-right-pad'; } catch (error) {}
-      var isBall = reverse ? side === 'left' : side === 'right';
-      marker.innerHTML = isBall ? '<strong>' + (side === 'left' ? '左' : '右') + ' · トラックボール</strong><span>CPIはDEVICEで設定</span>' : '<strong>' + (side === 'left' ? '左' : '右') + ' · トラックパッド</strong><span>移動倍率はDEVICEで設定</span>';
+      marker.dataset.deviceMarkerSide = side;
+      marker.innerHTML = '<strong></strong><span></span>';
       half.appendChild(marker);
     });
+    if (typeof window.soshoRefreshDeviceMarkers === 'function') window.soshoRefreshDeviceMarkers();
+  }
+
+  function encoderSetting(side, direction) {
+    var settings = window.soshoDeviceSettings && typeof window.soshoDeviceSettings.get === 'function' ? window.soshoDeviceSettings.get() : {};
+    var field = 'encoder' + String(side).charAt(0).toUpperCase() + String(side).slice(1) + String(direction).charAt(0).toUpperCase() + String(direction).slice(1);
+    return settings[field] || '未設定';
   }
 
   function renderEncoderAssignment(button, target) {
     var assignments = readAssignments();
     var value = button.querySelector('.encoder-assignment');
-    if (value) value.textContent = assignments[target] || '未設定';
+    var match = /^l\d+-(left|right)-encoder-(ccw|cw)$/.exec(target);
+    if (value) value.textContent = assignments[target] || (match ? encoderSetting(match[1], match[2]) : '未設定');
   }
 
   function setupZmkStudioShell() {

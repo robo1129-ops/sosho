@@ -34,12 +34,38 @@
     return '';
   }
 
+  function hidUsageLabel(value) {
+    var number = Number(value);
+    if (!Number.isFinite(number)) return '';
+    var usage = number >>> 0;
+    if (Math.floor(usage / 0x10000) !== 0x07) return '';
+    var code = usage & 0xffff;
+    if (code >= 0x04 && code <= 0x1d) return String.fromCharCode(65 + code - 0x04);
+    if (code >= 0x1e && code <= 0x27) return String(code === 0x27 ? 0 : code - 0x1d);
+    var names = {
+      0x28: 'ENTER', 0x29: 'ESC', 0x2a: 'BACKSPACE', 0x2b: 'TAB', 0x2c: 'SPACE',
+      0x2d: '-', 0x2e: '=', 0x2f: '[', 0x30: ']', 0x31: '\\', 0x33: ';', 0x34: "'", 0x35: '`',
+      0x36: ',', 0x37: '.', 0x38: '/', 0x39: 'CAPS LOCK', 0x46: 'PRINT SCREEN',
+      0x47: 'SCROLL LOCK', 0x48: 'PAUSE', 0x49: 'INSERT', 0x4a: 'HOME', 0x4b: 'PAGE UP',
+      0x4c: 'DELETE', 0x4d: 'END', 0x4e: 'PAGE DOWN', 0x4f: 'RIGHT', 0x50: 'LEFT',
+      0x51: 'DOWN', 0x52: 'UP', 0x53: 'NUM LOCK', 0xe0: 'LCTRL', 0xe1: 'LSHIFT',
+      0xe2: 'LALT', 0xe3: 'LGUI', 0xe4: 'RCTRL', 0xe5: 'RSHIFT', 0xe6: 'RALT', 0xe7: 'RGUI'
+    };
+    if (code >= 0x3a && code <= 0x45) return 'F' + String(code - 0x39);
+    return names[code] || 'HID 0x' + code.toString(16).toUpperCase();
+  }
+
+  function readableParameter(value) {
+    return hidUsageLabel(value) || String(value);
+  }
+
   function bindingLabel(binding) {
     var detail = detailFor(binding.behaviorId);
     if (!detail) return '#' + binding.behaviorId + '(' + binding.param1 + ',' + binding.param2 + ')';
+    if (/key\s*press|^kp$/i.test(String(detail.displayName || ''))) return readableParameter(binding.param1);
     var first = parameterName(detail, 1, binding.param1);
     var second = parameterName(detail, 2, binding.param2);
-    var params = [first || binding.param1, second || binding.param2];
+    var params = [first || readableParameter(binding.param1), second || readableParameter(binding.param2)];
     while (params.length && (params[params.length - 1] === 0 || params[params.length - 1] === '0')) params.pop();
     return detail.displayName + (params.length ? ' · ' + params.join(', ') : '');
   }
