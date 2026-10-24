@@ -222,6 +222,18 @@
     if (macroContract) macroContract.innerHTML = '<strong>' + macroScope.label + '</strong> ' + macroScope.body;
     setText('.download-card strong', copy.downloadHeading);
     setText('.download-card > div:first-child span', copy.downloadDescription);
+    /* Touch-named firmware variants were removed from the build matrix. Keep
+     * older translation entries from advertising files that no longer exist. */
+    var downloadDescription = {
+      ja: '左右の標準トラックボール・トラックパッド構成を含むZIPです。標準トラックパッドは一次タップとドラッグに対応します。',
+      en: 'The ZIP includes the standard trackball and trackpad profiles. The standard trackpad supports primary tap and drag.',
+      'zh-CN': 'ZIP 包含标准轨迹球和触控板配置；标准触控板支持主点击和拖动。',
+      ko: 'ZIP에는 표준 트랙볼 및 트랙패드 프로필이 포함되며, 표준 트랙패드는 탭과 드래그를 지원합니다.',
+      th: 'ZIP มีโปรไฟล์มาตรฐานของแทร็กบอลและแทร็กแพด โดยแทร็กแพดมาตรฐานรองรับการแตะและลาก',
+      es: 'El ZIP incluye los perfiles estándar de trackball y trackpad. El trackpad estándar admite toque y arrastre.',
+      de: 'Das ZIP enthält die Standardprofile für Trackball und Trackpad. Das Standard-Trackpad unterstützt Tippen und Ziehen.'
+    }[language];
+    setText('.download-card > div:first-child span', downloadDescription || copy.downloadDescription);
     setText('.download-actions a:first-child', copy.latestZip);
     setText('.map-transfer h3', copy.mapTransferHeading || copy.defaultHeading);
     setText('.map-transfer p', copy.mapTransferDescription || copy.defaultDescription);
