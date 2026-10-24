@@ -10,6 +10,7 @@
   var rawById = Object.create(null);
   var labelById = Object.create(null);
   var behaviorById = Object.create(null);
+  var readInProgress = false;
 
   if (footer) footer.textContent = 'ローカル編集はlocalStorageに保存されます。公式RPCで読み取りに成功した後だけ、実機への書き込みボタンが有効になります。';
   if (!editor || !readButton || !writeButton || typeof global.ZmkStudioRpc !== 'function') return;
@@ -59,15 +60,51 @@
     return hidUsageLabel(value) || String(value);
   }
 
+  function firstHidUsage(binding) {
+    var values = [binding && binding.param1, binding && binding.param2, binding && binding.value, binding && binding.behaviorId];
+    for (var i = 0; i < values.length; i++) {
+      var label = hidUsageLabel(values[i]);
+      if (label) return label;
+    }
+    return '';
+  }
+
+  function friendlyBehaviorName(name) {
+    var normalized = String(name || '').trim().toLowerCase();
+    if (/key\s*press|^kp$/.test(normalized)) return 'Key';
+    if (/momentary.*layer|^mo$/.test(normalized)) return 'Layer';
+    if (/toggle.*layer|^tg$/.test(normalized)) return 'Layer toggle';
+    if (/transparent|^trans$/.test(normalized)) return 'Transparent';
+    if (/none|no.?op/.test(normalized)) return 'None';
+    return String(name || 'Action');
+  }
+
+  function layerNumber(detail, value) {
+    var named = parameterName(detail, 1, value);
+    var namedMatch = /(?:layer|mo|tg)\s*(\d+)/i.exec(String(named || ''));
+    if (namedMatch) return namedMatch[1];
+    var number = Number(value);
+    return Number.isInteger(number) && number >= 0 && number < 16 ? String(number) : '';
+  }
+
   function bindingLabel(binding) {
     var detail = detailFor(binding.behaviorId);
-    if (!detail) return '#' + binding.behaviorId + '(' + binding.param1 + ',' + binding.param2 + ')';
-    if (/key\s*press|^kp$/i.test(String(detail.displayName || ''))) return readableParameter(binding.param1);
+    if (!detail) return 'Action';
+    var behaviorName = friendlyBehaviorName(detail.displayName);
+    if (behaviorName === 'Key') return firstHidUsage(binding) || readableParameter(binding.param1) || 'Key';
+    if (behaviorName === 'Layer') {
+      var layer = layerNumber(detail, binding.param1);
+      return layer ? 'Layer ' + layer : 'Layer';
+    }
+    if (behaviorName === 'Layer toggle') {
+      var toggleLayer = layerNumber(detail, binding.param1);
+      return toggleLayer ? 'Layer toggle ' + toggleLayer : 'Layer toggle';
+    }
     var first = parameterName(detail, 1, binding.param1);
     var second = parameterName(detail, 2, binding.param2);
     var params = [first || readableParameter(binding.param1), second || readableParameter(binding.param2)];
     while (params.length && (params[params.length - 1] === 0 || params[params.length - 1] === '0')) params.pop();
-    return detail.displayName + (params.length ? ' · ' + params.join(', ') : '');
+    return behaviorName + (params.length ? ' · ' + params.join(', ') : '');
   }
 
   function sameBinding(a, b) {
@@ -104,13 +141,16 @@
         editor.setAssignment(id, labelById[id]);
       });
     });
-    editor.render();
+    if (typeof global.soshoSetKeymapLoaded === 'function') global.soshoSetKeymapLoaded(true);
+    else editor.render();
   }
 
   async function readKeymap() {
+    if (readInProgress) return false;
     var transport = editor.getTransport();
-    if (!transport || !transport.isConnected) { setStatus('先に公式ZMK Studioサービスへ接続してください'); return; }
-    if (!transport.canWriteKeymap) { setStatus('接続済みですが、公式ZMK Studio GATTサービスが見つかりません'); return; }
+    if (!transport || !transport.isConnected) { setStatus('先に公式ZMK Studioサービスへ接続してください'); return false; }
+    if (!transport.canWriteKeymap) { setStatus('接続済みですが、公式ZMK Studio GATTサービスが見つかりません'); return false; }
+    readInProgress = true;
     try {
       readButton.disabled = true; writeButton.disabled = true; setStatus('公式RPCでキーマップを読み取り中…');
       var rpc = new global.ZmkStudioRpc(transport);
@@ -121,9 +161,11 @@
       global.soshoStudioState = { rpc: rpc, deviceState: deviceState, rawById: rawById, labelById: labelById };
       var lockText = deviceState.lockState === 1 ? 'Studioロック解除済み' : deviceState.lockState === 0 ? 'Studioロック中（キーボードの&studio_unlockを押すと保存可能）' : 'lockState=' + deviceState.lockState;
       setStatus('読み取り成功: ' + (deviceState.info && deviceState.info.name ? deviceState.info.name : 'sosho') + ' / ' + deviceState.keymap.layers.length + ' layers / ' + lockText);
+      return true;
     } catch (error) {
-      deviceState = null; setStatus('公式RPC読み取り失敗: ' + (error.message || error));
-    } finally { updateButtons(); }
+      deviceState = null; if (typeof global.soshoSetKeymapLoaded === 'function') global.soshoSetKeymapLoaded(false); setStatus('公式RPC読み取り失敗: ' + (error.message || error));
+      return false;
+    } finally { readInProgress = false; updateButtons(); }
   }
 
   function resolveBinding(label, raw) {
@@ -185,6 +227,7 @@
 
   readButton.addEventListener('click', readKeymap);
   writeButton.addEventListener('click', writeKeymap);
+  global.soshoReadKeymap = readKeymap;
   setInterval(updateButtons, 350);
   updateButtons();
 })(window);

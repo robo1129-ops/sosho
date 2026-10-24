@@ -1164,10 +1164,11 @@
     diagnostics.open = false;
     diagnostics.innerHTML = '<summary>デバイス・ファームウェア・診断</summary><div class="studio-diagnostics-body"></div>';
     var diagnosticsBody = diagnostics.querySelector('.studio-diagnostics-body');
-    [noticeCard, downloadCard, connectionSection, connectionLog, writeCard].forEach(function (element) {
+    [noticeCard, connectionSection, connectionLog, writeCard].forEach(function (element) {
       if (element && element !== diagnostics) diagnosticsBody.appendChild(element);
     });
     topbar.insertAdjacentElement('afterend', diagnostics);
+    if (downloadCard) workspace.insertAdjacentElement('beforebegin', downloadCard);
 
     var sidebar = document.createElement('aside');
     sidebar.className = 'studio-sidebar';
