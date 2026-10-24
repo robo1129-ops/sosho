@@ -172,14 +172,43 @@
     if (label === labelById[raw && raw._id]) return raw;
     var direct = /^#(-?\d+)\((\d+),(\d+)\)$/.exec(String(label || '').trim());
     if (direct) return { behaviorId: Number(direct[1]), param1: Number(direct[2]), param2: Number(direct[3]) };
+    function normalizeKeyName(value) {
+      return String(value || '').toUpperCase().replace(/[\\s_\-\/]+/g, '');
+    }
+    function keyNameAliases(value) {
+      var normalized = normalizeKeyName(value);
+      var aliases = {
+        DELETE: ['DELETE', 'DEL', 'KCDELETE'],
+        BACKSPACE: ['BACKSPACE', 'BSPC', 'KCBSPC'],
+        ENTER: ['ENTER', 'RET', 'RETURN', 'KCENTER', 'KCRET'],
+        ESCAPE: ['ESCAPE', 'ESC', 'KCESC'],
+        TAB: ['TAB', 'KCTAB'],
+        SPACE: ['SPACE', 'SPC', 'KCSPACE'],
+        'PAGEUP': ['PAGEUP', 'PGUP', 'PGUP', 'KCPGUP'],
+        'PAGEDOWN': ['PAGEDOWN', 'PGDN', 'PGDOWN', 'KCPGDN'],
+        LEFT: ['LEFT', 'LEFTARROW', 'KCLEFT'],
+        RIGHT: ['RIGHT', 'RIGHTARROW', 'KCRIGHT'],
+        UP: ['UP', 'UPARROW', 'KCUP'],
+        DOWN: ['DOWN', 'DOWNARROW', 'KCDOWN'],
+        INSERT: ['INSERT', 'INS', 'KCINSERT'],
+        HOME: ['HOME', 'KCHOME'],
+        END: ['END', 'KCEND']
+      };
+      return [normalized].concat(aliases[normalized] || []);
+    }
+    var wantedNames = keyNameAliases(label);
+    function isWantedConstant(value) {
+      var name = normalizeKeyName(value && value.name);
+      if (wantedNames.indexOf(name) >= 0) return true;
+      var hidName = normalizeKeyName(hidUsageLabel(value && value.constant));
+      return wantedNames.indexOf(hidName) >= 0;
+    }
     var match = null;
     Object.keys(behaviorById).some(function (id) {
       var detail = behaviorById[id];
-      var name = String(detail.displayName || '').toLowerCase();
-      if (name.indexOf('key') < 0 && name.indexOf('press') < 0 && name !== 'kp') return false;
       (detail.metadata || []).some(function (set) {
         return (set.param1 || []).some(function (value) {
-          if (value.type === 'constant' && String(value.name).toLowerCase() === String(label).toLowerCase()) { match = { behaviorId: detail.id, param1: value.constant, param2: 0 }; return true; }
+          if (value.type === 'constant' && isWantedConstant(value)) { match = { behaviorId: detail.id, param1: value.constant, param2: 0 }; return true; }
           return false;
         });
       });
