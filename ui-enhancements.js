@@ -208,7 +208,16 @@
     setText('[data-import-map]', copy.mapImport || copy.read);
     setText('.map-transfer-status', copy.mapTransferStatus || copy.footerNote);
     setText('.macro-drag-palette h3', copy.macroPaletteHeading);
-    setText('.macro-drag-palette > p', copy.macroPaletteDescription);
+    var macroPaletteHint = ({
+      ja: 'Remapと同じように、キーコードを下の手順欄へドラッグしてください。クリックでも選択中のマクロへ追加できます。',
+      en: 'Drag keycodes into the sequence area like Remap. Clicking also adds the key to the selected macro.',
+      'zh-CN': '像 Remap 一样将键码拖入步骤区域。点击也可以将按键添加到当前宏。',
+      ko: 'Remap처럼 키코드를 순서 영역으로 드래그하세요. 클릭으로도 선택한 매크로에 추가할 수 있습니다.',
+      th: 'ลากคีย์โค้ดไปยังพื้นที่ลำดับเหมือน Remap หรือคลิกเพื่อเพิ่มลงในมาโครที่เลือก',
+      es: 'Arrastra códigos al área de pasos como en Remap. También puedes hacer clic para añadirlos a la macro seleccionada.',
+      de: 'Ziehe Keycodes wie bei Remap in den Schrittbereich. Ein Klick fügt die Taste ebenfalls zum ausgewählten Makro hinzu.'
+    })[language] || copy.macroPaletteDescription;
+    setText('.macro-drag-palette > p', macroPaletteHint);
     setText('.macro-library-head h3', copy.macro);
     setText('.macro-library-head p', copy.macroLibraryDescription);
     setText('.macro-library-count', copy.macroLibraryCount);
@@ -473,7 +482,7 @@
 
     var palette = document.createElement('section');
     palette.className = 'macro-drag-palette';
-    palette.innerHTML = '<h3>ドラッグでマクロを作成</h3><p>Remapと同じように、キーコードを下の手順欄へドラッグしてください。クリックは選択だけで、入力は変更しません。</p><div class="macro-palette-tabs"><button type="button" data-macro-palette-tab="basic" aria-pressed="true">BASIC</button><button type="button" data-macro-palette-tab="functions" aria-pressed="false">FUNCTIONS</button><button type="button" data-macro-palette-tab="device" aria-pressed="false">DEVICE</button><button type="button" data-macro-palette-tab="special" aria-pressed="false">SPECIAL</button><button type="button" data-macro-palette-tab="ascii" aria-pressed="false">ASCII</button><input type="search" data-macro-palette-search placeholder="検索" aria-label="マクロキーコード検索"></div><div class="macro-palette-panel" data-macro-palette-panel="basic"><div class="macro-key-chips" data-macro-key-chips></div></div><div class="macro-palette-panel" data-macro-palette-panel="functions" hidden><div class="macro-key-chips" data-macro-functions></div></div><div class="macro-palette-panel" data-macro-palette-panel="device" hidden><div class="macro-key-chips" data-macro-device></div></div><div class="macro-palette-panel" data-macro-palette-panel="special" hidden><div class="macro-key-chips" data-macro-special></div></div><div class="macro-palette-panel" data-macro-palette-panel="ascii" hidden><div class="macro-key-chips" data-macro-ascii></div></div>';
+    palette.innerHTML = '<h3>ドラッグでマクロを作成</h3><p>Remapと同じように、キーコードを下の手順欄へドラッグしてください。クリックでも選択中のマクロへ追加できます。</p><div class="macro-palette-tabs"><button type="button" data-macro-palette-tab="basic" aria-pressed="true">BASIC</button><button type="button" data-macro-palette-tab="functions" aria-pressed="false">FUNCTIONS</button><button type="button" data-macro-palette-tab="device" aria-pressed="false">DEVICE</button><button type="button" data-macro-palette-tab="special" aria-pressed="false">SPECIAL</button><button type="button" data-macro-palette-tab="ascii" aria-pressed="false">ASCII</button><input type="search" data-macro-palette-search placeholder="検索" aria-label="マクロキーコード検索"></div><div class="macro-palette-panel" data-macro-palette-panel="basic"><div class="macro-key-chips" data-macro-key-chips></div></div><div class="macro-palette-panel" data-macro-palette-panel="functions" hidden><div class="macro-key-chips" data-macro-functions></div></div><div class="macro-palette-panel" data-macro-palette-panel="device" hidden><div class="macro-key-chips" data-macro-device></div></div><div class="macro-palette-panel" data-macro-palette-panel="special" hidden><div class="macro-key-chips" data-macro-special></div></div><div class="macro-palette-panel" data-macro-palette-panel="ascii" hidden><div class="macro-key-chips" data-macro-ascii></div></div>';
     macroList.insertAdjacentElement('afterend', palette);
 
     var keyEntries = [
@@ -490,9 +499,30 @@
       chip.title = entry[1] + 'をマクロへ追加';
       chip.dataset.macroKey = entry[1];
       chip.addEventListener('dragstart', function (event) {
+        window.__soshoMacroDragKey = entry[1];
         event.dataTransfer.setData('text/plain', 'macro-key:' + entry[1]);
       });
-      chip.addEventListener('click', function () { chip.classList.toggle('palette-selected'); });
+      chip.addEventListener('pointerdown', function () {
+        window.__soshoMacroDragKey = entry[1];
+        chip.classList.add('macro-dragging');
+      });
+      chip.addEventListener('mousedown', function () {
+        window.__soshoMacroDragKey = entry[1];
+        chip.classList.add('macro-dragging');
+      });
+      chip.addEventListener('dragend', function () {
+        window.__soshoMacroDragKey = '';
+        chip.classList.remove('macro-dragging');
+      });
+      chip.addEventListener('click', function () {
+        chip.classList.toggle('palette-selected');
+        var activeItem = macroList.querySelector('.macro-item[data-macro-builder-ready="true"]');
+        var textarea = activeItem && activeItem.querySelector('[data-macro-steps]');
+        if (!textarea) return;
+        appendMacroStep(textarea, entry[1]);
+        var feedback = activeItem.querySelector('[data-macro-action-feedback]');
+        if (feedback) feedback.textContent = macroReadableCode(entry[1]) + ' をクリックで追加しました。';
+      });
       container.appendChild(chip);
     }
     var chipContainer = palette.querySelector('[data-macro-key-chips]');
@@ -515,8 +545,120 @@
     });
 
     var modifierNames = [['Shift', 'LSHFT'], ['Ctrl', 'LCTRL'], ['Alt', 'LALT'], ['GUI', 'LGUI']];
+    var macroCodeLabels = {
+      RET: 'Enter', BSPC: 'Backspace', TAB: 'Tab', ESC: 'Escape', SPACE: 'Space',
+      LEFT: '← Left', RIGHT: '→ Right', UP: '↑ Up', DOWN: '↓ Down',
+      LCLK: 'Mouse Left', RCLK: 'Mouse Right', MCLK: 'Mouse Middle',
+      WH_U: 'Wheel Up', WH_D: 'Wheel Down', WH_L: 'Wheel Left', WH_R: 'Wheel Right'
+    };
+    function macroReadableCode(code) {
+      return macroCodeLabels[code] || code.replace(/^L(SHFT|CTRL|ALT|GUI)$/, function (_, name) {
+        return ({SHFT: 'Shift', CTRL: 'Ctrl', ALT: 'Alt', GUI: 'GUI'})[name] || code;
+      });
+    }
+    function parseMacroSteps(text) {
+      return String(text || '').split(/\r?\n/).filter(Boolean).map(function (line) {
+        var parts = line.split('|');
+        var mode = ['tap', 'press', 'release'].indexOf((parts[1] || 'tap').toLowerCase()) >= 0 ? (parts[1] || 'tap').toLowerCase() : 'tap';
+        var wait = Number(parts.length > 2 && parts[2] !== '' ? parts[2] : 1);
+        if (!Number.isInteger(wait) || wait < 0) wait = 1;
+        return { code: (parts[0] || '').trim() || 'NO', mode: mode, wait: Math.min(60000, wait) };
+      });
+    }
+    function macroStepText(step) {
+      var action = macroReadableCode(step.code);
+      return step.mode === 'press' ? action + ' を押す' : step.mode === 'release' ? action + ' を離す' : action + ' をタップ';
+    }
+    function updateMacroBytes(item, textarea) {
+      var bytes = item.querySelector('.macro-bytes-remaining');
+      if (bytes) bytes.textContent = Math.max(0, 496 - String(textarea.value || '').length) + ' 残りバイト';
+    }
+    function renderMacroSteps(item, textarea, stepList) {
+      if (!stepList) return;
+      var steps = parseMacroSteps(textarea.value);
+      stepList.innerHTML = '';
+      if (!steps.length) {
+        var empty = document.createElement('p');
+        empty.className = 'macro-step-empty';
+        empty.textContent = 'まだ手順がありません。キーをドラッグするとここに追加されます。';
+        stepList.appendChild(empty);
+        return;
+      }
+      steps.forEach(function (step, index) {
+        var row = document.createElement('div');
+        row.className = 'macro-step-row';
+        row.dataset.macroStepIndex = String(index);
+        var number = document.createElement('span');
+        number.className = 'macro-step-number';
+        number.textContent = String(index + 1).padStart(2, '0');
+        var description = document.createElement('span');
+        description.className = 'macro-step-description';
+        description.textContent = macroStepText(step);
+        var code = document.createElement('code');
+        code.className = 'macro-step-code';
+        code.textContent = step.code + '|' + step.mode;
+        var mode = document.createElement('select');
+        mode.className = 'macro-step-mode';
+        mode.setAttribute('aria-label', '手順 ' + (index + 1) + ' の操作');
+        [['tap', 'タップ'], ['press', '押す'], ['release', '離す']].forEach(function (option) {
+          var itemOption = document.createElement('option');
+          itemOption.value = option[0];
+          itemOption.textContent = option[1];
+          itemOption.selected = option[0] === step.mode;
+          mode.appendChild(itemOption);
+        });
+        var waitLabel = document.createElement('label');
+        waitLabel.className = 'macro-step-wait';
+        waitLabel.textContent = '待機(ms)';
+        var wait = document.createElement('input');
+        wait.type = 'number';
+        wait.min = '0';
+        wait.max = '60000';
+        wait.step = '1';
+        wait.value = String(step.wait);
+        wait.setAttribute('aria-label', '手順 ' + (index + 1) + ' の待機時間（ミリ秒）');
+        waitLabel.appendChild(wait);
+        var remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'macro-step-remove';
+        remove.textContent = '削除';
+        remove.setAttribute('aria-label', '手順 ' + (index + 1) + ' を削除');
+        function commit() {
+          var next = parseMacroSteps(textarea.value);
+          next[index].mode = mode.value;
+          next[index].wait = Math.max(0, Math.min(60000, Number(wait.value) || 0));
+          wait.value = String(next[index].wait);
+          textarea.value = next.map(function (entry) { return entry.code + '|' + entry.mode + '|' + entry.wait; }).join('\n');
+          textarea.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        mode.addEventListener('change', commit);
+        wait.addEventListener('change', commit);
+        remove.addEventListener('click', function () {
+          var next = parseMacroSteps(textarea.value).filter(function (_, entryIndex) { return entryIndex !== index; });
+          textarea.value = next.map(function (entry) { return entry.code + '|' + entry.mode + '|' + entry.wait; }).join('\n') || 'A|tap|1';
+          textarea.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        row.appendChild(number);
+        row.appendChild(description);
+        row.appendChild(code);
+        row.appendChild(mode);
+        row.appendChild(waitLabel);
+        row.appendChild(remove);
+        stepList.appendChild(row);
+      });
+    }
+    function updateMacroCombinationPreview(builder) {
+      var preview = builder.querySelector('[data-macro-combo-preview]');
+      if (!preview) return;
+      var selected = Array.prototype.slice.call(builder.querySelectorAll('[data-macro-modifier]:checked')).map(function (input) {
+        return input.parentElement.textContent.trim();
+      });
+      preview.textContent = selected.length ? selected.join(' + ') + ' + ドロップしたキー' : '修飾キーなし（キーだけを追加）';
+    }
     function appendMacroStep(textarea, key) {
-      var builder = textarea.closest('.macro-builder');
+      var editorSteps = textarea.closest('.macro-editor-steps');
+      var builder = editorSteps && editorSteps.querySelector('.macro-builder');
+      if (!builder) return { modifiers: [], latency: 1 };
       var latencyInput = builder.querySelector('[data-macro-latency]');
       var latency = Math.max(0, Math.min(60000, Number(latencyInput.value) || 1));
       latencyInput.value = latency;
@@ -532,6 +674,7 @@
       var current = textarea.value.trim();
       textarea.value = current ? current + '\n' + lines.join('\n') : lines.join('\n');
       textarea.dispatchEvent(new Event('change', { bubbles: true }));
+      return { modifiers: modifiers, latency: latency };
     }
 
     function enhanceMacroItem(item) {
@@ -540,27 +683,85 @@
       var stepsLabel = textarea && textarea.closest('label');
       if (!textarea || !stepsLabel) return;
       item.dataset.macroBuilderReady = 'true';
+      var stepList = document.createElement('div');
+      stepList.className = 'macro-step-list';
+      stepList.setAttribute('data-macro-step-summary', 'true');
+      stepList.setAttribute('aria-label', 'マクロ手順一覧');
+      stepsLabel.insertBefore(stepList, textarea);
       var builder = document.createElement('div');
       builder.className = 'macro-builder';
-      builder.innerHTML = '<div class="macro-modifiers"><span>修飾キー:</span>' + modifierNames.map(function (entry) { return '<label><input type="checkbox" data-macro-modifier value="' + entry[1] + '">' + entry[0] + '</label>'; }).join('') + '</div><label class="macro-latency">追加時の待ち時間(ms)<input type="number" data-macro-latency min="0" max="60000" step="1" value="1"></label><div class="macro-drop-zone" data-macro-drop-zone>ここへキーをドラッグして追加</div><small>各行の末尾がその操作の待ち時間です。追加後も手順欄で1行ずつ変更できます。</small>';
+      builder.innerHTML = '<div class="macro-combo-builder"><strong>組み合わせキー</strong><span data-macro-combo-preview>修飾キーなし（キーだけを追加）</span><small>Ctrl・Alt・Shift・GUIを選んでからキーをドロップすると、押す→キー→離すの順で追加されます。</small></div><div class="macro-modifiers"><span>修飾キー:</span>' + modifierNames.map(function (entry) { return '<label><input type="checkbox" data-macro-modifier value="' + entry[1] + '">' + entry[0] + '</label>'; }).join('') + '</div><label class="macro-latency">追加時の待ち時間(ms)<input type="number" data-macro-latency min="0" max="60000" step="1" value="1"></label><div class="macro-drop-zone" data-macro-drop-zone><strong data-macro-drop-label>ここへキーをドラッグして追加</strong><span data-macro-drop-status>ドロップすると、下の一覧に操作が追加されます。</span></div><div class="macro-action-feedback" data-macro-action-feedback aria-live="polite">待機時間の初期値は1msです。</div><small>下の一覧で各操作の種類と待機時間を1行ずつ変更できます。</small>';
       stepsLabel.appendChild(builder);
+      function refreshSteps() {
+        renderMacroSteps(item, textarea, stepList);
+        updateMacroBytes(item, textarea);
+      }
+      refreshSteps();
       var dropZone = builder.querySelector('[data-macro-drop-zone]');
+      var dropLabel = builder.querySelector('[data-macro-drop-label]');
+      var dropStatus = builder.querySelector('[data-macro-drop-status]');
+      var feedback = builder.querySelector('[data-macro-action-feedback]');
+      var comboModifiers = builder.querySelectorAll('[data-macro-modifier]');
+      comboModifiers.forEach(function (input) { input.addEventListener('change', function () { updateMacroCombinationPreview(builder); }); });
+      function appendDroppedKey(key) {
+        if (!key) return false;
+        var result = appendMacroStep(textarea, key);
+        dropLabel.textContent = '追加しました: ' + macroReadableCode(key);
+        dropStatus.textContent = (result.modifiers.length ? result.modifiers.map(macroReadableCode).join(' + ') + ' + ' : '') + macroReadableCode(key) + '（各操作 ' + result.latency + 'ms）';
+        feedback.textContent = 'マクロ手順に追加しました。下の一覧で確認・編集できます。';
+        return true;
+      }
       function acceptMacroDrop(event) {
         event.preventDefault();
         dropZone.classList.remove('drop-ready');
         textarea.classList.remove('drop-ready');
         var data = event.dataTransfer.getData('text/plain');
         var key = data.indexOf('macro-key:') === 0 ? data.slice(10) : '';
-        if (key) appendMacroStep(textarea, key);
+        window.__soshoMacroDragKey = '';
+        if (!appendDroppedKey(key)) {
+          dropLabel.textContent = '追加できませんでした';
+          dropStatus.textContent = 'BASIC / FUNCTIONS / DEVICE / SPECIAL のキーをドロップしてください。';
+          feedback.textContent = '認識できないドラッグ操作でした。';
+        }
       }
-      function markDropReady(target) { return function (event) { event.preventDefault(); target.classList.add('drop-ready'); }; }
-      function clearDropReady(target) { return function () { target.classList.remove('drop-ready'); }; }
+      function markDropReady(target) { return function (event) { event.preventDefault(); target.classList.add('drop-ready'); if (target === dropZone) { dropLabel.textContent = 'ここで離すと追加'; dropStatus.textContent = '組み合わせキーは選択中の修飾キーと一緒に追加されます。'; } }; }
+      function clearDropReady(target) { return function () { target.classList.remove('drop-ready'); if (target === dropZone) { dropLabel.textContent = 'ここへキーをドラッグして追加'; dropStatus.textContent = 'ドロップすると、下の一覧に操作が追加されます。'; } }; }
       dropZone.addEventListener('dragover', markDropReady(dropZone));
       dropZone.addEventListener('dragleave', clearDropReady(dropZone));
       dropZone.addEventListener('drop', acceptMacroDrop);
+      dropZone.addEventListener('pointerenter', function () { if (window.__soshoMacroDragKey) markDropReady(dropZone)({ preventDefault: function () {} }); });
+      dropZone.addEventListener('pointerup', function () {
+        if (appendDroppedKey(window.__soshoMacroDragKey)) {
+          dropZone.classList.remove('drop-ready');
+          window.__soshoMacroDragKey = '';
+        }
+      });
+      dropZone.addEventListener('mouseenter', function () { if (window.__soshoMacroDragKey) markDropReady(dropZone)({ preventDefault: function () {} }); });
+      dropZone.addEventListener('mouseup', function () {
+        if (appendDroppedKey(window.__soshoMacroDragKey)) {
+          dropZone.classList.remove('drop-ready');
+          window.__soshoMacroDragKey = '';
+        }
+      });
       textarea.addEventListener('dragover', markDropReady(textarea));
       textarea.addEventListener('dragleave', clearDropReady(textarea));
       textarea.addEventListener('drop', acceptMacroDrop);
+      textarea.addEventListener('pointerenter', function () { if (window.__soshoMacroDragKey) markDropReady(textarea)({ preventDefault: function () {} }); });
+      textarea.addEventListener('pointerup', function () {
+        if (appendDroppedKey(window.__soshoMacroDragKey)) {
+          textarea.classList.remove('drop-ready');
+          window.__soshoMacroDragKey = '';
+        }
+      });
+      textarea.addEventListener('mouseenter', function () { if (window.__soshoMacroDragKey) markDropReady(textarea)({ preventDefault: function () {} }); });
+      textarea.addEventListener('mouseup', function () {
+        if (appendDroppedKey(window.__soshoMacroDragKey)) {
+          textarea.classList.remove('drop-ready');
+          window.__soshoMacroDragKey = '';
+        }
+      });
+      textarea.addEventListener('input', refreshSteps);
+      textarea.addEventListener('change', refreshSteps);
     }
 
     function enhanceAllMacroItems() {
