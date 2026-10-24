@@ -783,7 +783,8 @@
     function syncState() {
       if (!stateNode) return;
       var text = connectionStatus ? connectionStatus.textContent : '未接続';
-      stateNode.textContent = text && text.indexOf('接続') >= 0 && text.indexOf('未接続') < 0 ? 'USB接続済み' : 'USB未接続';
+      var connected = /^USB接続済み/.test(text) || text === '接続済み';
+      stateNode.textContent = connected ? 'USB接続済み' : 'USB未接続';
       topbar.classList.toggle('studio-connected', stateNode.textContent === 'USB接続済み');
     }
     if (connectionStatus && typeof MutationObserver === 'function') {

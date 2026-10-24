@@ -356,7 +356,7 @@
   };
   Object.defineProperty(FramedTransport.prototype, 'canWriteKeymap', { get: function () { return RPC_SCHEMA_SUPPORTED; } });
 
-  function ZmkSerialTransport(options) { FramedTransport.call(this, options); this.port = null; this.reader = null; this.writer = null; this.reading = false; this._disconnecting = false; this._connecting = false; this.baudRate = 12500; this._rpcBaudRetried = false; }
+  function ZmkSerialTransport(options) { FramedTransport.call(this, options); this.port = null; this.reader = null; this.writer = null; this.reading = false; this._disconnecting = false; this._connecting = false; this.baudRate = 9600; this._rpcBaudRetried = false; }
   ZmkSerialTransport.prototype = Object.create(FramedTransport.prototype); ZmkSerialTransport.prototype.constructor = ZmkSerialTransport;
   Object.defineProperty(ZmkSerialTransport.prototype, 'isConnected', { get: function () { return !!this.port && this.reading; } });
   Object.defineProperty(ZmkSerialTransport.prototype, 'isSupported', { get: function () { return typeof navigator !== 'undefined' && !!navigator.serial && typeof navigator.serial.requestPort === 'function'; } });
@@ -380,9 +380,9 @@
   };
   ZmkSerialTransport.prototype._open = async function (port) {
     this.port = port;
-    // ZMK Studio's studio-rpc-usb-uart transport uses 12500 baud.  The
-    // endpoint is a CDC/ACM serial stream, but the baud value is still used by
-    // the firmware-side UART transport to select the Studio RPC path.
+    // Match the official ZMK Studio serial transport first.  Its reference
+    // implementation opens the CDC/ACM port at 9600 baud; 12500 is retained
+    // only as a compatibility fallback for earlier SO-SHO test images.
     await this.port.open({ baudRate: this.baudRate, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
     this.reading = true;
     this._setDevice('右側Central / USB');
@@ -391,9 +391,9 @@
     return true;
   };
   ZmkSerialTransport.prototype.tryAlternateBaud = async function () {
-    if (!this.port || this._disconnecting || this.baudRate !== 12500) return false;
+    if (!this.port || this._disconnecting || this.baudRate !== 9600) return false;
     var port = this.port;
-    this._setLog('RPC応答なし: USBを115200 baudへ切り替えて再試行');
+    this._setLog('RPC応答なし: USBを12500 baudへ切り替えて再試行');
     this.reading = false;
     this._disconnecting = true;
     try {
@@ -408,7 +408,7 @@
       return false;
     } finally { this._disconnecting = false; }
     this.port = null;
-    this.baudRate = 115200;
+    this.baudRate = 12500;
     this._inFrame = false; this._escaped = false; this._frameBytes = []; this._frameQueue = [];
     await this._open(port);
     return true;
@@ -418,6 +418,8 @@
     if (!this.isSupported) { this._setStatus('Web Serial非対応ブラウザーです'); return false; }
     if (this._connecting) return false;
     this._connecting = true;
+    this._rpcBaudRetried = false;
+    this.baudRate = 9600;
     try { this._setStatus('右側CentralのUSBデバイス選択待ち…'); this._setLog('USB requestPort開始（右側Centralを選択）'); var port = await navigator.serial.requestPort(); this._setLog('USBポート選択完了'); return await this._open(port); }
     catch (error) { this.port = null; this.reader = null; this.reading = false; this._setDevice('—'); this._setLog('USB接続失敗 [' + (error && error.name ? error.name : 'Error') + ']: ' + (error && error.message ? error.message : 'unknown error')); this._setStatus(error && error.name === 'NotFoundError' ? 'USBデバイス選択がキャンセルされました' : 'USB接続失敗: ' + (error && error.message ? error.message : 'unknown error')); return false; }
     finally { this._connecting = false; }
@@ -427,6 +429,8 @@
     if (!this.isSupported || typeof navigator.serial.getPorts !== 'function') { this._setStatus('許可済みUSB再接続はこのブラウザーでは利用できません'); return false; }
     if (this._connecting) return false;
     this._connecting = true;
+    this._rpcBaudRetried = false;
+    this.baudRate = 9600;
     try {
       var ports = await navigator.serial.getPorts();
       this._setLog('許可済みUSBポート: ' + ports.length + '件');
@@ -439,7 +443,7 @@
       return false;
     } finally { this._connecting = false; }
   };
-  ZmkSerialTransport.prototype.disconnect = async function (silent) { var had = !!this.port || !!this.reader; this._disconnecting = true; try { if (this.reader) await this.reader.cancel(); } catch (error) {} try { if (this.writer) this.writer.releaseLock(); } catch (error) {} try { if (this.port) await this.port.close(); } catch (error) {} this.reader = null; this.writer = null; this.port = null; this.reading = false; this._disconnecting = false; this._rejectPending(new Error('USB disconnected')); this._setDevice('—'); if (had && !silent) this._setStatus('USB切断済み'); };
+  ZmkSerialTransport.prototype.disconnect = async function (silent) { var had = !!this.port || !!this.reader; this._disconnecting = true; try { if (this.reader) await this.reader.cancel(); } catch (error) {} try { if (this.writer) this.writer.releaseLock(); } catch (error) {} try { if (this.port) await this.port.close(); } catch (error) {} this.reader = null; this.writer = null; this.port = null; this.reading = false; this._disconnecting = false; this._rpcBaudRetried = false; this.baudRate = 9600; this._rejectPending(new Error('USB disconnected')); this._setDevice('—'); if (had && !silent) this._setStatus('USB切断済み'); };
   ZmkSerialTransport.prototype._readLoop = async function () { while (this.port && this.reading && !this._disconnecting) { try { this.reader = this.port.readable.getReader(); while (this.reading && !this._disconnecting) { var result = await this.reader.read(); if (result.done) break; if (result.value) this._consume(result.value); } this.reader.releaseLock(); this.reader = null; } catch (error) { if (this.reader) try { this.reader.releaseLock(); } catch (releaseError) {} this.reader = null; if (!this._disconnecting) { this.reading = false; this._setStatus('USB受信失敗: ' + (error.message || 'unknown error')); } } } };
   ZmkSerialTransport.prototype.sendFramedPayload = async function (payload) { if (!this.isConnected) throw new Error('USB未接続です'); if (!this.port || !this.port.writable) throw new Error('USB writer unavailable'); var writer = this.writer || this.port.writable.getWriter(); this.writer = writer; await writer.write(encodeFrame(payload)); return true; };
 

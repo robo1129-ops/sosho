@@ -23,7 +23,7 @@ const port = {
   },
   opened: false,
   async open(options) {
-    assert.equal(options.baudRate, 12500);
+    assert.equal(options.baudRate, 9600);
     this.opened = true;
   },
   async close() { this.opened = false; },

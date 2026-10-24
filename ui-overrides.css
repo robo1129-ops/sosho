@@ -500,6 +500,35 @@
   justify-self: start;
 }
 
+/* Keep key editing in an overlay layer so the physical layout never moves. */
+.key-popover.key-popover-floating {
+  position: fixed !important;
+  z-index: 1200;
+  width: min(420px, calc(100vw - 20px));
+  max-width: calc(100vw - 20px);
+  max-height: min(72vh, 560px);
+  margin: 0 !important;
+  overflow: auto;
+  overscroll-behavior: contain;
+  box-shadow: 0 20px 56px #0009, 0 0 0 1px #58a6ff22;
+}
+
+.key-popover.key-popover-floating .key-popover-heading {
+  position: sticky;
+  top: -13px;
+  padding-top: 2px;
+  background: #161b22;
+  z-index: 1;
+}
+
+@media (max-width: 560px) {
+  .key-popover.key-popover-floating {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    max-height: 68vh;
+  }
+}
+
 .layout-badge {
   display: inline-block;
   margin-left: 6px;
