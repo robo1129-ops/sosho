@@ -26,7 +26,8 @@ assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /mapTransferDescript
 assert.match(html, /右側Central/);
 assert.match(html, /id="connect-ble"/);
 assert.doesNotMatch(html, /BLE診断/);
-assert.match(html, /USB専用の反映範囲/);
+assert.match(html, /実機への反映経路/);
+assert.match(html, /暗号化BLEサービス/);
 assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /defaultKeymap/);
 assert.match(css, /\.remap-palette-tab\[aria-selected=/);
 assert.match(css, /\.keyboard-frame \.bottom-row \.key:nth-child\(4\)/);
