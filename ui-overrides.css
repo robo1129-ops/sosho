@@ -498,6 +498,7 @@
   background: #0d1117;
 }
 
+.key-popover-panel [data-key-popover-apply-key],
 .key-popover-panel [data-key-popover-apply-selection] {
   width: 100%;
   border-color: var(--accent);

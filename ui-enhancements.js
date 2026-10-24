@@ -202,7 +202,6 @@
     setText('.download-card strong', copy.downloadHeading);
     setText('.download-card > div:first-child span', copy.downloadDescription);
     setText('.download-actions a:first-child', copy.latestZip);
-    setText('.download-actions a:last-child', copy.buildHistory);
     setText('.map-transfer h3', copy.mapTransferHeading || copy.defaultHeading);
     setText('.map-transfer p', copy.mapTransferDescription || copy.defaultDescription);
     setText('[data-export-map]', copy.mapExport || copy.save);
@@ -304,7 +303,6 @@
       '<span>通常版に加えて、公式Cirque Pinnacleドライバの一次タップ・ドラッグ対応タッチプロファイルも含むZIPです。</span></div>' +
       '<div class="download-actions">' +
       '<a href="' + firmwareZipUrl + '" download="sosho-firmware-latest.zip" rel="noopener">最新ZIPをダウンロード</a>' +
-      '<a href="https://github.com/robo1129-ops/sosho-firmware/actions/workflows/package-firmware.yml" target="_blank" rel="noopener">ビルド履歴</a>' +
       '</div>';
     notice.insertAdjacentElement('afterend', card);
   }

@@ -56,9 +56,13 @@ assert.match(html, /populateActionSelect/);
 assert.match(html, /actionGroupLabels/);
 assert.match(html, /data-key-popover-tap/);
 assert.match(html, /data-key-popover-hold/);
+assert.match(html, /data-key-popover-key/);
+assert.match(html, /data-key-popover-apply-key/);
 assert.match(html, /data-key-popover-apply-selection/);
 assert.match(html, /getHoldAssignments/);
 assert.match(html, /humanActionLabel/);
+assert.doesNotMatch(html, /data-key-popover-tab="custom"/);
+assert.doesNotMatch(html, /data-key-popover-custom/);
 assert.match(css, /\.key \.key-sub/);
 assert.match(css, /Keep the firmware download available/);
 const enhancements = fs.readFileSync('ui-enhancements.js', 'utf8');
@@ -67,5 +71,6 @@ assert.doesNotMatch(enhancements, /enhanceAllMacroItems\(\);\s*window\.setTimeou
 assert.match(enhancements, /var changed = false;/);
 assert.match(enhancements, /if \(changed && typeof window\.soshoRefreshDeviceMarkers/);
 assert.match(enhancements, /workspace\.insertAdjacentElement\('beforebegin', downloadCard\)/);
+assert.doesNotMatch(enhancements, /package-firmware\.yml/);
 
 console.log('SO-SHO Remap-like editor UI smoke test passed');
