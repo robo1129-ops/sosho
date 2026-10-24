@@ -85,6 +85,8 @@ assert.match(css, /\.macro-combo-builder/);
 assert.match(css, /\.key-popover-panel-tap-hold/);
 assert.doesNotMatch(html, /data-key-popover-tab="custom"/);
 assert.doesNotMatch(html, /data-key-popover-custom/);
+assert.match(html, /id="legacy-palette-guard"/);
+assert.match(html, /#palette\{display:none!important\}/);
 assert.match(css, /\.key \.key-sub/);
 assert.match(css, /Keep the firmware download available/);
 const enhancements = fs.readFileSync('ui-enhancements.js', 'utf8');
