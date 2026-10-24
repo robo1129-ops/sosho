@@ -895,6 +895,17 @@
       container.appendChild(chip);
     }
 
+    /* Keep one action palette.  The first implementation left the legacy
+     * renderPalette() toolbar inside #palette and then appended this enhanced
+     * palette below it, which made BASIC/FUNCTIONS appear twice. */
+    var functionsDetail = document.createElement('details');
+    functionsDetail.className = 'palette-group';
+    functionsDetail.dataset.paletteCategory = 'functions';
+    functionsDetail.innerHTML = '<summary>ファンクション <span>修飾キー / レイヤー / マクロ</span></summary><div class="palette-grid" data-functions-palette></div><p class="palette-help">修飾キーやレイヤー、マクロをキーへドラッグ＆ドロップしてください。</p>';
+    additions.insertBefore(functionsDetail, additions.querySelector('[data-layer-palette]').closest('.palette-group'));
+    var functionsPalette = functionsDetail.querySelector('[data-functions-palette]');
+    (paletteGroups.FUNCTIONS || []).forEach(function (name) { appendActionChip(functionsPalette, name, name, 'function-chip'); });
+
     var layerPalette = additions.querySelector('[data-layer-palette]');
     [['TO(0)', 'TO 0'], ['TO(1)', 'TO 1'], ['TO(2)', 'TO 2'], ['TO(3)', 'TO 3'], ['TG(0)', 'TG 0'], ['TG(1)', 'TG 1'], ['TG(2)', 'TG 2'], ['TG(3)', 'TG 3'], ['TT(0)', 'TT 0'], ['TT(1)', 'TT 1'], ['TT(2)', 'TT 2'], ['TT(3)', 'TT 3'], ['MO(0)', 'MO 0'], ['MO(1)', 'MO 1'], ['MO(2)', 'MO 2'], ['MO(3)', 'MO 3'], ['OSL(0)', 'OSL 0'], ['OSL(1)', 'OSL 1'], ['DF(0)', 'DF 0'], ['DF(1)', 'DF 1'], ['DF(2)', 'DF 2'], ['DF(3)', 'DF 3']].forEach(function (entry) { appendActionChip(layerPalette, entry[0], entry[1]); });
 
@@ -995,7 +1006,9 @@
     tapDanceDetail.dataset.paletteCategory = 'tap-dance';
 
     var actionPanel = document.getElementById('palette');
-    actionPanel.dataset.paletteCategory = 'functions';
+    /* Remove the legacy toolbar/chip container.  The enhanced tab bar below
+     * is the only palette navigation shown to users. */
+    if (actionPanel && actionPanel.parentElement === palette) actionPanel.remove();
     var devicePanel = document.createElement('div');
     devicePanel.className = 'device-settings-panel';
     devicePanel.dataset.paletteCategory = 'device';
@@ -1006,6 +1019,11 @@
       '<section class="device-settings-card device-settings-card-wide"><h4>スクロールモード</h4><p>下のボタンをキーへドラッグして割り当てると、押している間だけトラックボール／トラックパッドをスクロールモードにします。</p><button type="button" class="device-action-chip" draggable="true" data-scroll-hold-action>押している間だけスクロール</button><div class="device-setting-form"><label class="device-setting-checkbox"><input type="checkbox" data-scroll-diagonal>斜めスクロールを許可</label><label class="device-setting-checkbox"><input type="checkbox" data-scroll-axis-lock>明確な縦横入力を軸ロック</label><label>軸ロック判定<select data-scroll-axis-threshold><option value="1.5">弱め (1.5×)</option><option value="1.8">標準 (1.8×)</option><option value="2.2">強め (2.2×)</option><option value="3">かなり強め (3×)</option></select></label><label><span data-scroll-scale-label>スクロール量</span><input type="range" data-scroll-scale min="5" max="100" step="5"><span class="device-setting-value" data-scroll-scale-value></span></label><div class="device-setting-actions"><button type="button" data-scroll-divider-step="-1">分割 −</button><button type="button" data-scroll-divider-step="0">標準</button><button type="button" data-scroll-divider-step="1">分割 ＋</button><span class="device-setting-value" data-scroll-divider-value></span></div></div></section>' +
       '<section class="device-settings-card device-settings-card-wide"><h4 data-sleep-title>自動スリープ</h4><p data-sleep-description>分指定で自動スリープするか、スリープを無効にします。</p><div class="device-setting-form"><label><span data-sleep-mode-label>モード</span><select data-sleep-mode><option value="minutes">時間指定</option><option value="off">オフ</option></select></label><label><span data-sleep-minutes-label>スリープまで（分）</span><input type="number" data-sleep-minutes min="1" max="1440" step="1"></label></div></section>' +
       '<p class="device-setting-note">値はJSONとこのブラウザーへ保存します。CPI・スクロール量・左右センサー配置・自動スリープはファームウェアのビルド設定です。公式ZMK Studioの標準RPCはキーマップ編集用のため、これらを実機へ反映するには選択したプロファイルでファームウェアを再ビルドします。</p>';
+    var deviceActions = document.createElement('section');
+    deviceActions.className = 'device-settings-card device-settings-card-wide device-action-palette';
+    deviceActions.innerHTML = '<h4>デバイスアクション</h4><p>マウスボタン、ホイール、CPI、スクロールモードをキーへ割り当てます。</p><div class="palette-grid" data-device-actions></div>';
+    devicePanel.insertBefore(deviceActions, devicePanel.firstChild);
+    (paletteGroups.DEVICE || []).forEach(function (name) { appendActionChip(deviceActions.querySelector('[data-device-actions]'), name, name, 'device-chip'); });
     palette.appendChild(devicePanel);
     var legacyProfilePanel = devicePanel.querySelector('[data-pointer-profile-title]');
     if (legacyProfilePanel && legacyProfilePanel.parentElement) legacyProfilePanel.parentElement.hidden = true;
@@ -1044,7 +1062,7 @@
       tab.addEventListener('click', function () { showPaletteCategory(entry[0]); });
       tabBar.appendChild(tab);
     });
-    palette.insertBefore(tabBar, actionPanel);
+    palette.insertBefore(tabBar, additions);
 
     var search = document.createElement('input');
     search.type = 'search';
@@ -1060,7 +1078,7 @@
     tabBar.appendChild(search);
 
     function showPaletteCategory(category) {
-      [basicDetail, jisDetail, layerDetail, specialDetail, asciiDetail, tapDanceDetail, actionPanel, devicePanel].forEach(function (panel) {
+      [basicDetail, jisDetail, functionsDetail, layerDetail, specialDetail, asciiDetail, tapDanceDetail, devicePanel].forEach(function (panel) {
         panel.style.display = panel.dataset.paletteCategory === category ? '' : 'none';
       });
       tabBar.querySelectorAll('[data-palette-tab]').forEach(function (tab) {
