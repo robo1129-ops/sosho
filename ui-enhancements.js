@@ -679,10 +679,133 @@
     if (value) value.textContent = assignments[target] || '未設定';
   }
 
+  function setupZmkStudioShell() {
+    var app = document.querySelector('.app');
+    var topbar = document.querySelector('.topbar');
+    var workspace = document.querySelector('.workspace');
+    if (!app || !topbar || !workspace || topbar.dataset.studioShellReady === 'true') return;
+
+    topbar.dataset.studioShellReady = 'true';
+    document.title = 'ZMK Studio — SO-SHO';
+
+    var connectionActions = document.querySelector('.connection-actions');
+    var connectButton = document.getElementById('connect-usb');
+    var reconnectButton = document.getElementById('connect-usb-authorized');
+    var disconnectButton = document.getElementById('disconnect');
+    var connectionStatus = document.getElementById('connection-status');
+    var connectionSection = document.querySelector('.connection');
+    var connectionLog = document.querySelector('.connection-log');
+    var writeCard = document.querySelector('.write-card');
+    var noticeCard = document.querySelector('.notice');
+    var downloadCard = document.querySelector('.download-card');
+
+    if (connectButton) connectButton.textContent = 'USB接続';
+    if (reconnectButton) reconnectButton.textContent = '再接続';
+    if (disconnectButton) disconnectButton.textContent = '切断';
+
+    topbar.innerHTML = '' +
+      '<div class="studio-shell-left" aria-label="ZMK Studio">' +
+        '<span class="studio-logo" aria-hidden="true">ZMK</span>' +
+        '<span class="studio-wordmark">Studio</span>' +
+      '</div>' +
+      '<div class="studio-device-menu" role="status" aria-live="polite" aria-label="接続デバイス">' +
+        '<span class="studio-device-name">sosho</span>' +
+        '<span class="studio-device-state"><i></i><span data-studio-device-state>USB未接続</span></span>' +
+      '</div>' +
+      '<div class="studio-shell-actions" aria-label="Studio操作"></div>';
+
+    var shellActions = topbar.querySelector('.studio-shell-actions');
+    function addHeaderAction(label, title, handler, disabled) {
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'studio-icon-button';
+      button.title = title;
+      button.setAttribute('aria-label', title);
+      button.textContent = label;
+      button.disabled = Boolean(disabled);
+      if (handler) button.addEventListener('click', handler);
+      shellActions.appendChild(button);
+      return button;
+    }
+    addHeaderAction('↶', 'Undo（この版では未実装）', null, true);
+    addHeaderAction('↷', 'Redo（この版では未実装）', null, true);
+    var saveButton = addHeaderAction('保存', 'キーマップをUSBへ保存', function () {
+      var write = document.getElementById('write-keymap');
+      if (write) write.click();
+    });
+    saveButton.classList.add('studio-primary-action');
+    addHeaderAction('破棄', '未保存の編集をデフォルトへ戻す', function () {
+      var reset = document.getElementById('reset');
+      if (reset) reset.click();
+    });
+    if (connectionActions) {
+      connectionActions.classList.add('studio-connection-actions');
+      shellActions.appendChild(connectionActions);
+    }
+
+    var diagnostics = document.createElement('details');
+    diagnostics.className = 'studio-diagnostics';
+    diagnostics.innerHTML = '<summary>Device / firmware / diagnostics</summary><div class="studio-diagnostics-body"></div>';
+    var diagnosticsBody = diagnostics.querySelector('.studio-diagnostics-body');
+    [noticeCard, downloadCard, connectionSection, connectionLog, writeCard].forEach(function (element) {
+      if (element && element !== diagnostics) diagnosticsBody.appendChild(element);
+    });
+    topbar.insertAdjacentElement('afterend', diagnostics);
+
+    var sidebar = document.createElement('aside');
+    sidebar.className = 'studio-sidebar';
+    sidebar.setAttribute('aria-label', 'Studio navigation');
+    sidebar.innerHTML = '<div class="studio-sidebar-heading">Layout:</div><div class="studio-layout-name">sosho</div><div class="studio-sidebar-heading studio-layers-heading">Layers:</div><div class="studio-layer-controls"><span>レイヤー</span><button type="button" data-studio-layer-minus aria-label="レイヤー数を減らす">−</button><button type="button" data-studio-layer-plus aria-label="レイヤー数を増やす">＋</button></div><div class="studio-sidebar-content"></div>';
+    var sidebarContent = sidebar.querySelector('.studio-sidebar-content');
+    var layoutSelector = document.querySelector('.layout-selector');
+    var layerPanel = document.getElementById('layer-panel');
+    if (layoutSelector) sidebarContent.appendChild(layoutSelector);
+    if (layerPanel) sidebarContent.appendChild(layerPanel);
+    workspace.insertBefore(sidebar, workspace.firstChild);
+
+    var editor = workspace.querySelector('.editor');
+    if (editor) {
+      editor.dataset.studioEditor = 'true';
+      var heading = editor.querySelector('.editor-heading-row');
+      if (heading) heading.setAttribute('hidden', 'hidden');
+      var zoom = document.createElement('label');
+      zoom.className = 'studio-zoom-control';
+      zoom.innerHTML = 'ズーム <select aria-label="キーボード表示倍率"><option>Auto</option><option>90%</option><option>110%</option><option>125%</option></select>';
+      editor.insertBefore(zoom, editor.querySelector('#keyboard'));
+    }
+
+    var footer = document.createElement('footer');
+    footer.className = 'studio-footer';
+    footer.innerHTML = '© 2024 - The ZMK Contributors · <a href="https://zmk.dev/docs/features/studio" target="_blank" rel="noopener">About ZMK Studio</a> · <a href="https://github.com/zmkfirmware/zmk-studio/blob/main/LICENSE" target="_blank" rel="noopener">License NOTICE</a>';
+    app.appendChild(footer);
+
+    var stateNode = topbar.querySelector('[data-studio-device-state]');
+    function syncState() {
+      if (!stateNode) return;
+      var text = connectionStatus ? connectionStatus.textContent : '未接続';
+      stateNode.textContent = text && text.indexOf('接続') >= 0 && text.indexOf('未接続') < 0 ? 'USB接続済み' : 'USB未接続';
+      topbar.classList.toggle('studio-connected', stateNode.textContent === 'USB接続済み');
+    }
+    if (connectionStatus && typeof MutationObserver === 'function') {
+      new MutationObserver(syncState).observe(connectionStatus, { childList: true, characterData: true, subtree: true });
+    }
+    syncState();
+
+    var minus = sidebar.querySelector('[data-studio-layer-minus]');
+    var plus = sidebar.querySelector('[data-studio-layer-plus]');
+    function setLayerCountMessage(message) {
+      var layerDescription = document.querySelector('.layer-description');
+      if (layerDescription && message) layerDescription.dataset.studioMessage = message;
+    }
+    if (minus) minus.addEventListener('click', function () { setLayerCountMessage('レイヤー数はファームウェア定義のため、このUIでは固定です。'); });
+    if (plus) plus.addEventListener('click', function () { setLayerCountMessage('レイヤー数はファームウェア定義のため、このUIでは固定です。'); });
+  }
+
   var keyboard = document.getElementById('keyboard');
   if (keyboard && typeof MutationObserver === 'function') {
     var observer = new MutationObserver(function () { createEncoderTargets(); });
     observer.observe(keyboard, { childList: true, subtree: true });
   }
   createEncoderTargets();
+  setupZmkStudioShell();
 })();

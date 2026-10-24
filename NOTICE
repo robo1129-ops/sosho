@@ -1,0 +1,12 @@
+SO-SHO keymap editor
+
+The visual shell and navigation structure are inspired by ZMK Studio.
+ZMK Studio is developed by The ZMK Contributors and is licensed under the
+Apache License, Version 2.0.
+
+Upstream project:
+https://github.com/zmkfirmware/zmk-studio
+
+This SO-SHO editor is a separate static application. Its USB transport,
+SO-SHO layout, keymap editor, macro editor, and device settings are maintained
+in this repository.
