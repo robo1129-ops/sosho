@@ -488,6 +488,22 @@
   font: inherit;
 }
 
+.key-popover-panel select optgroup {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.key-popover-panel select option {
+  color: var(--text);
+  background: #0d1117;
+}
+
+.key-popover-panel [data-key-popover-apply-selection] {
+  width: 100%;
+  border-color: var(--accent);
+  background: #1f6feb55;
+}
+
 .key-popover-clear {
   justify-self: start;
 }
