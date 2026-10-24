@@ -1044,6 +1044,7 @@
         button.addEventListener('click', function () {
           var assignments = readAssignments();
           updateInspector(target, assignments[target] || encoderSetting(side, entry[0]));
+          if (typeof window.soshoOpenKeyPopover === 'function') window.soshoOpenKeyPopover(target);
         });
         button.addEventListener('dragover', function (event) {
           event.preventDefault();
@@ -1056,10 +1057,11 @@
           var data = event.dataTransfer.getData('text/plain');
           var assignments = readAssignments();
           var action = data.indexOf('action:') === 0 ? data.slice(7) : data.indexOf('macro:') === 0 ? 'Macro ' + data.slice(6) : '';
-          if (action && window.soshoDeviceSettings && typeof window.soshoDeviceSettings.setEncoder === 'function') {
-            window.soshoDeviceSettings.setEncoder(side, entry[0], action);
-          } else if (action) {
+          if (action) {
             assignments[target] = action;
+            writeAssignments(assignments);
+          } else {
+            delete assignments[target];
             writeAssignments(assignments);
           }
           renderEncoderAssignment(button, target);
@@ -1089,8 +1091,17 @@
     var assignments = readAssignments();
     var value = button.querySelector('.encoder-assignment');
     var match = /^l\d+-(left|right)-encoder-(ccw|cw)$/.exec(target);
-    if (value) value.textContent = assignments[target] || (match ? encoderSetting(match[1], match[2]) : '未設定');
+    var loaded = !window.soshoEditor || typeof window.soshoEditor.isKeymapLoaded !== 'function' || window.soshoEditor.isKeymapLoaded();
+    if (value) value.textContent = loaded ? (assignments[target] || (match ? encoderActionLabel(encoderSetting(match[1], match[2])) : '未設定')) : '';
   }
+
+  function encoderActionLabel(value) {
+    return ({ 'scroll-up': 'Wheel Up', 'scroll-down': 'Wheel Down', 'scroll-left': 'Wheel Left', 'scroll-right': 'Wheel Right', none: '未設定' })[value] || value || '未設定';
+  }
+
+  window.soshoRefreshEncoderTargets = function () {
+    document.querySelectorAll('.encoder-target').forEach(function (button) { renderEncoderAssignment(button, button.dataset.target); });
+  };
 
   function setupZmkStudioShell() {
     var app = document.querySelector('.app');
