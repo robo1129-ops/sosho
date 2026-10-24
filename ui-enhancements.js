@@ -1,6 +1,131 @@
 (function () {
   'use strict';
 
+  var languageCatalog = {
+    ja: {
+      title: 'SO-SHO キーマップエディター',
+      wordmark: 'Studio',
+      diagnostics: 'デバイス・ファームウェア・診断',
+      layout: '配列:',
+      layers: 'レイヤー:',
+      navigation: 'キーマップナビゲーション',
+      save: '保存',
+      saveTitle: 'キーマップをUSBへ保存',
+      discard: '破棄',
+      discardTitle: '未保存の編集をデフォルトへ戻す',
+      editor: 'キーマップ',
+      connection: 'USB接続',
+      log: 'USB接続ログ',
+      read: 'USBからキーマップを読み込む',
+      write: 'USBへキーマップを保存',
+      macro: 'マクロ設計',
+      addMacro: 'マクロを追加',
+      firmware: 'ファームウェア',
+      language: 'Language'
+    },
+    en: {
+      title: 'SO-SHO Keymap Editor',
+      wordmark: 'Keymap Studio',
+      diagnostics: 'Device, firmware and diagnostics',
+      layout: 'Layout:',
+      layers: 'Layers:',
+      navigation: 'Keymap navigation',
+      save: 'Save',
+      saveTitle: 'Save keymap to USB',
+      discard: 'Discard',
+      discardTitle: 'Restore the saved default',
+      editor: 'Keymap',
+      connection: 'USB connection',
+      log: 'USB connection log',
+      read: 'Read keymap from USB',
+      write: 'Save keymap to USB',
+      macro: 'Macro editor',
+      addMacro: 'Add macro',
+      firmware: 'Firmware',
+      language: 'Language'
+    }
+  };
+
+  function storedLanguage() {
+    try {
+      return localStorage.getItem('sosho-language-v1') === 'en' ? 'en' : 'ja';
+    } catch (error) {
+      return 'ja';
+    }
+  }
+
+  function textFor(language, key) {
+    return languageCatalog[language] && languageCatalog[language][key] || languageCatalog.ja[key];
+  }
+
+  function applyLanguage(language) {
+    language = language === 'en' ? 'en' : 'ja';
+    var copy = languageCatalog[language];
+    document.documentElement.lang = language;
+    document.title = copy.title;
+    var selector = document.getElementById('language-select');
+    if (selector) selector.value = language;
+    var wordmark = document.querySelector('.studio-wordmark');
+    if (wordmark) wordmark.textContent = copy.wordmark;
+    var diagnostics = document.querySelector('.studio-diagnostics > summary');
+    if (diagnostics) diagnostics.textContent = copy.diagnostics;
+    var sidebarHeadings = document.querySelectorAll('.studio-sidebar-heading');
+    if (sidebarHeadings[0]) sidebarHeadings[0].textContent = copy.layout;
+    if (sidebarHeadings[1]) sidebarHeadings[1].textContent = copy.layers;
+    var sidebar = document.querySelector('.studio-sidebar');
+    if (sidebar) sidebar.setAttribute('aria-label', copy.navigation);
+    var state = document.querySelector('[data-studio-device-state]');
+    if (state && state.textContent === 'USB未接続') state.textContent = language === 'en' ? 'USB disconnected' : 'USB未接続';
+    var editorHeading = document.getElementById('keyboard-heading');
+    if (editorHeading) editorHeading.textContent = copy.editor;
+    var connectionHeading = document.getElementById('connection-heading');
+    if (connectionHeading) connectionHeading.textContent = copy.connection;
+    var logHeading = document.getElementById('connection-log-heading');
+    if (logHeading) logHeading.textContent = copy.log;
+    var rpcHeading = document.getElementById('rpc-heading');
+    if (rpcHeading && language === 'en') rpcHeading.textContent = 'USB / ZMK Studio RPC keymap editing';
+    else if (rpcHeading) rpcHeading.textContent = 'USB / ZMK Studio RPC キーマップ編集';
+    var read = document.getElementById('read-keymap');
+    if (read) read.textContent = copy.read;
+    var write = document.getElementById('write-keymap');
+    if (write) write.textContent = copy.write;
+    var macro = document.getElementById('macro-heading');
+    if (macro) macro.textContent = copy.macro;
+    var addMacro = document.getElementById('add-macro');
+    if (addMacro) addMacro.textContent = copy.addMacro;
+    var connect = document.getElementById('connect-usb');
+    if (connect) connect.textContent = language === 'en' ? 'USB connection' : 'USB接続';
+    var reconnect = document.getElementById('connect-usb-authorized');
+    if (reconnect) reconnect.textContent = language === 'en' ? 'Reconnect' : '再接続';
+    var disconnect = document.getElementById('disconnect');
+    if (disconnect) disconnect.textContent = language === 'en' ? 'Disconnect' : '切断';
+    var copyLog = document.getElementById('connection-log-copy');
+    if (copyLog) copyLog.textContent = language === 'en' ? 'Copy log' : 'ログをコピー';
+    var clearLog = document.getElementById('connection-log-clear');
+    if (clearLog) clearLog.textContent = language === 'en' ? 'Clear' : 'クリア';
+    var shellPrimary = document.querySelector('.studio-primary-action');
+    if (shellPrimary) { shellPrimary.textContent = copy.save; shellPrimary.title = copy.saveTitle; shellPrimary.setAttribute('aria-label', copy.saveTitle); }
+    var shellButtons = document.querySelectorAll('.studio-shell-actions .studio-icon-button');
+    if (shellButtons[3]) { shellButtons[3].textContent = copy.discard; shellButtons[3].title = copy.discardTitle; shellButtons[3].setAttribute('aria-label', copy.discardTitle); }
+    var languageLabel = document.querySelector('.studio-language-picker span');
+    if (languageLabel) languageLabel.textContent = copy.language;
+  }
+
+  function installLanguagePicker(shellActions) {
+    if (!shellActions || shellActions.querySelector('.studio-language-picker')) return;
+    var wrapper = document.createElement('label');
+    wrapper.className = 'studio-language-picker';
+    wrapper.innerHTML = '<span>Language</span><select id="language-select" aria-label="Language"><option value="ja">日本語</option><option value="en">English</option></select>';
+    var selector = wrapper.querySelector('select');
+    selector.value = storedLanguage();
+    selector.addEventListener('change', function () {
+      var language = selector.value === 'en' ? 'en' : 'ja';
+      try { localStorage.setItem('sosho-language-v1', language); } catch (error) {}
+      applyLanguage(language);
+    });
+    shellActions.appendChild(wrapper);
+  }
+
   var notice = document.querySelector('.notice');
   var subtitle = document.querySelector('.subtitle');
   if (subtitle) subtitle.textContent = 'SO-SHO実機配列に合わせたキーマップ・マクロ編集ページ';
@@ -686,7 +811,7 @@
     if (!app || !topbar || !workspace || topbar.dataset.studioShellReady === 'true') return;
 
     topbar.dataset.studioShellReady = 'true';
-    document.title = 'ZMK Studio — SO-SHO';
+    document.title = 'SO-SHO キーマップエディター';
 
     var connectionActions = document.querySelector('.connection-actions');
     var connectButton = document.getElementById('connect-usb');
@@ -742,10 +867,11 @@
       connectionActions.classList.add('studio-connection-actions');
       shellActions.appendChild(connectionActions);
     }
+    installLanguagePicker(shellActions);
 
     var diagnostics = document.createElement('details');
     diagnostics.className = 'studio-diagnostics';
-    diagnostics.innerHTML = '<summary>Device / firmware / diagnostics</summary><div class="studio-diagnostics-body"></div>';
+    diagnostics.innerHTML = '<summary>デバイス・ファームウェア・診断</summary><div class="studio-diagnostics-body"></div>';
     var diagnosticsBody = diagnostics.querySelector('.studio-diagnostics-body');
     [noticeCard, downloadCard, connectionSection, connectionLog, writeCard].forEach(function (element) {
       if (element && element !== diagnostics) diagnosticsBody.appendChild(element);
@@ -754,8 +880,8 @@
 
     var sidebar = document.createElement('aside');
     sidebar.className = 'studio-sidebar';
-    sidebar.setAttribute('aria-label', 'Studio navigation');
-    sidebar.innerHTML = '<div class="studio-sidebar-heading">Layout:</div><div class="studio-layout-name">sosho</div><div class="studio-sidebar-heading studio-layers-heading">Layers:</div><div class="studio-layer-controls"><span>レイヤー</span><button type="button" data-studio-layer-minus aria-label="レイヤー数を減らす">−</button><button type="button" data-studio-layer-plus aria-label="レイヤー数を増やす">＋</button></div><div class="studio-sidebar-content"></div>';
+    sidebar.setAttribute('aria-label', 'キーマップナビゲーション');
+    sidebar.innerHTML = '<div class="studio-sidebar-heading">配列:</div><div class="studio-layout-name">sosho</div><div class="studio-sidebar-heading studio-layers-heading">レイヤー:</div><div class="studio-layer-controls"><span>レイヤー</span><button type="button" data-studio-layer-minus aria-label="レイヤー数を減らす">−</button><button type="button" data-studio-layer-plus aria-label="レイヤー数を増やす">＋</button></div><div class="studio-sidebar-content"></div>';
     var sidebarContent = sidebar.querySelector('.studio-sidebar-content');
     var layoutSelector = document.querySelector('.layout-selector');
     var layerPanel = document.getElementById('layer-panel');
@@ -776,7 +902,7 @@
 
     var footer = document.createElement('footer');
     footer.className = 'studio-footer';
-    footer.innerHTML = '© 2024 - The ZMK Contributors · <a href="https://zmk.dev/docs/features/studio" target="_blank" rel="noopener">About ZMK Studio</a> · <a href="https://github.com/zmkfirmware/zmk-studio/blob/main/LICENSE" target="_blank" rel="noopener">License NOTICE</a>';
+    footer.innerHTML = '© 2024 - The ZMK Contributors · <a href="https://zmk.dev/docs/features/studio" target="_blank" rel="noopener">ZMK Studio公式ドキュメント</a> · <a href="https://github.com/zmkfirmware/zmk-studio/blob/main/LICENSE" target="_blank" rel="noopener">ライセンス</a>';
     app.appendChild(footer);
 
     var stateNode = topbar.querySelector('[data-studio-device-state]');
@@ -809,4 +935,5 @@
   }
   createEncoderTargets();
   setupZmkStudioShell();
+  applyLanguage(storedLanguage());
 })();

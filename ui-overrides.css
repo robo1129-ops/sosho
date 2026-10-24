@@ -1459,6 +1459,39 @@ body {
 .studio-connected .studio-device-state { color: #9fe3b1; }
 .studio-connected .studio-device-state i { background: #46c37b; box-shadow: 0 0 0 3px #46c37b22; }
 .studio-shell-actions { justify-content: flex-end; gap: 5px; min-width: 0; }
+.studio-language-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 4px;
+  color: var(--studio-muted);
+  font-size: 10px;
+}
+.studio-language-picker select {
+  min-height: 28px;
+  padding: 3px 6px;
+  border: 1px solid var(--studio-line);
+  border-radius: 5px;
+  background: #222a34;
+  color: var(--studio-text);
+  font: inherit;
+}
+.connection-error-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 10px;
+  margin: 10px 16px;
+  padding: 12px 14px;
+  border: 1px solid #f85149;
+  border-radius: 8px;
+  background: #3b1518;
+  color: #ffd7d5;
+  box-shadow: 0 8px 24px #0005;
+}
+.connection-error-banner[hidden] { display: none; }
+.connection-error-banner strong { color: #ff9b98; font-size: 12px; }
+.connection-error-banner span { min-width: 0; font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+.connection-error-banner small { grid-column: 2; color: #f7b8b4; font-size: 11px; overflow-wrap: anywhere; }
 .studio-icon-button {
   min-height: 30px;
   padding: 4px 9px;

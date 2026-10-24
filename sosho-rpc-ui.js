@@ -48,7 +48,21 @@
     return !!a && !!b && a.behaviorId === b.behaviorId && a.param1 === b.param1 && a.param2 === b.param2;
   }
 
-  function setStatus(text) { status.textContent = text; if (typeof global.soshoLog === 'function') global.soshoLog('rpc', text); }
+  function setStatus(text) {
+    status.textContent = text;
+    if (typeof global.soshoLog === 'function') global.soshoLog('rpc', text);
+    var detail = String(text || '');
+    if (/失敗|タイムアウト|応答なし|見つかりません/.test(detail)) {
+      if (typeof global.soshoConnectionError === 'function') {
+        global.soshoConnectionError(
+          'キーマップ通信に失敗しました。',
+          'USBポート自体は接続されていますが、現在のファームウェアからZMK Studio RPCの応答がありません。右側Centralであること、対応ファームウェアであること、他のシリアル接続が閉じていることを確認してください。'
+        );
+      }
+    } else if (/読み取り成功|保存後の再読み取り成功/.test(detail) && typeof global.soshoClearConnectionError === 'function') {
+      global.soshoClearConnectionError();
+    }
+  }
 
   function mapDeviceState() {
     var keymap = deviceState.keymap;
