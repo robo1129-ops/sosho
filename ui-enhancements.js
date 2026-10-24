@@ -198,7 +198,17 @@
     setText('#reset', copy.resetSaved);
     setText('#macro-description', copy.macroDescription);
     var macroContract = document.querySelector('.macro-contract');
-    if (macroContract) macroContract.innerHTML = '<strong>' + copy.macroContractLabel + '</strong> ' + copy.macroContractBody;
+    var macroTransportCopy = {
+      ja: { label: '実機への反映経路:', body: 'キーマップは右側USBの公式ZMK Studio RPCで保存します。マクロは対応ファームウェアへ暗号化BLEサービス経由で保存します。USB接続ではマクロはJSONとブラウザーへの保存までです。' },
+      en: { label: 'Device write path:', body: 'Keymaps are saved through the official ZMK Studio RPC over right-side USB. Macros are saved through the encrypted BLE service on macro-capable firmware. USB-only mode saves macros to JSON and this browser.' },
+      'zh-CN': { label: '设备写入方式：', body: '键位通过右侧 USB 的官方 ZMK Studio RPC 保存。宏通过支持宏的固件提供的加密 BLE 服务保存。仅 USB 模式只能将宏保存到 JSON 和浏览器。' },
+      ko: { label: '장치 기록 경로:', body: '키맵은 오른쪽 USB의 공식 ZMK Studio RPC로 저장합니다. 매크로는 매크로 지원 펌웨어의 암호화 BLE 서비스로 저장합니다. USB 전용 모드에서는 매크로를 JSON과 브라우저에만 저장합니다.' },
+      th: { label: 'ช่องทางเขียนลงอุปกรณ์:', body: 'คีย์แมปจะบันทึกผ่าน ZMK Studio RPC อย่างเป็นทางการทาง USB ด้านขวา มาโครจะบันทึกผ่านบริการ BLE แบบเข้ารหัสของเฟิร์มแวร์ที่รองรับมาโคร โหมด USB อย่างเดียวจะบันทึกมาโครไว้ใน JSON และเบราว์เซอร์เท่านั้น' },
+      es: { label: 'Ruta de escritura:', body: 'El mapa se guarda mediante el RPC oficial de ZMK Studio por USB derecho. Las macros se guardan mediante el servicio BLE cifrado del firmware compatible. En modo USB solo se guardan en JSON y en este navegador.' },
+      de: { label: 'Schreibweg zum Gerät:', body: 'Keymaps werden über das offizielle ZMK-Studio-RPC per rechtem USB gespeichert. Makros werden über den verschlüsselten BLE-Dienst kompatibler Firmware gespeichert. Im USB-only-Modus werden Makros nur als JSON und im Browser gespeichert.' }
+    };
+    var macroScope = macroTransportCopy[language] || macroTransportCopy.en;
+    if (macroContract) macroContract.innerHTML = '<strong>' + macroScope.label + '</strong> ' + macroScope.body;
     setText('.download-card strong', copy.downloadHeading);
     setText('.download-card > div:first-child span', copy.downloadDescription);
     setText('.download-actions a:first-child', copy.latestZip);
