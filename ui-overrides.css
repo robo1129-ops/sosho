@@ -2053,3 +2053,52 @@ body { overflow-x: hidden; }
     grid-column: 2 / -1;
   }
 }
+
+/* Final responsive grid: keep the physical editor wide enough to show both
+   halves, and move the inspector below it at compact browser widths.  The
+   previous media rules could leave the inspector beside a one-column editor
+   when Chrome reported a scaled viewport. */
+.workspace {
+  display: grid !important;
+  grid-template-columns: 176px minmax(0, 1fr) 280px !important;
+  grid-template-areas: "sidebar editor inspector" !important;
+  align-items: stretch !important;
+  width: min(1440px, 100%) !important;
+  max-width: 1440px !important;
+  margin-inline: auto !important;
+}
+.workspace > .studio-sidebar { grid-area: sidebar !important; }
+.workspace > .editor { grid-area: editor !important; min-width: 0 !important; }
+.workspace > .inspector {
+  grid-area: inspector !important;
+  min-width: 0 !important;
+  width: auto !important;
+  position: sticky;
+}
+
+/* The connection guidance is already available in the diagnostics drawer;
+ * keep the main Studio workspace free of this redundant banner. */
+.notice { display: none !important; }
+
+@media (max-width: 1200px) {
+  .workspace {
+    grid-template-columns: 160px minmax(0, 1fr) !important;
+    grid-template-areas: "sidebar editor" "inspector inspector" !important;
+  }
+  .workspace > .inspector {
+    position: static !important;
+    max-height: none !important;
+    border-left: 0 !important;
+    border-top: 1px solid var(--studio-line) !important;
+  }
+  .workspace > .editor {
+    overflow: visible !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas: "sidebar" "editor" "inspector" !important;
+  }
+}

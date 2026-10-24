@@ -905,6 +905,12 @@
       container.appendChild(chip);
     }
 
+    /* paletteGroups is scoped to the inline editor bootstrap.  Reading that
+     * private variable here raised a ReferenceError and stopped the Studio
+     * shell before it could install its layout. */
+    var shellFunctionActions = ['Ctrl', 'Shift', 'Alt', 'GUI', 'MO 0', 'MO 1', 'MO 2', 'MO 3', 'TO 0', 'TO 1', 'TO 2', 'TO 3', 'TG 0', 'TG 1', 'TG 2', 'TG 3', 'TT 0', 'TT 1', 'TT 2', 'TT 3', 'OSL 0', 'OSL 1', 'OSL 2', 'OSL 3', 'Tap Dance', 'Macro 0', 'Macro 1'];
+    var shellDeviceActions = ['CPI −', 'CPI ＋', 'Trackpad −', 'Trackpad ＋', '押している間だけスクロール', 'スクロール切替', 'Auto Mouse ON/OFF', 'BT0', 'BT1', 'BT2', 'BT3', 'BT4', 'BT CLR', 'BT CLR ALL', 'Mouse Left', 'Mouse Right', 'Mouse Middle', 'Mouse Back', 'Mouse Forward', 'Wheel Up', 'Wheel Down', 'Wheel Left', 'Wheel Right'];
+
     /* Keep one action palette.  The first implementation left the legacy
      * renderPalette() toolbar inside #palette and then appended this enhanced
      * palette below it, which made BASIC/FUNCTIONS appear twice. */
@@ -914,7 +920,7 @@
     functionsDetail.innerHTML = '<summary>ファンクション <span>修飾キー / レイヤー / マクロ</span></summary><div class="palette-grid" data-functions-palette></div><p class="palette-help">修飾キーやレイヤー、マクロをキーへドラッグ＆ドロップしてください。</p>';
     additions.insertBefore(functionsDetail, additions.querySelector('[data-layer-palette]').closest('.palette-group'));
     var functionsPalette = functionsDetail.querySelector('[data-functions-palette]');
-    (paletteGroups.FUNCTIONS || []).forEach(function (name) { appendActionChip(functionsPalette, name, name, 'function-chip'); });
+    shellFunctionActions.forEach(function (name) { appendActionChip(functionsPalette, name, name, 'function-chip'); });
 
     var layerPalette = additions.querySelector('[data-layer-palette]');
     [['TO(0)', 'TO 0'], ['TO(1)', 'TO 1'], ['TO(2)', 'TO 2'], ['TO(3)', 'TO 3'], ['TG(0)', 'TG 0'], ['TG(1)', 'TG 1'], ['TG(2)', 'TG 2'], ['TG(3)', 'TG 3'], ['TT(0)', 'TT 0'], ['TT(1)', 'TT 1'], ['TT(2)', 'TT 2'], ['TT(3)', 'TT 3'], ['MO(0)', 'MO 0'], ['MO(1)', 'MO 1'], ['MO(2)', 'MO 2'], ['MO(3)', 'MO 3'], ['OSL(0)', 'OSL 0'], ['OSL(1)', 'OSL 1'], ['DF(0)', 'DF 0'], ['DF(1)', 'DF 1'], ['DF(2)', 'DF 2'], ['DF(3)', 'DF 3']].forEach(function (entry) { appendActionChip(layerPalette, entry[0], entry[1]); });
@@ -1040,7 +1046,7 @@
     deviceActions.className = 'device-settings-card device-settings-card-wide device-action-palette';
     deviceActions.innerHTML = '<h4>デバイスアクション</h4><p>マウスボタン、ホイール、CPI、スクロールモードをキーへ割り当てます。</p><div class="palette-grid" data-device-actions></div>';
     devicePanel.insertBefore(deviceActions, devicePanel.firstChild);
-    (paletteGroups.DEVICE || []).forEach(function (name) { appendActionChip(deviceActions.querySelector('[data-device-actions]'), name, name, 'device-chip'); });
+    shellDeviceActions.forEach(function (name) { appendActionChip(deviceActions.querySelector('[data-device-actions]'), name, name, 'device-chip'); });
     palette.appendChild(devicePanel);
     var legacyProfilePanel = devicePanel.querySelector('[data-pointer-profile-title]');
     if (legacyProfilePanel && legacyProfilePanel.parentElement) legacyProfilePanel.parentElement.hidden = true;
@@ -1430,7 +1436,9 @@
     diagnostics.open = false;
     diagnostics.innerHTML = '<summary>デバイス・ファームウェア・診断</summary><div class="studio-diagnostics-body"></div>';
     var diagnosticsBody = diagnostics.querySelector('.studio-diagnostics-body');
-    [noticeCard, connectionSection, connectionLog, writeCard].forEach(function (element) {
+    /* The connection guidance banner is redundant in the Studio shell. */
+    if (noticeCard) noticeCard.remove();
+    [connectionSection, connectionLog, writeCard].forEach(function (element) {
       if (element && element !== diagnostics) diagnosticsBody.appendChild(element);
     });
     topbar.insertAdjacentElement('afterend', diagnostics);
