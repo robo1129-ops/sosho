@@ -111,6 +111,64 @@
     return !!a && !!b && a.behaviorId === b.behaviorId && a.param1 === b.param1 && a.param2 === b.param2;
   }
 
+  function keyboardUsageForHoldLabel(value) {
+    var normalized = String(value || '').toUpperCase().replace(/[\s_\-\/]+/g, '');
+    var named = {
+      BACKSPACE: 0x2a, BSPC: 0x2a, ENTER: 0x28, RET: 0x28, RETURN: 0x28,
+      ESCAPE: 0x29, ESC: 0x29, TAB: 0x2b, SPACE: 0x2c, SPC: 0x2c,
+      INSERT: 0x49, INS: 0x49, DELETE: 0x4c, DEL: 0x4c, HOME: 0x4a,
+      END: 0x4d, PAGEUP: 0x4b, PGUP: 0x4b, PAGEDOWN: 0x4e, PGDN: 0x4e,
+      RIGHT: 0x4f, LEFT: 0x50, DOWN: 0x51, UP: 0x52,
+      CTRL: 0xe0, LCTRL: 0xe0, SHIFT: 0xe1, LSHIFT: 0xe1,
+      ALT: 0xe2, LALT: 0xe2, GUI: 0xe3, WIN: 0xe3,
+      RCTRL: 0xe4, RSHIFT: 0xe5, RALT: 0xe6, RGUI: 0xe7
+    };
+    var code = named[normalized];
+    if (code === undefined && /^[A-Z]$/.test(normalized)) code = 0x04 + normalized.charCodeAt(0) - 65;
+    if (code === undefined && /^[0-9]$/.test(normalized)) code = normalized === '0' ? 0x27 : 0x1d + Number(normalized);
+    var functionKey = /^F([1-9]|1[0-9]|2[0-4])$/.exec(normalized);
+    if (code === undefined && functionKey) code = 0x39 + Number(functionKey[1]);
+    return code === undefined ? null : (0x07 << 16) | code;
+  }
+
+  function layerNumberFromLabel(value) {
+    var match = /^(?:MO|TO|TG|TT|OSL|LAYER|MOMENTARY LAYER|LAYER TOGGLE|TAP-TOGGLE LAYER|ONE-SHOT LAYER)\s*(\d+)$/i.exec(String(value || '').trim());
+    return match ? Number(match[1]) : null;
+  }
+
+  function holdTapParameter(detail, slot, label) {
+    var values = [];
+    (detail && detail.metadata || []).some(function (set) {
+      values = slot === 1 ? (set.param1 || []) : (set.param2 || []);
+      return values.length > 0;
+    });
+    var wanted = String(label || '').trim();
+    if (!wanted) return null;
+    var usage = keyboardUsageForHoldLabel(wanted);
+    if (usage !== null && values.some(function (value) { return value.type === 'hid_usage'; })) return usage;
+    var layer = layerNumberFromLabel(wanted);
+    if (layer !== null && values.some(function (value) { return value.type === 'layer_id'; })) return layer;
+    var normalized = wanted.toUpperCase().replace(/[\s_\-\/]+/g, '');
+    for (var i = 0; i < values.length; i++) {
+      var valueName = String(values[i].name || '').toUpperCase().replace(/[\s_\-\/]+/g, '');
+      if (valueName === normalized && values[i].type === 'constant') return values[i].constant;
+    }
+    return null;
+  }
+
+  function resolveHoldTapBinding(tapLabel, holdLabel) {
+    var candidates = Object.keys(behaviorById).map(function (id) { return behaviorById[id]; }).filter(function (detail) {
+      return detail && /(?:mod|layer|hold)[\s-]*tap/i.test(String(detail.displayName || '')) && (detail.metadata || []).some(function (set) { return (set.param1 || []).length && (set.param2 || []).length; });
+    });
+    for (var i = 0; i < candidates.length; i++) {
+      var detail = candidates[i];
+      var holdValue = holdTapParameter(detail, 1, holdLabel);
+      var tapValue = holdTapParameter(detail, 2, tapLabel);
+      if (holdValue !== null && tapValue !== null) return { behaviorId: Number(detail.id), param1: holdValue, param2: tapValue };
+    }
+    return null;
+  }
+
   function setStatus(text) {
     status.textContent = text;
     if (typeof global.soshoLog === 'function') global.soshoLog('rpc', text);
@@ -271,7 +329,8 @@
           var id = uiId(layerIndex, position);
           original._id = id;
           var desiredLabel = editor.getAssignments()[id] || labelById[id];
-          var desired = resolveBinding(desiredLabel, original);
+          var holdLabel = editor.getHoldAssignments && editor.getHoldAssignments()[id];
+          var desired = holdLabel ? resolveHoldTapBinding(desiredLabel, holdLabel) : resolveBinding(desiredLabel, original);
           if (!desired) throw new Error(id + ' の割り当てを公式behavior bindingへ変換できません: ' + desiredLabel);
           if (!sameBinding(original, desired)) changes.push({ layerId: layer.id, keyPosition: position, binding: desired });
         });

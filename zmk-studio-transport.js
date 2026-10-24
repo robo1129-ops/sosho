@@ -289,6 +289,16 @@
       var idSet = Object.create(null);
       keymap.layers.forEach(function (layer) { layer.bindings.forEach(function (binding) { idSet[String(binding.behaviorId)] = true; }); });
       var ids = Object.keys(idSet).map(function (id) { return Number(id); });
+      /* Include behaviors that are not used by the current keymap.  This is
+       * what makes Mod-Tap/Layer-Tap selectable before the first hold-tap
+       * binding exists on the device. */
+      try {
+        var listed = await self.listBehaviors();
+        (listed || []).forEach(function (id) {
+          var numeric = Number(id);
+          if (Number.isFinite(numeric) && ids.indexOf(numeric) < 0) ids.push(numeric);
+        });
+      } catch (listError) {}
       var details = [];
       for (var i = 0; i < ids.length; i++) { try { details.push(await self.getBehaviorDetails(ids[i])); } catch (error) {} }
       return { info: info, lockState: lockState, keymap: keymap, behaviors: details };
@@ -513,8 +523,8 @@
       officialNotificationsActive: !!(this.reading && this.characteristic),
       keymapRpcReady: !!this.canWriteKeymap,
       writeChunkSize: this.writeChunkSize,
-      normalFilterMode: 'namePrefix + official/custom service filters',
-      broadFilterMode: 'diagnostic-only acceptAllDevices',
+      normalFilterMode: 'acceptAllDevices + official/custom optional services',
+      broadFilterMode: 'same as normal (selected device is verified by GATT discovery)',
       availabilityError: availabilityError
     };
   };
@@ -584,6 +594,7 @@
         var name = candidate && candidate.name || '';
         return BLE_NAME_PREFIXES.some(function (prefix) { return name.indexOf(prefix) === 0; });
       });
+      if (!device && devices.length === 1) device = devices[0];
       if (!device) {
         this._setLog('許可済みSO-SHOデバイスが見つかりません');
         this._setStatus('許可済みSO-SHOがありません。初回は「BLE接続」で選択してください');
@@ -608,10 +619,12 @@
       if (this.device && this.device.gatt && !this.device.gatt.connected) {
         try { return await this._attach(this.device); } catch (reconnectError) { this._handleDisconnected(); }
       }
-      this._setStatus('BLEデバイス選択待ち…（通常フィルター）');
-      this._setLog('requestDevice開始（通常フィルター）');
-      var filters = BLE_NAME_PREFIXES.map(function (prefix) { return { namePrefix: prefix }; }).concat([{ services: [BLE_SERVICE_UUID] }, { services: [MACRO_SERVICE_UUID] }]);
-      var device = await navigator.bluetooth.requestDevice({ filters: filters, optionalServices: [BLE_SERVICE_UUID, MACRO_SERVICE_UUID] });
+      /* Windows may expose a paired keyboard under a vendor name and omit the
+       * Studio UUID from the chooser. Let the user select it, then verify the
+       * official service/characteristic immediately after GATT connect. */
+      this._setStatus('BLEデバイス選択待ち…（全デバイス検索）');
+      this._setLog('requestDevice開始（全デバイス検索・公式サービス確認）');
+      var device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: [BLE_SERVICE_UUID, MACRO_SERVICE_UUID] });
       this._setLog('Device Picker選択: ' + (device && device.name ? device.name : '名称なし'));
       return await this._attach(device);
     }
