@@ -16,6 +16,27 @@
   var BLE_SAFE_WRITE_CHUNK_SIZE = 20;
   var BLE_INTER_CHUNK_DELAY_MS = 4;
 
+  function browserPlatform() {
+    if (typeof navigator === 'undefined') return '';
+    return String((navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent || '');
+  }
+
+  function blePickerUnavailableMessage() {
+    var platform = browserPlatform();
+    if (/Windows/i.test(platform)) {
+      return 'BLE: Chromeの選択一覧にSO-SHOがありません。WindowsのBluetooth接続中はZMKが広告を停止するため、既存のWindows接続を切断してから再試行してください。';
+    }
+    return 'BLE: Chromeの選択一覧にSO-SHOがありません。キーボードを広告状態にし、他の接続を切断してから再試行してください。';
+  }
+
+  function blePickerUnavailableLog() {
+    var platform = browserPlatform();
+    if (/Windows/i.test(platform)) {
+      return 'BLE未検出: Windowsの既存Bluetooth接続中はZMKがアクティブプロファイルの広告を停止します。ChromeはWindowsの既存接続を引き継げないため、Windows接続を切断して広告状態にしてください。';
+    }
+    return 'BLE未検出: 既存ホストとの接続中はZMKが広告を停止する場合があります。キーボードを広告状態にして再試行してください。';
+  }
+
   function concat() {
     var parts = Array.prototype.slice.call(arguments);
     var size = parts.reduce(function (n, part) { return n + part.length; }, 0);
@@ -525,6 +546,8 @@
       writeChunkSize: this.writeChunkSize,
       normalFilterMode: 'acceptAllDevices + official/custom optional services',
       broadFilterMode: 'same as normal (selected device is verified by GATT discovery)',
+      platform: browserPlatform(),
+      officialBleWebAppSupport: /Windows/i.test(browserPlatform()) ? 'officially-not-supported-by-zmk-web-app' : 'supported-by-zmk-docs',
       availabilityError: availabilityError
     };
   };
@@ -543,8 +566,8 @@
       var message = error && error.message ? error.message : 'unknown error';
       this._setLog('診断接続失敗 [' + name + ']: ' + message);
       if (name === 'NotFoundError') {
-        this._setStatus('BLE診断: Device Pickerで選択されず終了（キャンセルまたは対象未検出）');
-        this._setLog('ファームウェア/GATT未検証: Device Pickerで対象デバイスを選択するまで接続処理は開始されません');
+        this._setStatus('BLE診断: ' + blePickerUnavailableMessage());
+        this._setLog(blePickerUnavailableLog());
       } else {
         this._setStatus('BLE診断失敗 [' + name + ']: ' + message);
       }
@@ -597,7 +620,7 @@
       if (!device && devices.length === 1) device = devices[0];
       if (!device) {
         this._setLog('許可済みSO-SHOデバイスが見つかりません');
-        this._setStatus('許可済みSO-SHOがありません。初回は「BLE接続」で選択してください');
+        this._setStatus('許可済みSO-SHOがありません。Windowsの既存接続を切断後、「BLE接続」で選択してください');
         return false;
       }
       this._setLog('許可済みデバイスを再接続: ' + (device.name || '名称なし'));
@@ -628,7 +651,7 @@
       this._setLog('Device Picker選択: ' + (device && device.name ? device.name : '名称なし'));
       return await this._attach(device);
     }
-    catch (error) { this.reading = false; this.studioAvailable = false; this.server = null; this.service = null; this.macroService = null; this.characteristic = null; var name = error && error.name; var message = error && error.message ? error.message : 'unknown error'; this._setLog('BLE接続失敗 [' + (name || 'Error') + ']: ' + message); if (name === 'NotFoundError') { this._setStatus('BLE: Device Pickerで選択されず終了（キャンセルまたは対象未検出）'); this._setLog('ファームウェア/GATT未検証: Device Pickerでsoshoを選択するまで接続処理は開始されません'); } else if (name === 'SecurityError' || name === 'NotAllowedError') this._setStatus('BLE権限が拒否されました [' + name + ']: ' + message); else this._setStatus('BLE接続失敗 [' + (name || 'Error') + ']: ' + message); return false; }
+    catch (error) { this.reading = false; this.studioAvailable = false; this.server = null; this.service = null; this.macroService = null; this.characteristic = null; var name = error && error.name; var message = error && error.message ? error.message : 'unknown error'; this._setLog('BLE接続失敗 [' + (name || 'Error') + ']: ' + message); if (name === 'NotFoundError') { this._setStatus(blePickerUnavailableMessage()); this._setLog(blePickerUnavailableLog()); } else if (name === 'SecurityError' || name === 'NotAllowedError') this._setStatus('BLE権限が拒否されました [' + name + ']: ' + message); else this._setStatus('BLE接続失敗 [' + (name || 'Error') + ']: ' + message); return false; }
     finally { this._connecting = false; }
   };
   ZmkBleTransport.prototype.reconnect = async function () { await this.disconnect(true); return this.connect(); };

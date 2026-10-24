@@ -17,6 +17,9 @@ const context = {
 vm.runInNewContext(source, context);
 
 const { ZmkBleTransport, ZmkStudioProtocol } = context.window;
+assert.match(source, /acceptAllDevices:\s*true/, 'BLE picker must allow diagnostic selection');
+assert.match(source, /Windowsの既存Bluetooth接続中はZMKがアクティブプロファイルの広告を停止/, 'BLE picker failure must explain the Windows advertising condition');
+assert.match(source, /officialBleWebAppSupport/, 'BLE diagnostics must expose platform support status');
 
 (async () => {
   const chunks = [];
