@@ -175,6 +175,36 @@
     function normalizeKeyName(value) {
       return String(value || '').toUpperCase().replace(/[\\s_\-\/]+/g, '');
     }
+    function keyboardUsageForLabel(value) {
+      var normalized = normalizeKeyName(value);
+      var named = {
+        BACKSPACE: 0x2a, BSPC: 0x2a, KCBSPC: 0x2a,
+        ENTER: 0x28, RET: 0x28, RETURN: 0x28, KCENTER: 0x28, KCRET: 0x28,
+        ESCAPE: 0x29, ESC: 0x29, KCESC: 0x29,
+        TAB: 0x2b, KCTAB: 0x2b,
+        SPACE: 0x2c, SPC: 0x2c, KCSPACE: 0x2c,
+        INSERT: 0x49, INS: 0x49, KCINSERT: 0x49,
+        DELETE: 0x4c, DEL: 0x4c, KCDELETE: 0x4c,
+        HOME: 0x4a, KCHOME: 0x4a,
+        END: 0x4d, KCEND: 0x4d,
+        PAGEUP: 0x4b, PGUP: 0x4b, KCPGUP: 0x4b,
+        PAGEDOWN: 0x4e, PGDN: 0x4e, PGDOWN: 0x4e, KCPGDN: 0x4e,
+        RIGHT: 0x4f, RIGHTARROW: 0x4f, KCRIGHT: 0x4f,
+        LEFT: 0x50, LEFTARROW: 0x50, KCLEFT: 0x50,
+        DOWN: 0x51, DOWNARROW: 0x51, KCDOWN: 0x51,
+        UP: 0x52, UPARROW: 0x52, KCUP: 0x52,
+        CTRL: 0xe0, LCTRL: 0xe0, RCTRL: 0xe4,
+        SHIFT: 0xe1, LSHIFT: 0xe1, RSHIFT: 0xe5,
+        ALT: 0xe2, LALT: 0xe2, RALT: 0xe6,
+        GUI: 0xe3, WIN: 0xe3, LGUI: 0xe3, RGUI: 0xe7
+      };
+      var code = named[normalized];
+      if (code === undefined && /^[A-Z]$/.test(normalized)) code = 0x04 + normalized.charCodeAt(0) - 65;
+      if (code === undefined && /^[0-9]$/.test(normalized)) code = normalized === '0' ? 0x27 : 0x1d + Number(normalized);
+      var functionKey = /^F([1-9]|1[0-9]|2[0-4])$/.exec(normalized);
+      if (code === undefined && functionKey) code = 0x39 + Number(functionKey[1]);
+      return code === undefined ? null : (0x07 << 16) | code;
+    }
     function keyNameAliases(value) {
       var normalized = normalizeKeyName(value);
       var aliases = {
@@ -197,6 +227,7 @@
       return [normalized].concat(aliases[normalized] || []);
     }
     var wantedNames = keyNameAliases(label);
+    var desiredUsage = keyboardUsageForLabel(label);
     function isWantedConstant(value) {
       var name = normalizeKeyName(value && value.name);
       if (wantedNames.indexOf(name) >= 0) return true;
@@ -204,11 +235,23 @@
       return wantedNames.indexOf(hidName) >= 0;
     }
     var match = null;
+    // ZMK Studio exposes the key-press parameter as `hid_usage` rather than
+    // as named constants. Reuse the current binding's behavior ID when it
+    // already accepts that parameter, then encode the selected key as the
+    // official keyboard HID usage value.
+    if (desiredUsage !== null && raw) {
+      var rawDetail = detailFor(raw.behaviorId);
+      var rawHasHidUsage = (rawDetail && rawDetail.metadata || []).some(function (set) {
+        return (set.param1 || []).some(function (value) { return value.type === 'hid_usage'; });
+      });
+      if (rawHasHidUsage) return { behaviorId: raw.behaviorId, param1: desiredUsage, param2: 0 };
+    }
     Object.keys(behaviorById).some(function (id) {
       var detail = behaviorById[id];
       (detail.metadata || []).some(function (set) {
         return (set.param1 || []).some(function (value) {
           if (value.type === 'constant' && isWantedConstant(value)) { match = { behaviorId: detail.id, param1: value.constant, param2: 0 }; return true; }
+          if (value.type === 'hid_usage' && desiredUsage !== null) { match = { behaviorId: detail.id, param1: desiredUsage, param2: 0 }; return true; }
           return false;
         });
       });
