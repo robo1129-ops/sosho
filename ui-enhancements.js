@@ -3,52 +3,41 @@
 
   var languageCatalog = {
     ja: {
-      title: 'SO-SHO キーマップエディター',
-      wordmark: 'Studio',
-      diagnostics: 'デバイス・ファームウェア・診断',
-      layout: '配列:',
-      layers: 'レイヤー:',
-      navigation: 'キーマップナビゲーション',
-      save: '保存',
-      saveTitle: 'キーマップをUSBへ保存',
-      discard: '破棄',
-      discardTitle: '未保存の編集をデフォルトへ戻す',
-      editor: 'キーマップ',
-      connection: 'USB接続',
-      log: 'USB接続ログ',
-      read: 'USBからキーマップを読み込む',
-      write: 'USBへキーマップを保存',
-      macro: 'マクロ設計',
-      addMacro: 'マクロを追加',
-      firmware: 'ファームウェア',
-      language: 'Language'
+      title: 'SO-SHO キーマップエディター', wordmark: 'Studio', diagnostics: 'デバイス・ファームウェア・診断', layout: '配列:', layers: 'レイヤー:', navigation: 'キーマップナビゲーション', save: '保存', saveTitle: 'キーマップをUSBへ保存', discard: '破棄', discardTitle: '未保存の編集をデフォルトへ戻す', editor: 'キーマップ', connection: 'USB接続', log: 'USB接続ログ', read: 'USBからキーマップを読み込む', write: 'USBへキーマップを保存', macro: 'マクロ設計', addMacro: 'マクロを追加', language: 'Language',
+      subtitle: 'SO-SHO実機配列に合わせたキーマップ・マクロ編集ページ', firmwareLink: 'カスタムファームウェアZIPを直接ダウンロード', downloadHeading: 'カスタムファームウェア（全パターン）', downloadDescription: '通常版に加えて、公式Cirque Pinnacleドライバの一次タップ・ドラッグ対応タッチプロファイルも含むZIPです。', latestZip: '最新ZIPをダウンロード', buildHistory: 'ビルド履歴', noticeTitle: '右側CentralをUSBで接続してください', noticeBody: 'このページの実機編集経路はWeb Serial（USB/COM）だけです。左右分割間の通信はファームウェア側で維持されますが、PCとのBLE編集は使用しません。ChromeまたはEdgeで右側をUSB接続し、初回だけ「右側USB / COM接続」を押してください。', connectionDescription: '右側CentralのUSB CDC-ACMをWeb Serialで開き、公式ZMK Studio RPCを使って読み取り・保存します。', transportNote: '右側CentralのUSB CDC-ACMをWeb Serialで開き、公式ZMK Studio RPCを使って読み取り・保存します。', logDescription: 'USB接続、RPC読み取り・保存の前後状態をこのページ内に保持します。', rpcDescription: '右側USBで接続後に読み取りを実行し、実機の現在値を画面へ反映します。保存は公式ZMK Studio RPCで送信し、USB CDC-ACM経由で書き込んだ後、実機から再読み取りして確認します。読み取り結果が「Studioロック中」の場合は、キーボードのLayer 3にある &studio_unlock を押してから保存してください。', editorHint: 'キーをクリックすると編集ポップオーバーが開きます。パレットはドラッグ＆ドロップで割り当てます。', referenceNote: 'SO-SHO実機配列・44キー（左右各22キー）。既存の割り当てはこのブラウザーに保存されます。', layoutBadge: '実機レイアウト準拠', selectedLegend: '選択中', assignedLegend: 'アクション設定済み', unassignedLegend: '未設定キー', paletteHeading: 'アクションパレット', inspector: 'インスペクター', selectedPosition: '選択中の位置', selectPrompt: 'キーを選択してください', currentAction: '現在のアクション', defaultHeading: 'デフォルト設定', defaultDescription: '現在の編集内容を次回の初期設定として保存できます。ファームウェア標準へ戻すこともできます。', saveDefault: '現在の設定をデフォルトにする', restoreDefaults: 'ファームウェア標準へ戻す', defaultStatus: 'Layer 0のMO(3)は初期配置済みです。', footerNote: 'キーマップはブラウザーにも保存されます。実機へ反映するには右側USB接続後に「USBへキーマップを保存」を押してください。', clearSelected: '選択中を未設定にする', resetSaved: '保存済みデフォルトへ戻す', macroDescription: '通常キーとは別に、名前・割り当て先・キー列・押下/解放モード・待ち時間を編集します。', macroContractLabel: 'USB専用の反映範囲:', macroContractBody: 'マクロの編集内容はJSONとブラウザーへ保存できます。公式ZMK Studio RPCはキーマップ保存用のため、マクロの実機反映には対応ファームウェアが必要です。', macroPaletteHeading: 'ドラッグでマクロを作成', macroPaletteDescription: 'Remapと同じように、キーコードを下の手順欄へドラッグしてください。クリックは選択だけで、入力は変更しません。', language: 'Language',
+      groupBasic: '通常キー', groupJis: '日本語 / JIS', groupLayer: 'レイヤー', groupSpecial: '特殊キー', groupAscii: 'ASCII', groupTapDance: 'タップダンス', paletteHelp: 'キーをつかんで、上の実機配列へドラッグ＆ドロップしてください。', deviceBall: '右モジュール · トラックボール', deviceBallDesc: '移動量のCPIを調整します。', devicePad: '左モジュール · トラックパッド', devicePadDesc: 'カーソル移動倍率を調整します。', autoMouse: 'オートマウスレイヤー', autoMouseDesc: '入力中と停止後の指定時間だけ指定レイヤーを保持します。', scrollMode: 'スクロールモード', scrollDesc: 'ボタンをキーへ割り当てると、押している間だけスクロールします。', deviceNote: '設定値はJSONとブラウザーへ保存されます。実機へ反映するには対応ファームウェアが必要です。'
     },
     en: {
-      title: 'SO-SHO Keymap Editor',
-      wordmark: 'Keymap Studio',
-      diagnostics: 'Device, firmware and diagnostics',
-      layout: 'Layout:',
-      layers: 'Layers:',
-      navigation: 'Keymap navigation',
-      save: 'Save',
-      saveTitle: 'Save keymap to USB',
-      discard: 'Discard',
-      discardTitle: 'Restore the saved default',
-      editor: 'Keymap',
-      connection: 'USB connection',
-      log: 'USB connection log',
-      read: 'Read keymap from USB',
-      write: 'Save keymap to USB',
-      macro: 'Macro editor',
-      addMacro: 'Add macro',
-      firmware: 'Firmware',
-      language: 'Language'
-    }
+      title: 'SO-SHO Keymap Editor', wordmark: 'Keymap Studio', diagnostics: 'Device, firmware and diagnostics', layout: 'Layout:', layers: 'Layers:', navigation: 'Keymap navigation', save: 'Save', saveTitle: 'Save keymap to USB', discard: 'Discard', discardTitle: 'Restore the saved default', editor: 'Keymap', connection: 'USB connection', log: 'USB connection log', read: 'Read keymap from USB', write: 'Save keymap to USB', macro: 'Macro editor', addMacro: 'Add macro', language: 'Language', subtitle: 'Keymap and macro editor for the physical SO-SHO layout', firmwareLink: 'Download custom firmware ZIP', downloadHeading: 'Custom firmware (all profiles)', downloadDescription: 'The ZIP includes the standard profile and the Cirque Pinnacle touch profile with tap and drag support.', latestZip: 'Download latest ZIP', buildHistory: 'Build history', noticeTitle: 'Connect the right Central module by USB', noticeBody: 'This editor uses Web Serial (USB/COM) for device editing. Split communication remains in the firmware; BLE editing from the PC is not used. In Chrome or Edge, connect the right module by USB and choose USB connection once.', connectionDescription: 'Opens the right Central USB CDC-ACM port with Web Serial and uses the official ZMK Studio RPC for reading and saving.', transportNote: 'Opens the right Central USB CDC-ACM port with Web Serial and uses the official ZMK Studio RPC for reading and saving.', logDescription: 'Keeps the before-and-after state of USB and RPC operations in this page.', rpcDescription: 'Read the device after connecting the right USB module. Saving uses the official ZMK Studio RPC over USB CDC-ACM and reads the device again for verification. If the result says Studio locked, press &studio_unlock on Layer 3 before saving.', editorHint: 'Click a key to open its editor. Drag actions from the palette to assign them.', referenceNote: 'SO-SHO physical layout · 44 keys (22 per half). Existing assignments are saved in this browser.', layoutBadge: 'Physical layout', selectedLegend: 'Selected', assignedLegend: 'Assigned', unassignedLegend: 'Unassigned key', paletteHeading: 'Action palette', inspector: 'Inspector', selectedPosition: 'Selected position', selectPrompt: 'Select a key', currentAction: 'Current action', defaultHeading: 'Default settings', defaultDescription: 'Save the current edits as the next default or restore the firmware defaults.', saveDefault: 'Save current as default', restoreDefaults: 'Restore firmware defaults', defaultStatus: 'Layer 0 MO(3) is included in the initial layout.', footerNote: 'Keymaps are also saved in this browser. To write to the device, connect the right USB module and choose Save keymap to USB.', clearSelected: 'Clear selected key', resetSaved: 'Restore saved default', macroDescription: 'Edit macro names, targets, key sequences, press/release modes and delays separately from normal keys.', macroContractLabel: 'USB write scope:', macroContractBody: 'Macro edits are saved to JSON and this browser. Official ZMK Studio RPC saves keymaps; macro hardware support requires compatible firmware.', macroPaletteHeading: 'Build a macro by dragging', macroPaletteDescription: 'Drag keycodes into the sequence area like Remap. Clicking selects a key without changing the sequence.', groupBasic: 'Basic keys', groupJis: 'Japanese / JIS', groupLayer: 'Layers', groupSpecial: 'Special keys', groupAscii: 'ASCII', groupTapDance: 'Tap dance', paletteHelp: 'Drag a key onto the physical layout above.', deviceBall: 'Right module · trackball', deviceBallDesc: 'Adjust pointer CPI.', devicePad: 'Left module · trackpad', devicePadDesc: 'Adjust cursor movement scale.', autoMouse: 'Auto-mouse layer', autoMouseDesc: 'Hold the selected layer while input is active and for the selected timeout afterward.', scrollMode: 'Scroll mode', scrollDesc: 'Assign the button to a key to scroll only while it is held.', deviceNote: 'Values are saved to JSON and this browser. Compatible firmware is required to write them to the device.'
+    },
+    'zh-CN': {
+      title: 'SO-SHO 键位编辑器', wordmark: '键位工作台', diagnostics: '设备、固件与诊断', layout: '布局：', layers: '层：', navigation: '键位导航', save: '保存', saveTitle: '保存键位到 USB', discard: '放弃', discardTitle: '恢复已保存的默认设置', editor: '键位映射', connection: 'USB 连接', log: 'USB 连接日志', read: '从 USB 读取键位', write: '将键位保存到 USB', macro: '宏编辑器', addMacro: '添加宏', language: '语言', subtitle: '适用于 SO-SHO 实际布局的键位与宏编辑器', firmwareLink: '下载自定义固件 ZIP', downloadHeading: '自定义固件（全部配置）', downloadDescription: 'ZIP 包含标准配置，以及支持点击和拖动的 Cirque Pinnacle 触控配置。', latestZip: '下载最新 ZIP', buildHistory: '构建记录', noticeTitle: '请通过 USB 连接右侧 Central 模块', noticeBody: '本编辑器使用 Web Serial（USB/COM）编辑设备。左右分体通信由固件保持，不使用电脑端 BLE 编辑。请在 Chrome 或 Edge 中通过 USB 连接右侧模块，然后选择一次 USB 连接。', connectionDescription: '通过 Web Serial 打开右侧 Central 的 USB CDC-ACM，并使用官方 ZMK Studio RPC 读取和保存。', transportNote: '通过 Web Serial 打开右侧 Central 的 USB CDC-ACM，并使用官方 ZMK Studio RPC 读取和保存。', logDescription: '在本页面保留 USB 和 RPC 操作前后的状态。', rpcDescription: '连接右侧 USB 后读取设备。保存通过 USB CDC-ACM 使用官方 ZMK Studio RPC，并再次读取设备进行确认。如果提示 Studio 已锁定，请先按下第 3 层的 &studio_unlock。', editorHint: '点击按键打开编辑器，也可以从操作面板拖放来分配。', referenceNote: 'SO-SHO 实际布局 · 44 个按键（每侧 22 个）。现有分配会保存在此浏览器中。', layoutBadge: '实际布局', selectedLegend: '已选择', assignedLegend: '已分配', unassignedLegend: '未设置按键', paletteHeading: '操作面板', inspector: '检查器', selectedPosition: '已选择位置', selectPrompt: '请选择按键', currentAction: '当前操作', defaultHeading: '默认设置', defaultDescription: '可以将当前编辑保存为下次默认设置，也可以恢复固件默认值。', saveDefault: '保存为当前默认', restoreDefaults: '恢复固件默认值', defaultStatus: '第 0 层的 MO(3) 已包含在初始布局中。', footerNote: '键位也会保存在此浏览器中。连接右侧 USB 后选择保存键位到 USB，才能写入设备。', clearSelected: '清除所选按键', resetSaved: '恢复已保存默认', macroDescription: '单独编辑宏名称、目标、按键序列、按下/释放模式和延迟。', macroContractLabel: 'USB 写入范围：', macroContractBody: '宏编辑会保存到 JSON 和浏览器。官方 ZMK Studio RPC 用于保存键位；写入宏需要兼容的固件。', macroPaletteHeading: '拖放创建宏', macroPaletteDescription: '像 Remap 一样将键码拖入步骤区域。点击只选择按键，不会改变步骤。', groupBasic: '普通按键', groupJis: '日文 / JIS', groupLayer: '层', groupSpecial: '特殊按键', groupAscii: 'ASCII', groupTapDance: '点按舞', paletteHelp: '将按键拖到上方的实际布局。', deviceBall: '右侧模块 · 轨迹球', deviceBallDesc: '调整指针 CPI。', devicePad: '左侧模块 · 触控板', devicePadDesc: '调整光标移动倍率。', autoMouse: '自动鼠标层', autoMouseDesc: '输入期间及停止后的指定时间保持所选层。', scrollMode: '滚动模式', scrollDesc: '将按钮分配给按键后，仅在按住时滚动。', deviceNote: '数值会保存到 JSON 和浏览器。写入设备需要兼容固件。'
+    },
+    ko: {
+      title: 'SO-SHO 키맵 편집기', wordmark: '키맵 스튜디오', diagnostics: '장치·펌웨어·진단', layout: '배열:', layers: '레이어:', navigation: '키맵 탐색', save: '저장', saveTitle: 'USB에 키맵 저장', discard: '취소', discardTitle: '저장된 기본값으로 복원', editor: '키맵', connection: 'USB 연결', log: 'USB 연결 로그', read: 'USB에서 키맵 읽기', write: 'USB에 키맵 저장', macro: '매크로 편집기', addMacro: '매크로 추가', language: '언어', subtitle: 'SO-SHO 실제 배열용 키맵·매크로 편집기', firmwareLink: '커스텀 펌웨어 ZIP 다운로드', downloadHeading: '커스텀 펌웨어(전체 프로필)', downloadDescription: '표준 프로필과 탭·드래그를 지원하는 Cirque Pinnacle 터치 프로필이 포함되어 있습니다.', latestZip: '최신 ZIP 다운로드', buildHistory: '빌드 기록', noticeTitle: '오른쪽 Central 모듈을 USB로 연결하세요', noticeBody: '이 편집기는 Web Serial(USB/COM)로 장치를 편집합니다. 분할 통신은 펌웨어가 유지하며 PC의 BLE 편집은 사용하지 않습니다. Chrome 또는 Edge에서 오른쪽 모듈을 USB로 연결한 뒤 USB 연결을 선택하세요.', connectionDescription: 'Web Serial로 오른쪽 Central의 USB CDC-ACM을 열고 공식 ZMK Studio RPC로 읽기와 저장을 수행합니다.', transportNote: 'Web Serial로 오른쪽 Central의 USB CDC-ACM을 열고 공식 ZMK Studio RPC로 읽기와 저장을 수행합니다.', logDescription: 'USB 및 RPC 작업 전후 상태를 이 페이지에 보관합니다.', rpcDescription: '오른쪽 USB를 연결한 뒤 장치를 읽습니다. 저장은 USB CDC-ACM을 통한 공식 ZMK Studio RPC로 수행하고 다시 읽어 확인합니다. Studio 잠금 상태라면 Layer 3의 &studio_unlock을 누른 뒤 저장하세요.', editorHint: '키를 클릭해 편집기를 열거나 팔레트에서 드래그해 할당하세요.', referenceNote: 'SO-SHO 실제 배열 · 44키(각 측 22키). 기존 할당은 이 브라우저에 저장됩니다.', layoutBadge: '실제 배열', selectedLegend: '선택됨', assignedLegend: '할당됨', unassignedLegend: '미설정 키', paletteHeading: '동작 팔레트', inspector: '인스펙터', selectedPosition: '선택한 위치', selectPrompt: '키를 선택하세요', currentAction: '현재 동작', defaultHeading: '기본 설정', defaultDescription: '현재 편집 내용을 다음 기본값으로 저장하거나 펌웨어 기본값으로 복원할 수 있습니다.', saveDefault: '현재 설정을 기본값으로 저장', restoreDefaults: '펌웨어 기본값 복원', defaultStatus: 'Layer 0의 MO(3)가 초기 배열에 포함되어 있습니다.', footerNote: '키맵은 이 브라우저에도 저장됩니다. 장치에 쓰려면 오른쪽 USB를 연결하고 USB에 키맵 저장을 선택하세요.', clearSelected: '선택 키 지우기', resetSaved: '저장된 기본값 복원', macroDescription: '일반 키와 별도로 매크로 이름, 대상, 키 순서, 누름/해제 모드와 지연을 편집합니다.', macroContractLabel: 'USB 기록 범위:', macroContractBody: '매크로 편집은 JSON과 브라우저에 저장됩니다. 공식 ZMK Studio RPC는 키맵용이며 매크로 기록에는 호환 펌웨어가 필요합니다.', macroPaletteHeading: '드래그로 매크로 만들기', macroPaletteDescription: 'Remap처럼 키코드를 순서 영역으로 드래그하세요. 클릭은 선택만 하며 순서를 바꾸지 않습니다.', groupBasic: '기본 키', groupJis: '일본어 / JIS', groupLayer: '레이어', groupSpecial: '특수 키', groupAscii: 'ASCII', groupTapDance: '탭 댄스', paletteHelp: '위의 실제 배열로 키를 드래그하세요.', deviceBall: '오른쪽 모듈 · 트랙볼', deviceBallDesc: '포인터 CPI를 조정합니다.', devicePad: '왼쪽 모듈 · 트랙패드', devicePadDesc: '커서 이동 배율을 조정합니다.', autoMouse: '자동 마우스 레이어', autoMouseDesc: '입력 중과 정지 후 지정 시간 동안 선택한 레이어를 유지합니다.', scrollMode: '스크롤 모드', scrollDesc: '키에 버튼을 할당하면 누르는 동안만 스크롤합니다.', deviceNote: '값은 JSON과 브라우저에 저장됩니다. 장치에 쓰려면 호환 펌웨어가 필요합니다.'
+    },
+    th: {
+      title: 'ตัวแก้ไขคีย์แมป SO-SHO', wordmark: 'คีย์แมปสตูดิโอ', diagnostics: 'อุปกรณ์ เฟิร์มแวร์ และการวินิจฉัย', layout: 'เลย์เอาต์:', layers: 'เลเยอร์:', navigation: 'นำทางคีย์แมป', save: 'บันทึก', saveTitle: 'บันทึกคีย์แมปลง USB', discard: 'ยกเลิก', discardTitle: 'คืนค่าเริ่มต้นที่บันทึกไว้', editor: 'คีย์แมป', connection: 'การเชื่อมต่อ USB', log: 'บันทึกการเชื่อมต่อ USB', read: 'อ่านคีย์แมปจาก USB', write: 'บันทึกคีย์แมปลง USB', macro: 'ตัวแก้ไขมาโคร', addMacro: 'เพิ่มมาโคร', language: 'ภาษา', subtitle: 'ตัวแก้ไขคีย์แมปและมาโครตามเลย์เอาต์จริงของ SO-SHO', firmwareLink: 'ดาวน์โหลด ZIP เฟิร์มแวร์แบบกำหนดเอง', downloadHeading: 'เฟิร์มแวร์แบบกำหนดเอง (ทุกโปรไฟล์)', downloadDescription: 'ZIP มีโปรไฟล์มาตรฐานและโปรไฟล์ทัช Cirque Pinnacle ที่รองรับการแตะและลาก', latestZip: 'ดาวน์โหลด ZIP ล่าสุด', buildHistory: 'ประวัติการบิลด์', noticeTitle: 'เชื่อมต่อโมดูล Central ด้านขวาด้วย USB', noticeBody: 'ตัวแก้ไขนี้ใช้ Web Serial (USB/COM) สำหรับแก้ไขอุปกรณ์ การสื่อสารระหว่างสองฝั่งยังอยู่ในเฟิร์มแวร์ และไม่ใช้การแก้ไขผ่าน BLE จากคอมพิวเตอร์ ให้เชื่อมต่อโมดูลด้านขวาด้วย USB ใน Chrome หรือ Edge แล้วเลือกการเชื่อมต่อ USB', connectionDescription: 'เปิด USB CDC-ACM ของ Central ด้านขวาด้วย Web Serial และใช้ ZMK Studio RPC อย่างเป็นทางการเพื่ออ่านและบันทึก', transportNote: 'เปิด USB CDC-ACM ของ Central ด้านขวาด้วย Web Serial และใช้ ZMK Studio RPC อย่างเป็นทางการเพื่ออ่านและบันทึก', logDescription: 'เก็บสถานะก่อนและหลังการเชื่อมต่อ USB และการทำงาน RPC ไว้ในหน้านี้', rpcDescription: 'อ่านอุปกรณ์หลังเชื่อมต่อ USB ด้านขวา การบันทึกใช้ ZMK Studio RPC ผ่าน USB CDC-ACM แล้วอ่านซ้ำเพื่อตรวจสอบ หาก Studio ถูกล็อก ให้กด &studio_unlock ใน Layer 3 ก่อนบันทึก', editorHint: 'คลิกปุ่มเพื่อเปิดตัวแก้ไข หรือลากการทำงานจากแผงไปวางเพื่อกำหนดค่า', referenceNote: 'เลย์เอาต์จริง SO-SHO · 44 ปุ่ม (ข้างละ 22 ปุ่ม) การกำหนดค่าจะถูกบันทึกในเบราว์เซอร์นี้', layoutBadge: 'เลย์เอาต์จริง', selectedLegend: 'เลือกอยู่', assignedLegend: 'กำหนดแล้ว', unassignedLegend: 'ปุ่มที่ยังไม่ได้ตั้งค่า', paletteHeading: 'แผงการทำงาน', inspector: 'ตัวตรวจสอบ', selectedPosition: 'ตำแหน่งที่เลือก', selectPrompt: 'เลือกปุ่ม', currentAction: 'การทำงานปัจจุบัน', defaultHeading: 'การตั้งค่าเริ่มต้น', defaultDescription: 'บันทึกการแก้ไขปัจจุบันเป็นค่าเริ่มต้นครั้งถัดไป หรือคืนค่าเริ่มต้นจากเฟิร์มแวร์', saveDefault: 'บันทึกเป็นค่าเริ่มต้น', restoreDefaults: 'คืนค่าเริ่มต้นจากเฟิร์มแวร์', defaultStatus: 'MO(3) ของ Layer 0 อยู่ในเลย์เอาต์เริ่มต้น', footerNote: 'คีย์แมปถูกบันทึกในเบราว์เซอร์ด้วย หากต้องการเขียนลงอุปกรณ์ ให้เชื่อมต่อ USB ด้านขวาแล้วเลือกบันทึกคีย์แมปลง USB', clearSelected: 'ล้างปุ่มที่เลือก', resetSaved: 'คืนค่าค่าเริ่มต้นที่บันทึกไว้', macroDescription: 'แก้ไขชื่อมาโคร เป้าหมาย ลำดับปุ่ม โหมดกด/ปล่อย และความหน่วงแยกจากปุ่มปกติ', macroContractLabel: 'ขอบเขตการเขียนผ่าน USB:', macroContractBody: 'การแก้ไขมาโครจะถูกบันทึกเป็น JSON และในเบราว์เซอร์ การบันทึกคีย์แมปใช้ ZMK Studio RPC อย่างเป็นทางการ ส่วนมาโครต้องใช้เฟิร์มแวร์ที่รองรับ', macroPaletteHeading: 'สร้างมาโครด้วยการลาก', macroPaletteDescription: 'ลากคีย์โค้ดไปยังพื้นที่ลำดับเหมือน Remap การคลิกจะเลือกเท่านั้นและไม่เปลี่ยนลำดับ', groupBasic: 'ปุ่มพื้นฐาน', groupJis: 'ญี่ปุ่น / JIS', groupLayer: 'เลเยอร์', groupSpecial: 'ปุ่มพิเศษ', groupAscii: 'ASCII', groupTapDance: 'แตะแบบหลายจังหวะ', paletteHelp: 'ลากปุ่มไปยังเลย์เอาต์จริงด้านบน', deviceBall: 'โมดูลขวา · แทร็กบอล', deviceBallDesc: 'ปรับ CPI ของตัวชี้', devicePad: 'โมดูลซ้าย · แทร็กแพด', devicePadDesc: 'ปรับสเกลการเคลื่อนที่ของเคอร์เซอร์', autoMouse: 'เลเยอร์เมาส์อัตโนมัติ', autoMouseDesc: 'คงเลเยอร์ที่เลือกไว้ระหว่างการป้อนข้อมูลและตามเวลาที่กำหนดหลังหยุด', scrollMode: 'โหมดเลื่อน', scrollDesc: 'กำหนดปุ่มให้กับคีย์เพื่อเลื่อนเฉพาะขณะกดค้าง', deviceNote: 'ค่าจะถูกบันทึกเป็น JSON และในเบราว์เซอร์ ต้องใช้เฟิร์มแวร์ที่รองรับเพื่อเขียนลงอุปกรณ์'
+    },
+    es: { title: 'Editor de mapas de SO-SHO', wordmark: 'Estudio de mapas', diagnostics: 'Dispositivo, firmware y diagnóstico', layout: 'Distribución:', layers: 'Capas:', navigation: 'Navegación del mapa', save: 'Guardar', saveTitle: 'Guardar mapa en USB', discard: 'Descartar', discardTitle: 'Restaurar el valor predeterminado guardado', editor: 'Mapa de teclas', connection: 'Conexión USB', log: 'Registro de conexión USB', read: 'Leer mapa desde USB', write: 'Guardar mapa en USB', macro: 'Editor de macros', addMacro: 'Añadir macro', language: 'Idioma', subtitle: 'Editor de mapas y macros para la distribución física SO-SHO', firmwareLink: 'Descargar ZIP de firmware personalizado', downloadHeading: 'Firmware personalizado (todos los perfiles)', downloadDescription: 'El ZIP incluye el perfil estándar y un perfil táctil Cirque Pinnacle con toque y arrastre.', latestZip: 'Descargar ZIP más reciente', buildHistory: 'Historial de compilación', noticeTitle: 'Conecta por USB el módulo Central derecho', noticeBody: 'Este editor usa Web Serial (USB/COM). La comunicación dividida se mantiene en el firmware y no se usa BLE desde el PC. Conecta el módulo derecho por USB en Chrome o Edge y elige conexión USB.', connectionDescription: 'Abre el USB CDC-ACM del Central derecho con Web Serial y usa el RPC oficial de ZMK Studio para leer y guardar.', transportNote: 'Abre el USB CDC-ACM del Central derecho con Web Serial y usa el RPC oficial de ZMK Studio para leer y guardar.', logDescription: 'Conserva en esta página el estado antes y después de las operaciones USB y RPC.', rpcDescription: 'Lee el dispositivo después de conectar el USB derecho. El guardado usa el RPC oficial de ZMK Studio por USB CDC-ACM y vuelve a leer para verificar. Si Studio está bloqueado, pulsa &studio_unlock en la capa 3.', editorHint: 'Haz clic en una tecla para abrir el editor o arrastra acciones desde la paleta.', referenceNote: 'Distribución física SO-SHO · 44 teclas (22 por lado). Las asignaciones se guardan en este navegador.', layoutBadge: 'Distribución física', selectedLegend: 'Seleccionada', assignedLegend: 'Asignada', unassignedLegend: 'Tecla sin asignar', paletteHeading: 'Paleta de acciones', inspector: 'Inspector', selectedPosition: 'Posición seleccionada', selectPrompt: 'Selecciona una tecla', currentAction: 'Acción actual', defaultHeading: 'Configuración predeterminada', defaultDescription: 'Guarda la edición actual como valor predeterminado o restaura los valores del firmware.', saveDefault: 'Guardar como predeterminado', restoreDefaults: 'Restaurar valores del firmware', defaultStatus: 'MO(3) de la capa 0 está en la disposición inicial.', footerNote: 'El mapa también se guarda en este navegador. Para escribir en el dispositivo, conecta el USB derecho y pulsa guardar mapa en USB.', clearSelected: 'Limpiar tecla seleccionada', resetSaved: 'Restaurar valor guardado', macroDescription: 'Edita nombres, destinos, secuencias, modos de pulsación/liberación y retrasos por separado.', macroContractLabel: 'Alcance de escritura USB:', macroContractBody: 'Las macros se guardan en JSON y en el navegador. El RPC oficial guarda mapas; para escribir macros se necesita firmware compatible.', macroPaletteHeading: 'Crear una macro arrastrando', macroPaletteDescription: 'Arrastra códigos al área de pasos como en Remap. El clic solo selecciona.', groupBasic: 'Teclas básicas', groupJis: 'Japonés / JIS', groupLayer: 'Capas', groupSpecial: 'Teclas especiales', groupAscii: 'ASCII', groupTapDance: 'Tap dance', paletteHelp: 'Arrastra una tecla a la distribución física.', deviceBall: 'Módulo derecho · trackball', deviceBallDesc: 'Ajusta el CPI del puntero.', devicePad: 'Módulo izquierdo · trackpad', devicePadDesc: 'Ajusta la escala del cursor.', autoMouse: 'Capa de ratón automático', autoMouseDesc: 'Mantén la capa durante el movimiento y el tiempo indicado después de parar.', scrollMode: 'Modo de desplazamiento', scrollDesc: 'Asigna el botón a una tecla para desplazar solo mientras se mantiene pulsado.', deviceNote: 'Los valores se guardan en JSON y en el navegador. Se necesita firmware compatible para escribirlos.' },
+    de: { title: 'SO-SHO Tastenbelegungs-Editor', wordmark: 'Keymap Studio', diagnostics: 'Gerät, Firmware und Diagnose', layout: 'Layout:', layers: 'Ebenen:', navigation: 'Keymap-Navigation', save: 'Speichern', saveTitle: 'Keymap auf USB speichern', discard: 'Verwerfen', discardTitle: 'Gespeicherten Standard wiederherstellen', editor: 'Keymap', connection: 'USB-Verbindung', log: 'USB-Verbindungsprotokoll', read: 'Keymap von USB lesen', write: 'Keymap auf USB speichern', macro: 'Makro-Editor', addMacro: 'Makro hinzufügen', language: 'Sprache', subtitle: 'Keymap- und Makro-Editor für das physische SO-SHO-Layout', firmwareLink: 'Benutzerdefinierte Firmware als ZIP herunterladen', downloadHeading: 'Benutzerdefinierte Firmware (alle Profile)', downloadDescription: 'Das ZIP enthält das Standardprofil und ein Cirque-Pinnacle-Touchprofil mit Tipp- und Ziehunterstützung.', latestZip: 'Neuestes ZIP herunterladen', buildHistory: 'Build-Verlauf', noticeTitle: 'Rechtes Central-Modul per USB verbinden', noticeBody: 'Dieser Editor nutzt Web Serial (USB/COM). Die Kommunikation der geteilten Hälften bleibt in der Firmware; BLE-Editing vom PC wird nicht verwendet. Verbinde das rechte Modul in Chrome oder Edge per USB und wähle USB-Verbindung.', connectionDescription: 'Öffnet den USB-CDC-ACM-Port des rechten Central-Moduls per Web Serial und nutzt das offizielle ZMK-Studio-RPC zum Lesen und Speichern.', transportNote: 'Öffnet den USB-CDC-ACM-Port des rechten Central-Moduls per Web Serial und nutzt das offizielle ZMK-Studio-RPC zum Lesen und Speichern.', logDescription: 'Bewahrt den Zustand vor und nach USB- und RPC-Aktionen auf dieser Seite auf.', rpcDescription: 'Lies das Gerät nach dem Anschluss des rechten USB-Moduls aus. Das Speichern verwendet das offizielle ZMK-Studio-RPC über USB CDC-ACM und liest zur Prüfung erneut. Bei gesperrtem Studio zuerst &studio_unlock auf Layer 3 drücken.', editorHint: 'Klicke eine Taste zum Öffnen des Editors oder ziehe Aktionen aus der Palette.', referenceNote: 'Physisches SO-SHO-Layout · 44 Tasten (22 je Hälfte). Belegungen werden in diesem Browser gespeichert.', layoutBadge: 'Physisches Layout', selectedLegend: 'Ausgewählt', assignedLegend: 'Zugewiesen', unassignedLegend: 'Nicht belegte Taste', paletteHeading: 'Aktionspalette', inspector: 'Inspektor', selectedPosition: 'Ausgewählte Position', selectPrompt: 'Taste auswählen', currentAction: 'Aktuelle Aktion', defaultHeading: 'Standardeinstellungen', defaultDescription: 'Speichere die aktuelle Bearbeitung als Standard oder stelle die Firmware-Standards wieder her.', saveDefault: 'Als Standard speichern', restoreDefaults: 'Firmware-Standards wiederherstellen', defaultStatus: 'MO(3) von Layer 0 ist im Startlayout enthalten.', footerNote: 'Keymaps werden auch im Browser gespeichert. Zum Schreiben das rechte USB-Modul anschließen und Keymap auf USB speichern wählen.', clearSelected: 'Ausgewählte Taste löschen', resetSaved: 'Gespeicherten Standard wiederherstellen', macroDescription: 'Bearbeite Makronamen, Ziele, Tastenfolgen, Drück-/Loslassmodi und Verzögerungen getrennt.', macroContractLabel: 'USB-Schreibumfang:', macroContractBody: 'Makros werden als JSON und im Browser gespeichert. Das offizielle RPC speichert Keymaps; zum Schreiben von Makros ist kompatible Firmware nötig.', macroPaletteHeading: 'Makro per Drag-and-drop erstellen', macroPaletteDescription: 'Ziehe Keycodes wie bei Remap in den Schrittbereich. Klicken wählt nur aus.', groupBasic: 'Grundtasten', groupJis: 'Japanisch / JIS', groupLayer: 'Ebenen', groupSpecial: 'Sondertasten', groupAscii: 'ASCII', groupTapDance: 'Tap Dance', paletteHelp: 'Ziehe eine Taste auf das physische Layout.', deviceBall: 'Rechtes Modul · Trackball', deviceBallDesc: 'Pointer-CPI einstellen.', devicePad: 'Linkes Modul · Trackpad', devicePadDesc: 'Cursor-Bewegung skalieren.', autoMouse: 'Auto-Maus-Ebene', autoMouseDesc: 'Die gewählte Ebene während der Bewegung und nach dem Stopp für die eingestellte Zeit halten.', scrollMode: 'Scrollmodus', scrollDesc: 'Weise die Taste zu, um nur während des Haltens zu scrollen.', deviceNote: 'Werte werden als JSON und im Browser gespeichert. Zum Schreiben ist kompatible Firmware erforderlich.' }
   };
+
+  var languageExtras = {
+    ja: { mapTransferHeading: '設定ファイル', mapTransferDescription: 'キーマップ、マクロ、タップダンス、デバイス設定を1つのJSONに保存できます。', mapExport: 'JSONをダウンロード', mapImport: 'JSONを読み込む', mapTransferStatus: 'ブラウザー内にも自動保存されます。', macroModifiers: '修飾キー:', macroLatency: '追加時の待ち時間(ms)', macroDropZone: 'ここへキーをドラッグして追加', macroStepHelp: '各行の末尾がその操作の待ち時間です。追加後も手順欄で1行ずつ変更できます。', footerZmk: 'ZMK Studio公式ドキュメント', footerLicense: 'ライセンス', footerNoteShort: '© 2024 - The ZMK Contributors', zoom: 'ズーム', layerControl: 'レイヤー', layerMessage: 'レイヤー数はファームウェア定義のため、このUIでは固定です。', layerDescription: '通常入力。右手親指のMO 3を押してLayer 3へ切り替えます。', macroLibraryDescription: 'マクロカードをキーへドラッグすると割り当てできます。右下の鉛筆で編集モードに入ります。', macroLibraryCount: '最大16枠', padMarker: '左 · トラックパッド', padMarkerDesc: '移動倍率はDEVICEで設定', ballMarker: '右 · トラックボール', ballMarkerDesc: 'CPIはDEVICEで設定' },
+    en: { mapTransferHeading: 'Configuration file', mapTransferDescription: 'Save the keymap, macros, tap dances and device settings in one JSON file.', mapExport: 'Download JSON', mapImport: 'Load JSON', mapTransferStatus: 'The browser also saves changes automatically.', macroModifiers: 'Modifiers:', macroLatency: 'Delay for added step (ms)', macroDropZone: 'Drag a key here to add it', macroStepHelp: 'The number at the end of each row is that step delay. You can edit each row afterward.', footerZmk: 'ZMK Studio documentation', footerLicense: 'License', footerNoteShort: '© 2024 - The ZMK Contributors', zoom: 'Zoom', layerControl: 'Layer', layerMessage: 'The number of layers is defined by the firmware and fixed in this UI.', layerDescription: 'Normal input. Hold MO 3 on the right thumb to switch to Layer 3.', macroLibraryDescription: 'Drag a macro card onto a key to assign it. Use the pencil in the lower-right corner to edit.', macroLibraryCount: 'Up to 16 slots', padMarker: 'Left · trackpad', padMarkerDesc: 'Set movement scale in DEVICE', ballMarker: 'Right · trackball', ballMarkerDesc: 'Set CPI in DEVICE' },
+    'zh-CN': { mapTransferHeading: '配置文件', mapTransferDescription: '将键位、宏、点按舞和设备设置保存到一个 JSON 文件。', mapExport: '下载 JSON', mapImport: '读取 JSON', mapTransferStatus: '浏览器也会自动保存更改。', macroModifiers: '修饰键：', macroLatency: '新增步骤延迟（毫秒）', macroDropZone: '将按键拖到这里添加', macroStepHelp: '每行末尾的数字是该步骤的延迟。添加后可以逐行编辑。', footerZmk: 'ZMK Studio 文档', footerLicense: '许可证', footerNoteShort: '© 2024 - ZMK Contributors', zoom: '缩放', layerControl: '层', layerMessage: '层数由固件定义，此界面中固定。', layerDescription: '普通输入。按住右侧拇指的 MO 3 可切换到第 3 层。', macroLibraryDescription: '将宏卡片拖到按键上即可分配。使用右下角的铅笔进入编辑模式。', macroLibraryCount: '最多 16 个', padMarker: '左侧 · 触控板', padMarkerDesc: '在 DEVICE 中设置移动倍率', ballMarker: '右侧 · 轨迹球', ballMarkerDesc: '在 DEVICE 中设置 CPI' },
+    ko: { mapTransferHeading: '설정 파일', mapTransferDescription: '키맵, 매크로, 탭 댄스와 장치 설정을 하나의 JSON 파일로 저장합니다.', mapExport: 'JSON 다운로드', mapImport: 'JSON 불러오기', mapTransferStatus: '브라우저에도 변경 사항이 자동 저장됩니다.', macroModifiers: '수식 키:', macroLatency: '추가 단계 지연(ms)', macroDropZone: '키를 여기로 드래그해 추가', macroStepHelp: '각 행 끝의 숫자는 해당 단계의 지연입니다. 추가 후 한 줄씩 편집할 수 있습니다.', footerZmk: 'ZMK Studio 문서', footerLicense: '라이선스', footerNoteShort: '© 2024 - The ZMK Contributors', zoom: '확대/축소', layerControl: '레이어', layerMessage: '레이어 수는 펌웨어에서 정하며 이 UI에서는 고정됩니다.', layerDescription: '일반 입력입니다. 오른쪽 엄지의 MO 3을 누르면 Layer 3으로 전환합니다.', macroLibraryDescription: '매크로 카드를 키로 드래그해 할당하세요. 오른쪽 아래 연필로 편집 모드에 들어갑니다.', macroLibraryCount: '최대 16개', padMarker: '왼쪽 · 트랙패드', padMarkerDesc: 'DEVICE에서 이동 배율 설정', ballMarker: '오른쪽 · 트랙볼', ballMarkerDesc: 'DEVICE에서 CPI 설정' },
+    th: { mapTransferHeading: 'ไฟล์การตั้งค่า', mapTransferDescription: 'บันทึกคีย์แมป มาโคร แตะแบบหลายจังหวะ และการตั้งค่าอุปกรณ์เป็นไฟล์ JSON เดียว', mapExport: 'ดาวน์โหลด JSON', mapImport: 'โหลด JSON', mapTransferStatus: 'เบราว์เซอร์จะบันทึกการเปลี่ยนแปลงให้อัตโนมัติด้วย', macroModifiers: 'ปุ่มปรับแต่ง:', macroLatency: 'ความหน่วงของขั้นตอนที่เพิ่ม (มิลลิวินาที)', macroDropZone: 'ลากปุ่มมาวางที่นี่เพื่อเพิ่ม', macroStepHelp: 'ตัวเลขท้ายแต่ละบรรทัดคือความหน่วงของขั้นตอนนั้น แก้ไขทีละบรรทัดได้หลังเพิ่มแล้ว', footerZmk: 'เอกสาร ZMK Studio', footerLicense: 'ใบอนุญาต', footerNoteShort: '© 2024 - ผู้ร่วมพัฒนา ZMK', zoom: 'ซูม', layerControl: 'เลเยอร์', layerMessage: 'จำนวนเลเยอร์กำหนดโดยเฟิร์มแวร์และคงที่ในหน้านี้', layerDescription: 'การป้อนข้อมูลปกติ กด MO 3 ที่นิ้วโป้งขวาเพื่อเปลี่ยนเป็น Layer 3', macroLibraryDescription: 'ลากการ์ดมาโครไปยังปุ่มเพื่อกำหนดค่า ใช้ดินสอมุมขวาล่างเพื่อเข้าสู่โหมดแก้ไข', macroLibraryCount: 'สูงสุด 16 ช่อง', padMarker: 'ซ้าย · แทร็กแพด', padMarkerDesc: 'ตั้งค่าสเกลการเคลื่อนที่ใน DEVICE', ballMarker: 'ขวา · แทร็กบอล', ballMarkerDesc: 'ตั้งค่า CPI ใน DEVICE' },
+    es: { mapTransferHeading: 'Archivo de configuración', mapTransferDescription: 'Guarda el mapa, las macros, los tap dances y la configuración del dispositivo en un JSON.', mapExport: 'Descargar JSON', mapImport: 'Cargar JSON', mapTransferStatus: 'El navegador también guarda los cambios automáticamente.', macroModifiers: 'Modificadores:', macroLatency: 'Retraso del paso añadido (ms)', macroDropZone: 'Arrastra una tecla aquí para añadirla', macroStepHelp: 'El número al final de cada fila es el retraso de ese paso. Puedes editar cada fila después.', footerZmk: 'Documentación de ZMK Studio', footerLicense: 'Licencia', footerNoteShort: '© 2024 - Colaboradores de ZMK', zoom: 'Zoom', layerControl: 'Capa', layerMessage: 'El número de capas lo define el firmware y es fijo en esta interfaz.', layerDescription: 'Entrada normal. Mantén MO 3 en el pulgar derecho para cambiar a la capa 3.', macroLibraryDescription: 'Arrastra una tarjeta de macro a una tecla para asignarla. Usa el lápiz inferior derecho para editar.', macroLibraryCount: 'Hasta 16 ranuras', padMarker: 'Izquierda · trackpad', padMarkerDesc: 'Configura la escala en DEVICE', ballMarker: 'Derecha · trackball', ballMarkerDesc: 'Configura el CPI en DEVICE' },
+    de: { mapTransferHeading: 'Konfigurationsdatei', mapTransferDescription: 'Keymap, Makros, Tap Dance und Geräteeinstellungen in einer JSON-Datei speichern.', mapExport: 'JSON herunterladen', mapImport: 'JSON laden', mapTransferStatus: 'Der Browser speichert Änderungen ebenfalls automatisch.', macroModifiers: 'Modifikatoren:', macroLatency: 'Verzögerung für neuen Schritt (ms)', macroDropZone: 'Taste hierher ziehen, um sie hinzuzufügen', macroStepHelp: 'Die Zahl am Ende jeder Zeile ist die Verzögerung dieses Schritts. Danach kann jede Zeile bearbeitet werden.', footerZmk: 'ZMK-Studio-Dokumentation', footerLicense: 'Lizenz', footerNoteShort: '© 2024 - Die ZMK-Mitwirkenden', zoom: 'Zoom', layerControl: 'Ebene', layerMessage: 'Die Ebenenzahl wird von der Firmware festgelegt und ist in dieser Oberfläche fest.', layerDescription: 'Normale Eingabe. MO 3 am rechten Daumen gedrückt halten, um zu Layer 3 zu wechseln.', macroLibraryDescription: 'Eine Makrokarte auf eine Taste ziehen, um sie zuzuweisen. Mit dem Stift unten rechts den Bearbeitungsmodus öffnen.', macroLibraryCount: 'Bis zu 16 Plätze', padMarker: 'Links · Trackpad', padMarkerDesc: 'Bewegungsskalierung unter DEVICE einstellen', ballMarker: 'Rechts · Trackball', ballMarkerDesc: 'CPI unter DEVICE einstellen' }
+  };
+  Object.keys(languageCatalog).forEach(function (language) { Object.assign(languageCatalog[language], languageExtras[language] || {}); });
 
   function storedLanguage() {
     try {
-      return localStorage.getItem('sosho-language-v1') === 'en' ? 'en' : 'ja';
+      var value = localStorage.getItem('sosho-language-v1') || 'ja';
+      return Object.prototype.hasOwnProperty.call(languageCatalog, value) ? value : 'ja';
     } catch (error) {
       return 'ja';
     }
@@ -59,10 +48,29 @@
   }
 
   function applyLanguage(language) {
-    language = language === 'en' ? 'en' : 'ja';
-    var copy = languageCatalog[language];
+    language = Object.prototype.hasOwnProperty.call(languageCatalog, language) ? language : 'ja';
+    var copy = Object.assign({}, languageCatalog.ja, languageCatalog[language]);
     document.documentElement.lang = language;
     document.title = copy.title;
+    function setText(selector, value) {
+      if (typeof value !== 'string') return;
+      document.querySelectorAll(selector).forEach(function (element) { element.textContent = value; });
+    }
+    function setFirstText(selector, value) {
+      if (typeof value !== 'string') return;
+      document.querySelectorAll(selector).forEach(function (element) {
+        if (element.firstChild && element.firstChild.nodeType === 3) element.firstChild.nodeValue = value + ' ';
+        else element.textContent = value;
+      });
+    }
+    function setLastText(selector, value) {
+      if (typeof value !== 'string') return;
+      document.querySelectorAll(selector).forEach(function (element) {
+        var last = element.lastChild;
+        if (last && last.nodeType === 3) last.nodeValue = ' ' + value;
+        else element.appendChild(document.createTextNode(' ' + value));
+      });
+    }
     var selector = document.getElementById('language-select');
     if (selector) selector.value = language;
     var wordmark = document.querySelector('.studio-wordmark');
@@ -75,16 +83,24 @@
     var sidebar = document.querySelector('.studio-sidebar');
     if (sidebar) sidebar.setAttribute('aria-label', copy.navigation);
     var state = document.querySelector('[data-studio-device-state]');
-    if (state && state.textContent === 'USB未接続') state.textContent = language === 'en' ? 'USB disconnected' : 'USB未接続';
+    if (state && /^(USB未接続|USB disconnected|USB desconectado|USB getrennt|未连接 USB|USB 연결 안 됨|ไม่ได้เชื่อมต่อ USB)$/.test(state.textContent)) {
+      state.textContent = ({
+        ja: 'USB未接続', en: 'USB disconnected', 'zh-CN': 'USB 未连接', ko: 'USB 연결 안 됨', th: 'ไม่ได้เชื่อมต่อ USB', es: 'USB desconectado', de: 'USB getrennt'
+      })[language] || 'USB未接続';
+    }
     var editorHeading = document.getElementById('keyboard-heading');
     if (editorHeading) editorHeading.textContent = copy.editor;
+    setFirstText('.layout-selector', copy.layout);
+    setText('.studio-layer-controls > span', copy.layerControl);
+    setFirstText('.studio-zoom-control', copy.zoom);
+    var layerDescription = document.querySelector('.layer-description');
+    if (layerDescription && /通常入力|Normal input|普通输入|일반 입력|การป้อนข้อมูลปกติ|Entrada normal|Normale Eingabe/.test(layerDescription.textContent)) layerDescription.textContent = copy.layerDescription;
     var connectionHeading = document.getElementById('connection-heading');
     if (connectionHeading) connectionHeading.textContent = copy.connection;
     var logHeading = document.getElementById('connection-log-heading');
     if (logHeading) logHeading.textContent = copy.log;
     var rpcHeading = document.getElementById('rpc-heading');
-    if (rpcHeading && language === 'en') rpcHeading.textContent = 'USB / ZMK Studio RPC keymap editing';
-    else if (rpcHeading) rpcHeading.textContent = 'USB / ZMK Studio RPC キーマップ編集';
+    if (rpcHeading) rpcHeading.textContent = copy.connection + ' / ZMK Studio RPC ' + copy.editor;
     var read = document.getElementById('read-keymap');
     if (read) read.textContent = copy.read;
     var write = document.getElementById('write-keymap');
@@ -94,32 +110,115 @@
     var addMacro = document.getElementById('add-macro');
     if (addMacro) addMacro.textContent = copy.addMacro;
     var connect = document.getElementById('connect-usb');
-    if (connect) connect.textContent = language === 'en' ? 'USB connection' : 'USB接続';
+    if (connect) connect.textContent = ({ja:'USB接続', en:'USB connection', 'zh-CN':'USB 连接', ko:'USB 연결', th:'เชื่อมต่อ USB', es:'Conectar USB', de:'USB verbinden'})[language] || 'USB接続';
     var reconnect = document.getElementById('connect-usb-authorized');
-    if (reconnect) reconnect.textContent = language === 'en' ? 'Reconnect' : '再接続';
+    if (reconnect) reconnect.textContent = ({ja:'再接続', en:'Reconnect', 'zh-CN':'重新连接', ko:'다시 연결', th:'เชื่อมต่อใหม่', es:'Reconectar', de:'Erneut verbinden'})[language] || '再接続';
     var disconnect = document.getElementById('disconnect');
-    if (disconnect) disconnect.textContent = language === 'en' ? 'Disconnect' : '切断';
+    if (disconnect) disconnect.textContent = ({ja:'切断', en:'Disconnect', 'zh-CN':'断开', ko:'연결 해제', th:'ตัดการเชื่อมต่อ', es:'Desconectar', de:'Trennen'})[language] || '切断';
     var copyLog = document.getElementById('connection-log-copy');
-    if (copyLog) copyLog.textContent = language === 'en' ? 'Copy log' : 'ログをコピー';
+    if (copyLog) copyLog.textContent = ({ja:'ログをコピー', en:'Copy log', 'zh-CN':'复制日志', ko:'로그 복사', th:'คัดลอกบันทึก', es:'Copiar registro', de:'Protokoll kopieren'})[language] || 'ログをコピー';
     var clearLog = document.getElementById('connection-log-clear');
-    if (clearLog) clearLog.textContent = language === 'en' ? 'Clear' : 'クリア';
+    if (clearLog) clearLog.textContent = ({ja:'クリア', en:'Clear', 'zh-CN':'清除', ko:'지우기', th:'ล้าง', es:'Borrar', de:'Löschen'})[language] || 'クリア';
     var shellPrimary = document.querySelector('.studio-primary-action');
     if (shellPrimary) { shellPrimary.textContent = copy.save; shellPrimary.title = copy.saveTitle; shellPrimary.setAttribute('aria-label', copy.saveTitle); }
     var shellButtons = document.querySelectorAll('.studio-shell-actions .studio-icon-button');
     if (shellButtons[3]) { shellButtons[3].textContent = copy.discard; shellButtons[3].title = copy.discardTitle; shellButtons[3].setAttribute('aria-label', copy.discardTitle); }
     var languageLabel = document.querySelector('.studio-language-picker span');
     if (languageLabel) languageLabel.textContent = copy.language;
+
+    setText('#site-subtitle', copy.subtitle);
+    setLastText('#firmware-link-line a', copy.firmwareLink);
+    setText('#notice-title', copy.noticeTitle);
+    setText('#notice-body', copy.noticeBody);
+    setText('#transport-note', copy.transportNote);
+    setText('#connection-log-description', copy.logDescription);
+    setText('#rpc-description', copy.rpcDescription);
+    setText('#editor-hint', copy.editorHint);
+    setFirstText('#reference-note', copy.referenceNote);
+    setText('.layout-badge', copy.layoutBadge);
+    setLastText('.legend-selected', copy.selectedLegend);
+    setLastText('.legend-assigned', copy.assignedLegend);
+    setLastText('.legend-unassigned', copy.unassignedLegend);
+    setText('#palette-heading', copy.paletteHeading);
+    setText('#inspector-heading', copy.inspector);
+    setFirstText('.inspector > .label:nth-of-type(1)', copy.selectedPosition);
+    setFirstText('.inspector > .label:nth-of-type(2)', copy.currentAction);
+    setText('#default-settings-heading', copy.defaultHeading);
+    setText('#default-settings-description', copy.defaultDescription);
+    setText('#save-current-as-default', copy.saveDefault);
+    setText('#restore-firmware-defaults', copy.restoreDefaults);
+    setText('#default-settings-status', copy.defaultStatus);
+    setText('.inspector > .footer-note', copy.footerNote);
+    setText('#clear-selected', copy.clearSelected);
+    setText('#reset', copy.resetSaved);
+    setText('#macro-description', copy.macroDescription);
+    var macroContract = document.querySelector('.macro-contract');
+    if (macroContract) macroContract.innerHTML = '<strong>' + copy.macroContractLabel + '</strong> ' + copy.macroContractBody;
+    setText('.download-card strong', copy.downloadHeading);
+    setText('.download-card > div:first-child span', copy.downloadDescription);
+    setText('.download-actions a:first-child', copy.latestZip);
+    setText('.download-actions a:last-child', copy.buildHistory);
+    setText('.map-transfer h3', copy.mapTransferHeading || copy.defaultHeading);
+    setText('.map-transfer p', copy.mapTransferDescription || copy.defaultDescription);
+    setText('[data-export-map]', copy.mapExport || copy.save);
+    setText('[data-import-map]', copy.mapImport || copy.read);
+    setText('.map-transfer-status', copy.mapTransferStatus || copy.footerNote);
+    setText('.macro-drag-palette h3', copy.macroPaletteHeading);
+    setText('.macro-drag-palette > p', copy.macroPaletteDescription);
+    setText('.macro-library-head h3', copy.macro);
+    setText('.macro-library-head p', copy.macroLibraryDescription);
+    setText('.macro-library-count', copy.macroLibraryCount);
+    setText('.palette-help', copy.paletteHelp);
+    setText('.device-settings-card:nth-of-type(1) h4', copy.deviceBall);
+    setText('.device-settings-card:nth-of-type(1) p', copy.deviceBallDesc);
+    setText('.device-settings-card:nth-of-type(2) h4', copy.devicePad);
+    setText('.device-settings-card:nth-of-type(2) p', copy.devicePadDesc);
+    setText('.device-settings-card:nth-of-type(3) h4', copy.autoMouse);
+    setText('.device-settings-card:nth-of-type(3) p', copy.autoMouseDesc);
+    setText('.device-settings-card:nth-of-type(4) h4', copy.scrollMode);
+    setText('.device-settings-card:nth-of-type(4) p', copy.scrollDesc);
+    setText('.device-setting-note', copy.deviceNote);
+    var leftMarker = document.querySelector('#keyboard .half.left .device-marker');
+    var rightMarker = document.querySelector('#keyboard .half.right .device-marker');
+    if (leftMarker) {
+      setText('#keyboard .half.left .device-marker strong', copy.padMarker);
+      setText('#keyboard .half.left .device-marker span', copy.padMarkerDesc);
+    }
+    if (rightMarker) {
+      setText('#keyboard .half.right .device-marker strong', copy.ballMarker);
+      setText('#keyboard .half.right .device-marker span', copy.ballMarkerDesc);
+    }
+    setText('.macro-modifiers > span', copy.macroModifiers || 'Modifiers:');
+    setFirstText('.macro-latency', copy.macroLatency || 'Delay per added step (ms)');
+    setText('.macro-drop-zone', copy.macroDropZone || 'Drag a key here to add it');
+    setText('.macro-builder > small', copy.macroStepHelp || 'The number at the end of each row is that step delay.');
+    setText('.palette-group:nth-of-type(1) summary', copy.groupBasic);
+    setText('.palette-group:nth-of-type(2) summary', copy.groupJis);
+    setText('.palette-group:nth-of-type(3) summary', copy.groupLayer);
+    setText('.palette-group:nth-of-type(4) summary', copy.groupSpecial);
+    setText('.palette-group:nth-of-type(5) summary', copy.groupAscii);
+    setText('.palette-group:nth-of-type(6) summary', copy.groupTapDance);
+    var footer = document.querySelector('.studio-footer');
+    if (footer) {
+      var footerLinks = footer.querySelectorAll('a');
+      if (footerLinks[0]) footerLinks[0].textContent = copy.footerZmk;
+      if (footerLinks[1]) footerLinks[1].textContent = copy.footerLicense;
+    }
   }
+
+  window.soshoUiText = function (key, fallback) {
+    return textFor(storedLanguage(), key) || fallback || '';
+  };
 
   function installLanguagePicker(shellActions) {
     if (!shellActions || shellActions.querySelector('.studio-language-picker')) return;
     var wrapper = document.createElement('label');
     wrapper.className = 'studio-language-picker';
-    wrapper.innerHTML = '<span>Language</span><select id="language-select" aria-label="Language"><option value="ja">日本語</option><option value="en">English</option></select>';
+    wrapper.innerHTML = '<span>Language</span><select id="language-select" aria-label="Language"><option value="ja">日本語</option><option value="en">English</option><option value="zh-CN">简体中文</option><option value="ko">한국어</option><option value="th">ไทย</option><option value="es">Español</option><option value="de">Deutsch</option></select>';
     var selector = wrapper.querySelector('select');
     selector.value = storedLanguage();
     selector.addEventListener('change', function () {
-      var language = selector.value === 'en' ? 'en' : 'ja';
+      var language = Object.prototype.hasOwnProperty.call(languageCatalog, selector.value) ? selector.value : 'ja';
       try { localStorage.setItem('sosho-language-v1', language); } catch (error) {}
       applyLanguage(language);
     });
@@ -387,7 +486,10 @@
     }
     enhanceAllMacroItems();
     if (typeof MutationObserver === 'function') {
-      var observer = new MutationObserver(enhanceAllMacroItems);
+      var observer = new MutationObserver(function () {
+        enhanceAllMacroItems();
+        window.setTimeout(function () { applyLanguage(storedLanguage()); }, 0);
+      });
       observer.observe(macroList, { childList: true });
     }
   }
@@ -742,8 +844,8 @@
   function updateInspector(target, value) {
     var position = document.getElementById('selected-position');
     var action = document.getElementById('selected-action');
-    if (position) position.textContent = '選択中: ' + target;
-    if (action) action.textContent = value || '未設定';
+    if (position) position.textContent = textFor(storedLanguage(), 'selectedPosition') + ': ' + target;
+    if (action) action.textContent = value || textFor(storedLanguage(), 'unassignedLegend');
   }
 
   function createEncoderTargets() {
