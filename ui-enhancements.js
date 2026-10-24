@@ -1,6 +1,9 @@
 (function () {
   'use strict';
 
+  if (window.__soshoUiEnhancementsLoaded) return;
+  window.__soshoUiEnhancementsLoaded = true;
+
   var languageCatalog = {
     ja: {
       title: 'SO-SHO キーマップエディター', wordmark: 'Studio', diagnostics: 'デバイス・ファームウェア・診断', layout: '配列:', layers: 'レイヤー:', navigation: 'キーマップナビゲーション', save: '保存', saveTitle: 'キーマップをUSBへ保存', discard: '破棄', discardTitle: '未保存の編集をデフォルトへ戻す', editor: 'キーマップ', connection: 'USB接続', log: 'USB接続ログ', read: 'USBからキーマップを読み込む', write: 'USBへキーマップを保存', macro: 'マクロ設計', addMacro: 'マクロを追加', language: 'Language',
@@ -566,9 +569,14 @@
     }
     enhanceAllMacroItems();
     if (typeof MutationObserver === 'function') {
+      var macroObserverQueued = false;
       var observer = new MutationObserver(function () {
-        enhanceAllMacroItems();
-        window.setTimeout(function () { applyLanguage(storedLanguage()); }, 0);
+        if (macroObserverQueued) return;
+        macroObserverQueued = true;
+        window.setTimeout(function () {
+          macroObserverQueued = false;
+          enhanceAllMacroItems();
+        }, 0);
       });
       observer.observe(macroList, { childList: true });
     }
@@ -1015,12 +1023,14 @@
 
   function createEncoderTargets() {
     var layer = activeLayerIndex();
+    var changed = false;
     document.querySelectorAll('#keyboard .half').forEach(function (half) {
       var existing = half.querySelector('.encoder-cluster');
       if (existing && existing.dataset.layer === String(layer)) return;
       if (existing) existing.remove();
       var oldMarker = half.querySelector('.device-marker');
       if (oldMarker) oldMarker.remove();
+      changed = true;
       var side = half.classList.contains('left') ? 'left' : 'right';
       var cluster = document.createElement('div');
       cluster.className = 'encoder-cluster';
@@ -1068,7 +1078,7 @@
       marker.innerHTML = '<strong></strong><span></span>';
       half.appendChild(marker);
     });
-    if (typeof window.soshoRefreshDeviceMarkers === 'function') window.soshoRefreshDeviceMarkers();
+    if (changed && typeof window.soshoRefreshDeviceMarkers === 'function') window.soshoRefreshDeviceMarkers();
   }
 
   function encoderSetting(side, direction) {
@@ -1151,6 +1161,7 @@
 
     var diagnostics = document.createElement('details');
     diagnostics.className = 'studio-diagnostics';
+    diagnostics.open = false;
     diagnostics.innerHTML = '<summary>デバイス・ファームウェア・診断</summary><div class="studio-diagnostics-body"></div>';
     var diagnosticsBody = diagnostics.querySelector('.studio-diagnostics-body');
     [noticeCard, downloadCard, connectionSection, connectionLog, writeCard].forEach(function (element) {
@@ -1211,7 +1222,15 @@
 
   var keyboard = document.getElementById('keyboard');
   if (keyboard && typeof MutationObserver === 'function') {
-    var observer = new MutationObserver(function () { createEncoderTargets(); });
+    var encoderObserverQueued = false;
+    var observer = new MutationObserver(function () {
+      if (encoderObserverQueued) return;
+      encoderObserverQueued = true;
+      window.setTimeout(function () {
+        encoderObserverQueued = false;
+        createEncoderTargets();
+      }, 0);
+    });
     observer.observe(keyboard, { childList: true, subtree: true });
   }
   createEncoderTargets();

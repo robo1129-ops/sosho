@@ -44,5 +44,12 @@ assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /data-left-module/);
 assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /encoderLeftCcw/);
 assert.match(fs.readFileSync('sosho-rpc-ui.js', 'utf8'), /hidUsageLabel/);
 assert.match(css, /module-selection-grid/);
+assert.match(css, /Final layout pass/);
+assert.match(css, /-webkit-line-clamp: 3/);
+const enhancements = fs.readFileSync('ui-enhancements.js', 'utf8');
+assert.match(enhancements, /__soshoUiEnhancementsLoaded/);
+assert.doesNotMatch(enhancements, /enhanceAllMacroItems\(\);\s*window\.setTimeout\(function \(\) \{ applyLanguage/);
+assert.match(enhancements, /var changed = false;/);
+assert.match(enhancements, /if \(changed && typeof window\.soshoRefreshDeviceMarkers/);
 
 console.log('SO-SHO Remap-like editor UI smoke test passed');
