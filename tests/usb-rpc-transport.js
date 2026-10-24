@@ -5,6 +5,7 @@ const vm = require('node:vm');
 
 const source = fs.readFileSync(path.resolve(__dirname, '..', 'zmk-studio-transport.js'), 'utf8');
 const writes = [];
+let requestOptions = null;
 let readerCancelled = false;
 const reader = {
   async read() { return { done: true, value: undefined }; },
@@ -34,7 +35,7 @@ const context = {
   navigator: {
     serial: {
       async getPorts() { return [port]; },
-      async requestPort() { return port; },
+      async requestPort(options) { requestOptions = options; return port; },
     },
   },
   TextEncoder,
@@ -62,6 +63,11 @@ vm.runInNewContext(source, context);
   assert.equal(transport.isConnected, false);
   assert.equal(readerCancelled, true);
   assert.ok(statuses.some((value) => value.includes('USB接続済み')));
+
+  await transport.connect();
+  assert.equal(requestOptions.filters[0].usbVendorId, 0x1D50);
+  assert.equal(requestOptions.filters[0].usbProductId, 0x615E);
+  await transport.disconnect();
   console.log('USB/COM RPC fallback test passed');
 })().catch((error) => {
   console.error(error);

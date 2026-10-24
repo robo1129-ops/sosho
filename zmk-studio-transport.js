@@ -424,11 +424,24 @@
     this._connecting = true;
     this._rpcBaudRetried = false;
     this.baudRate = 9600;
-    try { this._setStatus('右側CentralのUSBデバイス選択待ち…'); this._setLog('USB requestPort開始（右側Centralを選択）'); var port = await navigator.serial.requestPort(); this._setLog('USBポート選択完了'); return await this._open(port); }
+    try {
+      this._setStatus('右側CentralのUSBデバイス選択待ち…');
+      this._setLog('USB requestPort開始（右側Centralを選択）');
+      // SO-SHO exposes two CDC-ACM interfaces with the same VID/PID: one for
+      // the console and one for ZMK Studio RPC.  Keep the chooser scoped to
+      // the keyboard so unrelated serial devices cannot be selected.
+      var port = await navigator.serial.requestPort({ filters: [{ usbVendorId: 0x1D50, usbProductId: 0x615E }] });
+      this._setLog('USBポート選択完了（VID=0x' + ((port.getInfo && port.getInfo().usbVendorId || 0).toString(16)) + ' PID=0x' + ((port.getInfo && port.getInfo().usbProductId || 0).toString(16)) + '）');
+      return await this._open(port);
+    }
     catch (error) { this.port = null; this.reader = null; this.reading = false; this._setDevice('—'); this._setLog('USB接続失敗 [' + (error && error.name ? error.name : 'Error') + ']: ' + (error && error.message ? error.message : 'unknown error')); this._setStatus(error && error.name === 'NotFoundError' ? 'USBデバイス選択がキャンセルされました' : 'USB接続失敗: ' + (error && error.message ? error.message : 'unknown error')); return false; }
     finally { this._connecting = false; }
   };
-  ZmkSerialTransport.prototype.connectAuthorized = async function () {
+  ZmkSerialTransport.prototype.getAuthorizedPorts = async function () {
+    if (!this.isSupported || typeof navigator.serial.getPorts !== 'function') return [];
+    return await navigator.serial.getPorts();
+  };
+  ZmkSerialTransport.prototype.connectAuthorized = async function (targetPort) {
     if (this.isConnected) return true;
     if (!this.isSupported || typeof navigator.serial.getPorts !== 'function') { this._setStatus('許可済みUSB再接続はこのブラウザーでは利用できません'); return false; }
     if (this._connecting) return false;
@@ -436,10 +449,13 @@
     this._rpcBaudRetried = false;
     this.baudRate = 9600;
     try {
-      var ports = await navigator.serial.getPorts();
+      var ports = targetPort ? [targetPort] : await this.getAuthorizedPorts();
       this._setLog('許可済みUSBポート: ' + ports.length + '件');
       if (!ports.length) { this._setStatus('許可済みUSBポートがありません。初回は「右側USB / COM接続」を押してください'); return false; }
-      return await this._open(ports[0]);
+      var port = ports[0];
+      var info = typeof port.getInfo === 'function' ? port.getInfo() : null;
+      this._setLog('許可済みUSBポートを試行（VID=0x' + ((info && info.usbVendorId || 0).toString(16)) + ' PID=0x' + ((info && info.usbProductId || 0).toString(16)) + '）');
+      return await this._open(port);
     } catch (error) {
       this.port = null; this.reader = null; this.reading = false; this._setDevice('—');
       this._setLog('許可済みUSB再接続失敗 [' + (error && error.name ? error.name : 'Error') + ']: ' + (error && error.message ? error.message : 'unknown error'));
