@@ -2080,6 +2080,11 @@ body { overflow-x: hidden; }
  * keep the main Studio workspace free of this redundant banner. */
 .notice { display: none !important; }
 
+/* The published editor is USB-only. Keep stale cached markup from exposing
+ * the retired BLE connection controls during a rolling Pages update. */
+#connect-ble,
+#connect-ble-authorized { display: none !important; }
+
 @media (max-width: 1200px) {
   .workspace {
     grid-template-columns: 160px minmax(0, 1fr) !important;
