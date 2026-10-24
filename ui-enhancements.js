@@ -490,6 +490,13 @@
       ['0','0'], ['1','1'], ['2','2'], ['3','3'], ['4','4'], ['5','5'], ['6','6'], ['7','7'], ['8','8'], ['9','9'],
       ['Enter','RET'], ['Backspace','BSPC'], ['Tab','TAB'], ['Escape','ESC'], ['Space','SPACE'], ['←','LEFT'], ['→','RIGHT'], ['↑','UP'], ['↓','DOWN']
     ];
+    function markMacroDragged() {
+      window.__soshoMacroJustDragged = true;
+      window.clearTimeout(window.__soshoMacroJustDraggedTimer);
+      window.__soshoMacroJustDraggedTimer = window.setTimeout(function () {
+        window.__soshoMacroJustDragged = false;
+      }, 500);
+    }
     function appendMacroKeyChip(container, entry) {
       var chip = document.createElement('button');
       chip.type = 'button';
@@ -500,21 +507,33 @@
       chip.dataset.macroKey = entry[1];
       chip.addEventListener('dragstart', function (event) {
         window.__soshoMacroDragKey = entry[1];
+        markMacroDragged();
         event.dataTransfer.setData('text/plain', 'macro-key:' + entry[1]);
       });
       chip.addEventListener('pointerdown', function () {
         window.__soshoMacroDragKey = entry[1];
+        window.__soshoMacroPointerMoved = false;
         chip.classList.add('macro-dragging');
       });
       chip.addEventListener('mousedown', function () {
         window.__soshoMacroDragKey = entry[1];
+        window.__soshoMacroMouseMoved = false;
         chip.classList.add('macro-dragging');
       });
+      chip.addEventListener('pointermove', function () { window.__soshoMacroPointerMoved = true; });
+      chip.addEventListener('mousemove', function () { window.__soshoMacroMouseMoved = true; });
       chip.addEventListener('dragend', function () {
         window.__soshoMacroDragKey = '';
         chip.classList.remove('macro-dragging');
       });
       chip.addEventListener('click', function () {
+        if (window.__soshoMacroJustDragged || window.__soshoMacroPointerMoved || window.__soshoMacroMouseMoved) {
+          window.__soshoMacroJustDragged = false;
+          window.__soshoMacroPointerMoved = false;
+          window.__soshoMacroMouseMoved = false;
+          return;
+        }
+        window.__soshoMacroDragKey = '';
         chip.classList.toggle('palette-selected');
         var activeItem = macroList.querySelector('.macro-item[data-macro-builder-ready="true"]');
         var textarea = activeItem && activeItem.querySelector('[data-macro-steps]');
@@ -706,6 +725,7 @@
       function appendDroppedKey(key) {
         if (!key) return false;
         var result = appendMacroStep(textarea, key);
+        markMacroDragged();
         dropLabel.textContent = '追加しました: ' + macroReadableCode(key);
         dropStatus.textContent = (result.modifiers.length ? result.modifiers.map(macroReadableCode).join(' + ') + ' + ' : '') + macroReadableCode(key) + '（各操作 ' + result.latency + 'ms）';
         feedback.textContent = 'マクロ手順に追加しました。下の一覧で確認・編集できます。';
