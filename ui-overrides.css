@@ -308,22 +308,7 @@
   text-align: left;
 }
 
-.half-title {
-  font-size: 0;
-}
-
-.half.left .half-title::after,
-.half.right .half-title::after {
-  font-size: .78rem;
-}
-
-.half.left .half-title::after {
-  content: 'LEFT MODULE · TRACKPAD · 22 KEYS';
-}
-
-.half.right .half-title::after {
-  content: 'RIGHT MODULE · TRACKBALL · 22 KEYS';
-}
+.half-title { font-size: .78rem; }
 
 .key-stack {
   display: flex;
@@ -358,8 +343,15 @@
 
 .base,
 .assigned-label {
+  display: -webkit-box;
   max-width: 100%;
   text-align: center;
+  white-space: normal !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow-wrap: anywhere;
 }
 
 .reference-note {
@@ -1579,8 +1571,7 @@ body {
 .studio-zoom-control select { width: 75px; margin: 0; padding: 5px 6px; }
 .keyboard-frame { min-height: 475px; align-items: center !important; justify-content: center !important; gap: clamp(18px, 4vw, 56px) !important; padding: 22px 6px 26px !important; overflow: auto; }
 .half { min-width: min(370px, 44vw) !important; }
-.half-title { color: #718091 !important; font-size: 0 !important; }
-.half.left .half-title::after, .half.right .half-title::after { font-size: 10px !important; }
+.half-title { color: #718091 !important; font-size: 10px !important; }
 .key-stack { gap: 8px !important; }
 .key-row { gap: 8px !important; }
 .key {

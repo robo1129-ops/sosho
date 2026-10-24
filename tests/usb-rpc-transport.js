@@ -61,7 +61,7 @@ vm.runInNewContext(source, context);
   await transport.disconnect();
   assert.equal(transport.isConnected, false);
   assert.equal(readerCancelled, true);
-  assert.ok(statuses.some((value) => value.includes('右側Central')));
+  assert.ok(statuses.some((value) => value.includes('USB接続済み')));
   console.log('USB/COM RPC fallback test passed');
 })().catch((error) => {
   console.error(error);

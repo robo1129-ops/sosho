@@ -34,6 +34,34 @@
   };
   Object.keys(languageCatalog).forEach(function (language) { Object.assign(languageCatalog[language], languageExtras[language] || {}); });
 
+  var transportCopy = {
+    ja: { connection: '接続', log: '接続ログ', read: 'キーマップを読み込む', write: 'キーマップを保存', noticeTitle: '右側CentralをUSBまたは対応BLEで接続してください', noticeBody: 'USB編集は右側Centralだけに対応します。BLE編集は公式ZMK Studio GATTを含むファームウェアと対応ブラウザーが必要です。左側PeripheralをUSBで選ぶと警告して停止します。', connectionDescription: 'USBは右側CentralのCDC-ACM、BLEは公式ZMK Studio GATTを使って読み取りと保存を行います。', transportNote: 'USBは右側CentralのCDC-ACM、BLEは公式ZMK Studio GATTを使って読み取りと保存を行います。', logDescription: 'USB・BLEとRPC操作の前後状態をこのページに保持します。', rpcDescription: '接続後に実機の現在値を読み込み、公式ZMK Studio RPCでキーマップを保存して再読み込みで確認します。', usbConnect: 'USB接続', usbReconnect: '許可済みUSBに再接続', bleConnect: 'BLE接続', bleReconnect: '許可済みBLEに再接続', deviceProfile: '左右のポインティングデバイス', deviceProfileDescription: '実機のセンサー配置に合わせて左右の構成を選択します。', profileRightBall: '右：トラックボール / 左：トラックパッド', profileLeftBall: '左：トラックボール / 右：トラックパッド', scrollScale: 'スクロール量', sleepTitle: '自動スリープ', sleepDescription: '分指定で自動スリープするか、スリープを無効にします。', sleepMode: 'モード', sleepMinutes: 'スリープまで（分）', sleepTimed: '時間指定', sleepOff: 'オフ', deviceBuildNote: 'CPI・スクロール量・センサー配置・自動スリープはファームウェアのビルド設定です。公式ZMK Studioの標準RPCはキーマップ用のため、変更後は選択したプロファイルで再ビルドしてください。' },
+    en: { connection: 'Connection', log: 'Connection log', read: 'Read keymap', write: 'Save keymap', noticeTitle: 'Connect the right Central by USB or supported BLE', noticeBody: 'USB editing is supported only on the right Central. BLE editing requires firmware with the official ZMK Studio GATT transport and a supported browser. Selecting the left Peripheral over USB is rejected.', connectionDescription: 'USB uses the right Central CDC-ACM endpoint; BLE uses the official ZMK Studio GATT service for reading and saving.', transportNote: 'USB uses the right Central CDC-ACM endpoint; BLE uses the official ZMK Studio GATT service for reading and saving.', logDescription: 'Keeps USB, BLE and RPC state before and after each operation.', rpcDescription: 'Read the device after connecting, save the keymap through the official ZMK Studio RPC, then read it again for verification.', usbConnect: 'USB connection', usbReconnect: 'Reconnect authorized USB', bleConnect: 'BLE connection', bleReconnect: 'Reconnect authorized BLE', deviceProfile: 'Pointing-device layout', deviceProfileDescription: 'Choose the left/right sensor arrangement used by the hardware.', profileRightBall: 'Right: trackball / Left: trackpad', profileLeftBall: 'Left: trackball / Right: trackpad', scrollScale: 'Scroll amount', sleepTitle: 'Automatic sleep', sleepDescription: 'Choose a minute-based timeout or disable automatic sleep.', sleepMode: 'Mode', sleepMinutes: 'Sleep after (minutes)', sleepTimed: 'Timed', sleepOff: 'Off', deviceBuildNote: 'CPI, scroll amount, sensor placement and automatic sleep are firmware build settings. Official ZMK Studio RPC handles keymaps, so rebuild the selected profile after changing them.' },
+    'zh-CN': { connection: '连接', log: '连接日志', read: '读取键位', write: '保存键位', noticeTitle: '请通过 USB 或支持的 BLE 连接右侧 Central', noticeBody: 'USB 编辑仅支持右侧 Central。BLE 编辑需要包含官方 ZMK Studio GATT 传输的固件和兼容浏览器。选择左侧 Peripheral 时会停止并显示警告。', connectionDescription: 'USB 使用右侧 Central CDC-ACM；BLE 使用官方 ZMK Studio GATT 服务读取和保存。', transportNote: 'USB 使用右侧 Central CDC-ACM；BLE 使用官方 ZMK Studio GATT 服务读取和保存。', logDescription: '保留 USB、BLE 和 RPC 操作前后的状态。', rpcDescription: '连接后读取设备，通过官方 ZMK Studio RPC 保存键位，再次读取进行确认。', usbConnect: 'USB 连接', usbReconnect: '重新连接已授权 USB', bleConnect: 'BLE 连接', bleReconnect: '重新连接已授权 BLE', deviceProfile: '指针设备布局', deviceProfileDescription: '选择硬件实际使用的左右传感器配置。', profileRightBall: '右：轨迹球 / 左：触控板', profileLeftBall: '左：轨迹球 / 右：触控板', scrollScale: '滚动量', deviceBuildNote: 'CPI、滚动量和传感器位置属于固件构建设置。官方 ZMK Studio RPC 用于键位映射，修改后请重新构建所选配置。' },
+    ko: { connection: '연결', log: '연결 로그', read: '키맵 읽기', write: '키맵 저장', noticeTitle: '오른쪽 Central을 USB 또는 지원되는 BLE로 연결하세요', noticeBody: 'USB 편집은 오른쪽 Central만 지원합니다. BLE 편집에는 공식 ZMK Studio GATT 전송을 포함한 펌웨어와 지원 브라우저가 필요합니다. 왼쪽 Peripheral을 USB로 선택하면 경고 후 중지합니다.', connectionDescription: 'USB는 오른쪽 Central CDC-ACM을, BLE는 공식 ZMK Studio GATT 서비스를 사용합니다.', transportNote: 'USB는 오른쪽 Central CDC-ACM을, BLE는 공식 ZMK Studio GATT 서비스를 사용합니다.', logDescription: 'USB·BLE·RPC 동작 전후 상태를 보관합니다.', rpcDescription: '연결 후 장치를 읽고 공식 ZMK Studio RPC로 키맵을 저장한 다음 다시 읽어 확인합니다.', usbConnect: 'USB 연결', usbReconnect: '허가된 USB 다시 연결', bleConnect: 'BLE 연결', bleReconnect: '허가된 BLE 다시 연결', deviceProfile: '포인팅 장치 배열', deviceProfileDescription: '하드웨어의 좌우 센서 구성을 선택합니다.', profileRightBall: '오른쪽: 트랙볼 / 왼쪽: 트랙패드', profileLeftBall: '왼쪽: 트랙볼 / 오른쪽: 트랙패드', scrollScale: '스크롤 양', deviceBuildNote: 'CPI, 스크롤 양과 센서 배치는 펌웨어 빌드 설정입니다. 공식 RPC는 키맵용이므로 변경 후 선택한 프로필을 다시 빌드하세요.' },
+    th: { connection: 'การเชื่อมต่อ', log: 'บันทึกการเชื่อมต่อ', read: 'อ่านคีย์แมป', write: 'บันทึกคีย์แมป', noticeTitle: 'เชื่อมต่อ Central ด้านขวาด้วย USB หรือ BLE ที่รองรับ', noticeBody: 'การแก้ไขผ่าน USB รองรับเฉพาะ Central ด้านขวา การแก้ไขผ่าน BLE ต้องใช้เฟิร์มแวร์ที่มี GATT transport ของ ZMK Studio และเบราว์เซอร์ที่รองรับ หากเลือก Peripheral ด้านซ้ายจะหยุดพร้อมแจ้งเตือน', connectionDescription: 'USB ใช้ CDC-ACM ของ Central ด้านขวา ส่วน BLE ใช้บริการ GATT ของ ZMK Studio อย่างเป็นทางการ', transportNote: 'USB ใช้ CDC-ACM ของ Central ด้านขวา ส่วน BLE ใช้บริการ GATT ของ ZMK Studio อย่างเป็นทางการ', logDescription: 'เก็บสถานะก่อนและหลังการทำงานของ USB, BLE และ RPC', rpcDescription: 'อ่านอุปกรณ์หลังเชื่อมต่อ บันทึกคีย์แมปผ่าน RPC ของ ZMK Studio แล้วอ่านซ้ำเพื่อตรวจสอบ', usbConnect: 'เชื่อมต่อ USB', usbReconnect: 'เชื่อมต่อ USB ที่อนุญาตอีกครั้ง', bleConnect: 'เชื่อมต่อ BLE', bleReconnect: 'เชื่อมต่อ BLE ที่อนุญาตอีกครั้ง', deviceProfile: 'เลย์เอาต์อุปกรณ์ชี้ตำแหน่ง', deviceProfileDescription: 'เลือกการจัดวางเซนเซอร์ซ้ายและขวาตามฮาร์ดแวร์', profileRightBall: 'ขวา: แทร็กบอล / ซ้าย: แทร็กแพด', profileLeftBall: 'ซ้าย: แทร็กบอล / ขวา: แทร็กแพด', scrollScale: 'ปริมาณการเลื่อน', deviceBuildNote: 'CPI ปริมาณการเลื่อน และตำแหน่งเซนเซอร์เป็นค่าตอนบิลด์เฟิร์มแวร์ RPC มาตรฐานของ ZMK Studio ใช้กับคีย์แมป จึงต้องบิลด์โปรไฟล์ใหม่หลังเปลี่ยนค่า' },
+    es: { connection: 'Conexión', log: 'Registro de conexión', read: 'Leer mapa de teclas', write: 'Guardar mapa de teclas', noticeTitle: 'Conecta el Central derecho por USB o BLE compatible', noticeBody: 'La edición por USB solo admite el Central derecho. La edición BLE requiere firmware con el transporte GATT oficial de ZMK Studio y un navegador compatible. Si eliges el Peripheral izquierdo, se mostrará una advertencia y se detendrá.', connectionDescription: 'USB usa el CDC-ACM del Central derecho; BLE usa el servicio GATT oficial de ZMK Studio.', transportNote: 'USB usa el CDC-ACM del Central derecho; BLE usa el servicio GATT oficial de ZMK Studio.', logDescription: 'Conserva el estado antes y después de las operaciones USB, BLE y RPC.', rpcDescription: 'Lee el dispositivo tras conectarlo, guarda el mapa mediante el RPC oficial de ZMK Studio y vuelve a leerlo para verificar.', usbConnect: 'Conectar USB', usbReconnect: 'Reconectar USB autorizado', bleConnect: 'Conectar BLE', bleReconnect: 'Reconectar BLE autorizado', deviceProfile: 'Distribución de dispositivos apuntadores', deviceProfileDescription: 'Elige la disposición izquierda/derecha de los sensores del hardware.', profileRightBall: 'Derecha: trackball / Izquierda: trackpad', profileLeftBall: 'Izquierda: trackball / Derecha: trackpad', scrollScale: 'Cantidad de desplazamiento', deviceBuildNote: 'El CPI, la cantidad de desplazamiento y la posición de los sensores son ajustes de compilación. El RPC oficial de ZMK Studio gestiona mapas, así que recompila el perfil elegido después de cambiarlos.' },
+    de: { connection: 'Verbindung', log: 'Verbindungsprotokoll', read: 'Keymap lesen', write: 'Keymap speichern', noticeTitle: 'Rechtes Central per USB oder unterstütztem BLE verbinden', noticeBody: 'USB-Bearbeitung unterstützt nur das rechte Central. Für BLE sind Firmware mit dem offiziellen ZMK-Studio-GATT-Transport und ein unterstützter Browser nötig. Das linke Peripheral wird per USB abgewiesen.', connectionDescription: 'USB verwendet den CDC-ACM-Port des rechten Central; BLE verwendet den offiziellen ZMK-Studio-GATT-Dienst.', transportNote: 'USB verwendet den CDC-ACM-Port des rechten Central; BLE verwendet den offiziellen ZMK-Studio-GATT-Dienst.', logDescription: 'Bewahrt Zustände vor und nach USB-, BLE- und RPC-Aktionen auf.', rpcDescription: 'Gerät nach dem Verbinden lesen, Keymap über das offizielle ZMK-Studio-RPC speichern und zur Prüfung erneut lesen.', usbConnect: 'USB verbinden', usbReconnect: 'Autorisiertes USB erneut verbinden', bleConnect: 'BLE verbinden', bleReconnect: 'Autorisiertes BLE erneut verbinden', deviceProfile: 'Zeigegeräte-Layout', deviceProfileDescription: 'Linke/rechte Sensoranordnung der Hardware auswählen.', profileRightBall: 'Rechts: Trackball / Links: Trackpad', profileLeftBall: 'Links: Trackball / Rechts: Trackpad', scrollScale: 'Scrollmenge', deviceBuildNote: 'CPI, Scrollmenge und Sensorposition sind Firmware-Build-Einstellungen. Das offizielle ZMK-Studio-RPC bearbeitet Keymaps; nach Änderungen das gewählte Profil neu bauen.' }
+  };
+  var physicalCopy = {
+    ja: { leftModule: '左モジュール', rightModule: '右モジュール', ballShort: 'トラックボール', padShort: 'トラックパッド' },
+    en: { leftModule: 'LEFT MODULE', rightModule: 'RIGHT MODULE', ballShort: 'TRACKBALL', padShort: 'TRACKPAD' },
+    'zh-CN': { leftModule: '左侧模块', rightModule: '右侧模块', ballShort: '轨迹球', padShort: '触控板' },
+    ko: { leftModule: '왼쪽 모듈', rightModule: '오른쪽 모듈', ballShort: '트랙볼', padShort: '트랙패드' },
+    th: { leftModule: 'โมดูลซ้าย', rightModule: 'โมดูลขวา', ballShort: 'แทร็กบอล', padShort: 'แทร็กแพด' },
+    es: { leftModule: 'MÓDULO IZQUIERDO', rightModule: 'MÓDULO DERECHO', ballShort: 'TRACKBALL', padShort: 'TRACKPAD' },
+    de: { leftModule: 'LINKES MODUL', rightModule: 'RECHTES MODUL', ballShort: 'TRACKBALL', padShort: 'TRACKPAD' }
+  };
+  var sleepCopy = {
+    ja: { sleepTitle: '自動スリープ', sleepDescription: '分指定で自動スリープするか、スリープを無効にします。', sleepMode: 'モード', sleepMinutes: 'スリープまで（分）', sleepTimed: '時間指定', sleepOff: 'オフ' },
+    en: { sleepTitle: 'Automatic sleep', sleepDescription: 'Choose a minute-based timeout or disable automatic sleep.', sleepMode: 'Mode', sleepMinutes: 'Sleep after (minutes)', sleepTimed: 'Timed', sleepOff: 'Off' },
+    'zh-CN': { sleepTitle: '自动休眠', sleepDescription: '按分钟设置自动休眠时间，或关闭自动休眠。', sleepMode: '模式', sleepMinutes: '休眠前（分钟）', sleepTimed: '按时间', sleepOff: '关闭' },
+    ko: { sleepTitle: '자동 절전', sleepDescription: '분 단위 시간을 지정하거나 자동 절전을 끕니다.', sleepMode: '모드', sleepMinutes: '절전까지(분)', sleepTimed: '시간 지정', sleepOff: '끔' },
+    th: { sleepTitle: 'พักเครื่องอัตโนมัติ', sleepDescription: 'กำหนดเวลาเป็นนาทีหรือปิดการพักเครื่องอัตโนมัติ', sleepMode: 'โหมด', sleepMinutes: 'พักเครื่องหลัง (นาที)', sleepTimed: 'กำหนดเวลา', sleepOff: 'ปิด' },
+    es: { sleepTitle: 'Suspensión automática', sleepDescription: 'Elige un tiempo en minutos o desactiva la suspensión automática.', sleepMode: 'Modo', sleepMinutes: 'Suspender después de (minutos)', sleepTimed: 'Temporizado', sleepOff: 'Desactivado' },
+    de: { sleepTitle: 'Automatischer Ruhezustand', sleepDescription: 'Minuten festlegen oder den automatischen Ruhezustand deaktivieren.', sleepMode: 'Modus', sleepMinutes: 'Ruhezustand nach (Minuten)', sleepTimed: 'Zeitgesteuert', sleepOff: 'Aus' }
+  };
+
   function storedLanguage() {
     try {
       var value = localStorage.getItem('sosho-language-v1') || 'ja';
@@ -49,7 +77,7 @@
 
   function applyLanguage(language) {
     language = Object.prototype.hasOwnProperty.call(languageCatalog, language) ? language : 'ja';
-    var copy = Object.assign({}, languageCatalog.ja, languageCatalog[language]);
+    var copy = Object.assign({}, languageCatalog.ja, languageCatalog[language], transportCopy[language] || transportCopy.en, physicalCopy[language] || physicalCopy.en, sleepCopy[language] || sleepCopy.en);
     document.documentElement.lang = language;
     document.title = copy.title;
     function setText(selector, value) {
@@ -110,9 +138,13 @@
     var addMacro = document.getElementById('add-macro');
     if (addMacro) addMacro.textContent = copy.addMacro;
     var connect = document.getElementById('connect-usb');
-    if (connect) connect.textContent = ({ja:'USB接続', en:'USB connection', 'zh-CN':'USB 连接', ko:'USB 연결', th:'เชื่อมต่อ USB', es:'Conectar USB', de:'USB verbinden'})[language] || 'USB接続';
+    if (connect) connect.textContent = copy.usbConnect;
     var reconnect = document.getElementById('connect-usb-authorized');
-    if (reconnect) reconnect.textContent = ({ja:'再接続', en:'Reconnect', 'zh-CN':'重新连接', ko:'다시 연결', th:'เชื่อมต่อใหม่', es:'Reconectar', de:'Erneut verbinden'})[language] || '再接続';
+    if (reconnect) reconnect.textContent = copy.usbReconnect;
+    var connectBle = document.getElementById('connect-ble');
+    if (connectBle) connectBle.textContent = copy.bleConnect;
+    var reconnectBle = document.getElementById('connect-ble-authorized');
+    if (reconnectBle) reconnectBle.textContent = copy.bleReconnect;
     var disconnect = document.getElementById('disconnect');
     if (disconnect) disconnect.textContent = ({ja:'切断', en:'Disconnect', 'zh-CN':'断开', ko:'연결 해제', th:'ตัดการเชื่อมต่อ', es:'Desconectar', de:'Trennen'})[language] || '切断';
     var copyLog = document.getElementById('connection-log-copy');
@@ -169,24 +201,38 @@
     setText('.macro-library-head p', copy.macroLibraryDescription);
     setText('.macro-library-count', copy.macroLibraryCount);
     setText('.palette-help', copy.paletteHelp);
-    setText('.device-settings-card:nth-of-type(1) h4', copy.deviceBall);
-    setText('.device-settings-card:nth-of-type(1) p', copy.deviceBallDesc);
-    setText('.device-settings-card:nth-of-type(2) h4', copy.devicePad);
-    setText('.device-settings-card:nth-of-type(2) p', copy.devicePadDesc);
-    setText('.device-settings-card:nth-of-type(3) h4', copy.autoMouse);
-    setText('.device-settings-card:nth-of-type(3) p', copy.autoMouseDesc);
-    setText('.device-settings-card:nth-of-type(4) h4', copy.scrollMode);
-    setText('.device-settings-card:nth-of-type(4) p', copy.scrollDesc);
-    setText('.device-setting-note', copy.deviceNote);
+    setText('[data-pointer-profile-title]', copy.deviceProfile);
+    setText('[data-pointer-profile-description]', copy.deviceProfileDescription);
+    var profileSelect = document.querySelector('[data-pointer-profile]');
+    if (profileSelect && profileSelect.options.length >= 2) { profileSelect.options[0].textContent = copy.profileRightBall; profileSelect.options[1].textContent = copy.profileLeftBall; }
+    setText('[data-device-ball-title]', copy.deviceBall);
+    setText('[data-device-ball-description]', copy.deviceBallDesc);
+    setText('[data-device-pad-title]', copy.devicePad);
+    setText('[data-device-pad-description]', copy.devicePadDesc);
+    setText('.device-settings-card:nth-of-type(4) h4', copy.autoMouse);
+    setText('.device-settings-card:nth-of-type(4) p', copy.autoMouseDesc);
+    setText('.device-settings-card:nth-of-type(5) h4', copy.scrollMode);
+    setText('.device-settings-card:nth-of-type(5) p', copy.scrollDesc);
+    setText('[data-sleep-title]', copy.sleepTitle);
+    setText('[data-sleep-description]', copy.sleepDescription);
+    setText('[data-sleep-mode-label]', copy.sleepMode);
+    setText('[data-sleep-minutes-label]', copy.sleepMinutes);
+    var sleepMode = document.querySelector('[data-sleep-mode]');
+    if (sleepMode && sleepMode.options.length >= 2) { sleepMode.options[0].textContent = copy.sleepTimed; sleepMode.options[1].textContent = copy.sleepOff; }
+    setText('.device-setting-note', copy.deviceBuildNote || copy.deviceNote);
+    setText('[data-scroll-scale-label]', copy.scrollScale);
+    if (typeof window.soshoRefreshPhysicalTitles === 'function') window.soshoRefreshPhysicalTitles(copy);
     var leftMarker = document.querySelector('#keyboard .half.left .device-marker');
     var rightMarker = document.querySelector('#keyboard .half.right .device-marker');
+    var reverseProfile = false;
+    try { reverseProfile = JSON.parse(localStorage.getItem('sosho-device-settings-v1') || '{}').pointerProfile === 'left-ball-right-pad'; } catch (error) {}
     if (leftMarker) {
-      setText('#keyboard .half.left .device-marker strong', copy.padMarker);
-      setText('#keyboard .half.left .device-marker span', copy.padMarkerDesc);
+      setText('#keyboard .half.left .device-marker strong', reverseProfile ? copy.ballMarker : copy.padMarker);
+      setText('#keyboard .half.left .device-marker span', reverseProfile ? copy.ballMarkerDesc : copy.padMarkerDesc);
     }
     if (rightMarker) {
-      setText('#keyboard .half.right .device-marker strong', copy.ballMarker);
-      setText('#keyboard .half.right .device-marker span', copy.ballMarkerDesc);
+      setText('#keyboard .half.right .device-marker strong', reverseProfile ? copy.padMarker : copy.ballMarker);
+      setText('#keyboard .half.right .device-marker span', reverseProfile ? copy.padMarkerDesc : copy.ballMarkerDesc);
     }
     setText('.macro-modifiers > span', copy.macroModifiers || 'Modifiers:');
     setFirstText('.macro-latency', copy.macroLatency || 'Delay per added step (ms)');
@@ -309,8 +355,14 @@
     value = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
     var timeout = Number(value.autoMouseTimeoutMs);
     if (!Number.isFinite(timeout)) timeout = 300;
+    var pointerProfile = value.pointerProfile === 'left-ball-right-pad' ? 'left-ball-right-pad' : 'right-ball-left-pad';
+    var scrollScale = Number(value.scrollScalePercent);
+    if (!Number.isFinite(scrollScale)) scrollScale = 35;
+    var sleepMinutes = Number(value.sleepMinutes);
+    if (!Number.isFinite(sleepMinutes)) sleepMinutes = 60;
     return {
-      trackballCpi: Math.max(200, Math.min(1200, Number(value.trackballCpi) || 600)),
+      pointerProfile: pointerProfile,
+      trackballCpi: Math.max(200, Math.min(1200, Number(value.trackballCpi) || 200)),
       trackpadScale: Math.max(.5, Math.min(2, Number(value.trackpadScale) || 1)),
       autoMouseEnabled: value.autoMouseEnabled !== false,
       autoMouseLayer: Math.max(0, Math.min(3, Number.isInteger(Number(value.autoMouseLayer)) ? Number(value.autoMouseLayer) : 1)),
@@ -319,7 +371,10 @@
       scrollDiagonal: value.scrollDiagonal !== false,
       scrollAxisLock: value.scrollAxisLock !== false,
       scrollAxisThreshold: Math.max(1.1, Math.min(4, Number(value.scrollAxisThreshold) || 1.8)),
-      scrollDivider: Math.max(1, Math.min(16, Number(value.scrollDivider) || 4))
+      scrollDivider: Math.max(1, Math.min(16, Number(value.scrollDivider) || 4)),
+      scrollScalePercent: Math.max(5, Math.min(100, Math.round(scrollScale))),
+      sleepMode: value.sleepMode === 'off' ? 'off' : 'minutes',
+      sleepMinutes: Math.max(1, Math.min(1440, Math.round(sleepMinutes)))
     };
   }
 
@@ -691,11 +746,13 @@
     var devicePanel = document.createElement('div');
     devicePanel.className = 'device-settings-panel';
     devicePanel.dataset.paletteCategory = 'device';
-    devicePanel.innerHTML = '<section class="device-settings-card"><h4>右モジュール · トラックボール</h4><p>移動量のCPIを調整します。</p><div class="device-setting-actions"><button type="button" data-trackball-step="-100">CPI −</button><button type="button" data-trackball-step="0">標準</button><button type="button" data-trackball-step="100">CPI ＋</button><span class="device-setting-value" data-trackball-value></span></div></section>' +
-      '<section class="device-settings-card"><h4>左モジュール · トラックパッド</h4><p>カーソル移動倍率を調整します。</p><div class="device-setting-actions"><button type="button" data-trackpad-step="-0.25">移動倍率 −</button><button type="button" data-trackpad-step="0">標準</button><button type="button" data-trackpad-step="0.25">移動倍率 ＋</button><span class="device-setting-value" data-trackpad-value></span></div></section>' +
+    devicePanel.innerHTML = '<section class="device-settings-card device-settings-card-wide"><h4 data-pointer-profile-title>左右のポインティングデバイス</h4><p data-pointer-profile-description>実機のセンサー配置に合わせて、左右のトラックボール／トラックパッド構成を選択します。</p><label>センサー配置<select data-pointer-profile><option value="right-ball-left-pad">右：トラックボール / 左：トラックパッド</option><option value="left-ball-right-pad">左：トラックボール / 右：トラックパッド</option></select></label></section>' +
+      '<section class="device-settings-card"><h4 data-device-ball-title>トラックボール</h4><p data-device-ball-description>移動量のCPIを調整します。</p><div class="device-setting-actions"><button type="button" data-trackball-step="-100">CPI −</button><button type="button" data-trackball-step="0">標準</button><button type="button" data-trackball-step="100">CPI ＋</button><span class="device-setting-value" data-trackball-value></span></div></section>' +
+      '<section class="device-settings-card"><h4 data-device-pad-title>トラックパッド</h4><p data-device-pad-description>カーソル移動倍率を調整します。</p><div class="device-setting-actions"><button type="button" data-trackpad-step="-0.25">移動倍率 −</button><button type="button" data-trackpad-step="0">標準</button><button type="button" data-trackpad-step="0.25">移動倍率 ＋</button><span class="device-setting-value" data-trackpad-value></span></div></section>' +
       '<section class="device-settings-card device-settings-card-wide"><h4>オートマウスレイヤー</h4><p>トラックボール／トラックパッドが動いている間と、停止後の指定時間だけ指定レイヤーを保持します。</p><div class="device-setting-form"><label class="device-setting-checkbox"><input type="checkbox" data-auto-mouse-enabled aria-label="オートマウス ON/OFF">オートマウス ON / OFF</label><label>保持するレイヤー<select data-auto-mouse-layer><option value="0">Layer 0</option><option value="1">Layer 1</option><option value="2">Layer 2</option><option value="3">Layer 3</option></select></label><label>停止後の保持時間(ms)<input type="number" data-auto-mouse-timeout min="0" max="60000" step="10"></label></div></section>' +
-      '<section class="device-settings-card device-settings-card-wide"><h4>スクロールモード</h4><p>下のボタンをキーへドラッグして割り当てると、押している間だけトラックボール／トラックパッドをスクロールモードにします。</p><button type="button" class="device-action-chip" draggable="true" data-scroll-hold-action>押している間だけスクロール</button><div class="device-setting-form"><label class="device-setting-checkbox"><input type="checkbox" data-scroll-diagonal>斜めスクロールを許可</label><label class="device-setting-checkbox"><input type="checkbox" data-scroll-axis-lock>明確な縦横入力を軸ロック</label><label>軸ロック判定<select data-scroll-axis-threshold><option value="1.5">弱め (1.5×)</option><option value="1.8">標準 (1.8×)</option><option value="2.2">強め (2.2×)</option><option value="3">かなり強め (3×)</option></select></label><div class="device-setting-actions"><button type="button" data-scroll-divider-step="-1">分割 −</button><button type="button" data-scroll-divider-step="0">標準</button><button type="button" data-scroll-divider-step="1">分割 ＋</button><span class="device-setting-value" data-scroll-divider-value></span></div></div></section>' +
-      '<p class="device-setting-note">Keyballのオートマウス層・押下中スクロール・軸ロック／スクロール分割の考え方を設定モデルに反映しています。値はJSONとこのブラウザーへ保存します。実機へ反映するには、同じ項目を扱うファームウェア通信が必要です。</p>';
+      '<section class="device-settings-card device-settings-card-wide"><h4>スクロールモード</h4><p>下のボタンをキーへドラッグして割り当てると、押している間だけトラックボール／トラックパッドをスクロールモードにします。</p><button type="button" class="device-action-chip" draggable="true" data-scroll-hold-action>押している間だけスクロール</button><div class="device-setting-form"><label class="device-setting-checkbox"><input type="checkbox" data-scroll-diagonal>斜めスクロールを許可</label><label class="device-setting-checkbox"><input type="checkbox" data-scroll-axis-lock>明確な縦横入力を軸ロック</label><label>軸ロック判定<select data-scroll-axis-threshold><option value="1.5">弱め (1.5×)</option><option value="1.8">標準 (1.8×)</option><option value="2.2">強め (2.2×)</option><option value="3">かなり強め (3×)</option></select></label><label><span data-scroll-scale-label>スクロール量</span><input type="range" data-scroll-scale min="5" max="100" step="5"><span class="device-setting-value" data-scroll-scale-value></span></label><div class="device-setting-actions"><button type="button" data-scroll-divider-step="-1">分割 −</button><button type="button" data-scroll-divider-step="0">標準</button><button type="button" data-scroll-divider-step="1">分割 ＋</button><span class="device-setting-value" data-scroll-divider-value></span></div></div></section>' +
+      '<section class="device-settings-card device-settings-card-wide"><h4 data-sleep-title>自動スリープ</h4><p data-sleep-description>分指定で自動スリープするか、スリープを無効にします。</p><div class="device-setting-form"><label><span data-sleep-mode-label>モード</span><select data-sleep-mode><option value="minutes">時間指定</option><option value="off">オフ</option></select></label><label><span data-sleep-minutes-label>スリープまで（分）</span><input type="number" data-sleep-minutes min="1" max="1440" step="1"></label></div></section>' +
+      '<p class="device-setting-note">値はJSONとこのブラウザーへ保存します。CPI・スクロール量・左右センサー配置・自動スリープはファームウェアのビルド設定です。公式ZMK Studioの標準RPCはキーマップ編集用のため、これらを実機へ反映するには選択したプロファイルでファームウェアを再ビルドします。</p>';
     palette.appendChild(devicePanel);
 
     var tabBar = document.createElement('div');
@@ -745,7 +802,8 @@
     }
 
     var deviceSettings = {
-      trackballCpi: 600,
+      pointerProfile: 'right-ball-left-pad',
+      trackballCpi: 200,
       trackpadScale: 1,
       autoMouseEnabled: true,
       autoMouseLayer: 1,
@@ -754,7 +812,10 @@
       scrollDiagonal: true,
       scrollAxisLock: true,
       scrollAxisThreshold: 1.8,
-      scrollDivider: 4
+      scrollDivider: 4,
+      scrollScalePercent: 35,
+      sleepMode: 'minutes',
+      sleepMinutes: 60
     };
     try {
       deviceSettings = validDeviceSettings(Object.assign(deviceSettings, JSON.parse(localStorage.getItem('sosho-device-settings-v1') || '{}')));
@@ -764,6 +825,7 @@
     function saveDeviceSettings() {
       deviceSettings = validDeviceSettings(deviceSettings);
       try { localStorage.setItem('sosho-device-settings-v1', JSON.stringify(deviceSettings)); } catch (error) {}
+      devicePanel.querySelector('[data-pointer-profile]').value = deviceSettings.pointerProfile;
       devicePanel.querySelector('[data-trackball-value]').textContent = deviceSettings.trackballCpi + ' CPI';
       devicePanel.querySelector('[data-trackpad-value]').textContent = deviceSettings.trackpadScale.toFixed(2) + '×';
       devicePanel.querySelector('[data-auto-mouse-enabled]').checked = deviceSettings.autoMouseEnabled;
@@ -772,8 +834,21 @@
       devicePanel.querySelector('[data-scroll-diagonal]').checked = deviceSettings.scrollDiagonal;
       devicePanel.querySelector('[data-scroll-axis-lock]').checked = deviceSettings.scrollAxisLock;
       devicePanel.querySelector('[data-scroll-axis-threshold]').value = String(deviceSettings.scrollAxisThreshold);
+      devicePanel.querySelector('[data-scroll-scale]').value = String(deviceSettings.scrollScalePercent);
+      devicePanel.querySelector('[data-scroll-scale-value]').textContent = deviceSettings.scrollScalePercent + '%';
       devicePanel.querySelector('[data-scroll-divider-value]').textContent = '分割 ' + deviceSettings.scrollDivider;
+      devicePanel.querySelector('[data-sleep-mode]').value = deviceSettings.sleepMode;
+      devicePanel.querySelector('[data-sleep-minutes]').value = String(deviceSettings.sleepMinutes);
+      devicePanel.querySelector('[data-sleep-minutes]').disabled = deviceSettings.sleepMode === 'off';
+      var reverse = deviceSettings.pointerProfile === 'left-ball-right-pad';
+      devicePanel.querySelector('[data-device-ball-title]').textContent = reverse ? '左モジュール · トラックボール' : '右モジュール · トラックボール';
+      devicePanel.querySelector('[data-device-pad-title]').textContent = reverse ? '右モジュール · トラックパッド' : '左モジュール · トラックパッド';
     }
+    devicePanel.querySelector('[data-pointer-profile]').addEventListener('change', function (event) {
+      deviceSettings.pointerProfile = event.target.value;
+      saveDeviceSettings();
+      createEncoderTargets();
+    });
     devicePanel.querySelectorAll('[data-trackball-step]').forEach(function (button) {
       button.addEventListener('click', function () {
         var step = Number(button.dataset.trackballStep);
@@ -810,6 +885,18 @@
     });
     devicePanel.querySelector('[data-scroll-axis-threshold]').addEventListener('change', function (event) {
       deviceSettings.scrollAxisThreshold = Number(event.target.value);
+      saveDeviceSettings();
+    });
+    devicePanel.querySelector('[data-scroll-scale]').addEventListener('input', function (event) {
+      deviceSettings.scrollScalePercent = Number(event.target.value);
+      saveDeviceSettings();
+    });
+    devicePanel.querySelector('[data-sleep-mode]').addEventListener('change', function (event) {
+      deviceSettings.sleepMode = event.target.value === 'off' ? 'off' : 'minutes';
+      saveDeviceSettings();
+    });
+    devicePanel.querySelector('[data-sleep-minutes]').addEventListener('change', function (event) {
+      deviceSettings.sleepMinutes = Number(event.target.value);
       saveDeviceSettings();
     });
     devicePanel.querySelectorAll('[data-scroll-divider-step]').forEach(function (button) {
@@ -860,7 +947,7 @@
       var cluster = document.createElement('div');
       cluster.className = 'encoder-cluster';
       cluster.dataset.layer = String(layer);
-      cluster.innerHTML = '<span class="encoder-title">ロータリーエンコーダー</span>';
+      cluster.innerHTML = '<span class="encoder-title">ロータリーエンコーダー（押下なし）</span>';
       [['ccw', '↺ 左回転'], ['cw', '↻ 右回転']].forEach(function (entry) {
         var target = 'l' + layer + '-' + side + '-encoder-' + entry[0];
         var button = document.createElement('button');
@@ -895,7 +982,10 @@
 
       var marker = document.createElement('div');
       marker.className = 'device-marker';
-      marker.innerHTML = side === 'left' ? '<strong>左 · トラックパッド</strong><span>移動倍率はDEVICEで設定</span>' : '<strong>右 · トラックボール</strong><span>CPIはDEVICEで設定</span>';
+      var reverse = false;
+      try { reverse = JSON.parse(localStorage.getItem('sosho-device-settings-v1') || '{}').pointerProfile === 'left-ball-right-pad'; } catch (error) {}
+      var isBall = reverse ? side === 'left' : side === 'right';
+      marker.innerHTML = isBall ? '<strong>' + (side === 'left' ? '左' : '右') + ' · トラックボール</strong><span>CPIはDEVICEで設定</span>' : '<strong>' + (side === 'left' ? '左' : '右') + ' · トラックパッド</strong><span>移動倍率はDEVICEで設定</span>';
       half.appendChild(marker);
     });
   }
@@ -1011,9 +1101,10 @@
     function syncState() {
       if (!stateNode) return;
       var text = connectionStatus ? connectionStatus.textContent : '未接続';
-      var connected = /^USB接続済み/.test(text) || text === '接続済み';
-      stateNode.textContent = connected ? 'USB接続済み' : 'USB未接続';
-      topbar.classList.toggle('studio-connected', stateNode.textContent === 'USB接続済み');
+      var connected = /^(USB|BLE)接続済み/.test(text) || text === '接続済み';
+      var bleConnected = /^BLE接続済み/.test(text);
+      stateNode.textContent = connected ? (bleConnected ? 'BLE接続済み' : 'USB接続済み') : '未接続';
+      topbar.classList.toggle('studio-connected', connected);
     }
     if (connectionStatus && typeof MutationObserver === 'function') {
       new MutationObserver(syncState).observe(connectionStatus, { childList: true, characterData: true, subtree: true });

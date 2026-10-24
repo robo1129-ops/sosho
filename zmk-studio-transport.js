@@ -356,7 +356,7 @@
   };
   Object.defineProperty(FramedTransport.prototype, 'canWriteKeymap', { get: function () { return RPC_SCHEMA_SUPPORTED; } });
 
-  function ZmkSerialTransport(options) { FramedTransport.call(this, options); this.port = null; this.reader = null; this.writer = null; this.reading = false; this._disconnecting = false; this._connecting = false; this.baudRate = 9600; this._rpcBaudRetried = false; }
+  function ZmkSerialTransport(options) { FramedTransport.call(this, options); this.kind = 'usb'; this.requiredSide = 'central'; this.roleState = 'unknown'; this.port = null; this.portInfo = null; this.reader = null; this.writer = null; this.reading = false; this._disconnecting = false; this._connecting = false; this.baudRate = 9600; this._rpcBaudRetried = false; }
   ZmkSerialTransport.prototype = Object.create(FramedTransport.prototype); ZmkSerialTransport.prototype.constructor = ZmkSerialTransport;
   Object.defineProperty(ZmkSerialTransport.prototype, 'isConnected', { get: function () { return !!this.port && this.reading; } });
   Object.defineProperty(ZmkSerialTransport.prototype, 'isSupported', { get: function () { return typeof navigator !== 'undefined' && !!navigator.serial && typeof navigator.serial.requestPort === 'function'; } });
@@ -375,18 +375,22 @@
       error: errorText,
       transport: 'Web Serial / USB CDC-ACM',
       recommendedDevice: '右側Central（トラックボール側）',
+      requiredSide: this.requiredSide,
+      roleState: this.roleState,
+      portInfo: this.portInfo,
       baudRate: this.baudRate
     };
   };
   ZmkSerialTransport.prototype._open = async function (port) {
     this.port = port;
+    try { this.portInfo = typeof port.getInfo === 'function' ? port.getInfo() : null; } catch (error) { this.portInfo = null; }
     // Match the official ZMK Studio serial transport first.  Its reference
     // implementation opens the CDC/ACM port at 9600 baud; 12500 is retained
     // only as a compatibility fallback for earlier SO-SHO test images.
     await this.port.open({ baudRate: this.baudRate, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
     this.reading = true;
-    this._setDevice('右側Central / USB');
-    this._setStatus('USB接続済み（右側Central / ZMK Studio RPC / ' + this.baudRate + ' baud）');
+    this._setDevice('USBデバイス（左右はRPC確認前）');
+    this._setStatus('USB接続済み（左右確認前 / ZMK Studio RPC / ' + this.baudRate + ' baud）');
     this._readLoop();
     return true;
   };
@@ -443,12 +447,12 @@
       return false;
     } finally { this._connecting = false; }
   };
-  ZmkSerialTransport.prototype.disconnect = async function (silent) { var had = !!this.port || !!this.reader; this._disconnecting = true; try { if (this.reader) await this.reader.cancel(); } catch (error) {} try { if (this.writer) this.writer.releaseLock(); } catch (error) {} try { if (this.port) await this.port.close(); } catch (error) {} this.reader = null; this.writer = null; this.port = null; this.reading = false; this._disconnecting = false; this._rpcBaudRetried = false; this.baudRate = 9600; this._rejectPending(new Error('USB disconnected')); this._setDevice('—'); if (had && !silent) this._setStatus('USB切断済み'); };
+  ZmkSerialTransport.prototype.disconnect = async function (silent) { var had = !!this.port || !!this.reader; this._disconnecting = true; try { if (this.reader) await this.reader.cancel(); } catch (error) {} try { if (this.writer) this.writer.releaseLock(); } catch (error) {} try { if (this.port) await this.port.close(); } catch (error) {} this.reader = null; this.writer = null; this.port = null; this.portInfo = null; this.reading = false; this.roleState = 'unknown'; this._disconnecting = false; this._rpcBaudRetried = false; this.baudRate = 9600; this._rejectPending(new Error('USB disconnected')); this._setDevice('—'); if (had && !silent) this._setStatus('USB切断済み'); };
   ZmkSerialTransport.prototype._readLoop = async function () { while (this.port && this.reading && !this._disconnecting) { try { this.reader = this.port.readable.getReader(); while (this.reading && !this._disconnecting) { var result = await this.reader.read(); if (result.done) break; if (result.value) this._consume(result.value); } this.reader.releaseLock(); this.reader = null; } catch (error) { if (this.reader) try { this.reader.releaseLock(); } catch (releaseError) {} this.reader = null; if (!this._disconnecting) { this.reading = false; this._setStatus('USB受信失敗: ' + (error.message || 'unknown error')); } } } };
   ZmkSerialTransport.prototype.sendFramedPayload = async function (payload) { if (!this.isConnected) throw new Error('USB未接続です'); if (!this.port || !this.port.writable) throw new Error('USB writer unavailable'); var writer = this.writer || this.port.writable.getWriter(); this.writer = writer; await writer.write(encodeFrame(payload)); return true; };
 
   var BLE_NAME_PREFIXES = ['sosho', 'soho', 'SO-SHO', 'SOHO', 'ZMK'];
-  function ZmkBleTransport(options) { options = options || {}; FramedTransport.call(this, options); this.device = null; this.server = null; this.service = null; this.characteristic = null; this.macroService = null; this.studioAvailable = false; this.reading = false; this._connecting = false; this.writeChunkSize = Math.max(1, Math.min(BLE_SAFE_WRITE_CHUNK_SIZE, Number(options.writeChunkSize) || BLE_SAFE_WRITE_CHUNK_SIZE)); this.writeDelayMs = Math.max(0, Number(options.writeDelayMs) || BLE_INTER_CHUNK_DELAY_MS); this._writeChain = Promise.resolve(); this._onValue = this._handleValue.bind(this); this._onDisconnected = this._handleDisconnected.bind(this); }
+  function ZmkBleTransport(options) { options = options || {}; FramedTransport.call(this, options); this.kind = 'ble'; this.requiredSide = 'central'; this.roleState = 'unknown'; this.device = null; this.server = null; this.service = null; this.characteristic = null; this.macroService = null; this.studioAvailable = false; this.reading = false; this._connecting = false; this.writeChunkSize = Math.max(1, Math.min(BLE_SAFE_WRITE_CHUNK_SIZE, Number(options.writeChunkSize) || BLE_SAFE_WRITE_CHUNK_SIZE)); this.writeDelayMs = Math.max(0, Number(options.writeDelayMs) || BLE_INTER_CHUNK_DELAY_MS); this._writeChain = Promise.resolve(); this._onValue = this._handleValue.bind(this); this._onDisconnected = this._handleDisconnected.bind(this); }
   ZmkBleTransport.prototype = Object.create(FramedTransport.prototype); ZmkBleTransport.prototype.constructor = ZmkBleTransport;
   Object.defineProperty(ZmkBleTransport.prototype, 'isSupported', { get: function () { return typeof navigator !== 'undefined' && !!navigator.bluetooth && typeof window !== 'undefined' && window.isSecureContext === true; } });
   Object.defineProperty(ZmkBleTransport.prototype, 'isConnected', { get: function () { return !!this.device && !!this.server && this.server.connected && this.reading; } });
@@ -482,6 +486,8 @@
       authorizedDevicesError: authorizedDevicesError,
       requestDeviceApi: bluetooth && typeof navigator.bluetooth.requestDevice === 'function',
       deviceName: this.device && this.device.name ? this.device.name : '',
+      requiredSide: this.requiredSide,
+      roleState: this.roleState,
       gattConnected: !!(this.server && this.server.connected),
       officialServiceDiscovered: !!this.service,
       officialCharacteristicDiscovered: !!this.characteristic,
