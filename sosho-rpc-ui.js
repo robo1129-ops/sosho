@@ -249,6 +249,9 @@
     var keymap = deviceState.keymap;
     rawById = Object.create(null);
     labelById = Object.create(null);
+    // A device read is authoritative. Drop browser-only overrides first so
+    // stale hold/tap entries cannot be mistaken for edits to another key.
+    if (editor.resetForDevice) editor.resetForDevice();
     keymap.layers.forEach(function (layer, layerIndex) {
       var uiLayer = editor.getLayers()[layerIndex];
       if (uiLayer && layer.name) uiLayer.name = layer.name;
@@ -419,7 +422,10 @@
           original._id = id;
           var desiredLabel = editor.getAssignments()[id] || labelById[id];
           var holdLabel = editor.getHoldAssignments && editor.getHoldAssignments()[id];
-          var desired = holdLabel ? resolveHoldTapBinding(desiredLabel, holdLabel) : resolveBinding(desiredLabel, original);
+          // Preserve bindings that came from the device verbatim. This is
+          // essential for behavior bindings whose metadata is not editable
+          // through the generic key picker (for example Mod-Tap/Layer-Tap).
+          var desired = desiredLabel === labelById[id] ? original : (holdLabel ? resolveHoldTapBinding(desiredLabel, holdLabel) : resolveBinding(desiredLabel, original));
           if (!desired) throw new Error(id + ' の割り当てを公式behavior bindingへ変換できません: ' + desiredLabel);
           if (!sameBinding(original, desired)) changes.push({ layerId: layer.id, keyPosition: position, binding: desired });
         });
