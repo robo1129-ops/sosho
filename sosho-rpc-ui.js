@@ -432,6 +432,28 @@
         return true;
       });
       if (bluetoothMatch) return bluetoothMatch;
+      // The current firmware exposes both clear actions as constants inside
+      // the single Bluetooth behavior metadata.  They are not separate
+      // behavior display names, so inspect the constant names as well.
+      var clearConstant = wantedBluetoothAction === 'BT CLR ALL'
+        ? /clear\s+all/i
+        : wantedBluetoothAction === 'BT CLR'
+          ? /clear\s+selected/i
+          : null;
+      if (clearConstant) {
+        Object.keys(behaviorById).some(function (id) {
+          var detail = behaviorById[id] || {};
+          if (!/bluetooth/i.test(String(detail.displayName || ''))) return false;
+          return (detail.metadata || []).some(function (set) {
+            return (set.param1 || []).some(function (value) {
+              if (value.type !== 'constant' || !clearConstant.test(String(value.name || ''))) return false;
+              bluetoothMatch = { behaviorId: Number(detail.id), param1: Number(value.constant) || 0, param2: 0 };
+              return true;
+            });
+          });
+        });
+      }
+      if (bluetoothMatch) return bluetoothMatch;
     }
     // Mouse button actions use the firmware's Mouse Key Press behavior.  The
     // palette uses human-readable names while ZMK Studio exposes MB1..MB5 as
