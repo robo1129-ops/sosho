@@ -89,6 +89,16 @@
     return languageCatalog[language] && languageCatalog[language][key] || languageCatalog.ja[key];
   }
 
+  /* These values are deliberately explicit: the editor no longer presents
+   * controls that only update local JSON. */
+  languageCatalog.ja.deviceBuildNote = '実機へ保存できるのは、DEVICEパレットの実機対応アクションだけです。CPIとスクロール量は「−／＋」アクションをキーに割り当てます。センサー配置・初期値・スリープ・オートマウス・エンコーダーのセンサーバインドはファームウェアプロファイルの選択と書き換えが必要です。';
+  languageCatalog.en.deviceBuildNote = 'Only DEVICE actions are written through the Studio RPC. Assign CPI and scroll −/+ actions to keys. Sensor placement, initial values, sleep, auto-mouse, and encoder sensor bindings require a firmware profile and reflash.';
+  languageCatalog['zh-CN'].deviceBuildNote = '只有 DEVICE 面板中的实机操作会通过 Studio RPC 写入。请将 CPI 和滚动 −/+ 操作分配给按键。传感器布局、初始值、休眠、自动鼠标和编码器传感器绑定需要选择并重新写入固件。';
+  languageCatalog.ko.deviceBuildNote = 'Studio RPC로 기록되는 것은 DEVICE 패널의 실제 펌웨어 동작뿐입니다. CPI와 스크롤 −/+ 동작을 키에 할당하세요. 센서 배치, 초기값, 절전, 자동 마우스, 인코더 센서 바인딩은 펌웨어 프로필을 다시 기록해야 합니다.';
+  languageCatalog.th.deviceBuildNote = 'Studio RPC จะเขียนได้เฉพาะการทำงานของเฟิร์มแวร์จริงในแผง DEVICE เท่านั้น ให้กำหนด CPI และการเลื่อน −/+ ให้กับปุ่ม การจัดวางเซนเซอร์ ค่าเริ่มต้น สลีป ออโตเมาส์ และ sensor binding ของเอนโคเดอร์ต้องเลือกและเขียนเฟิร์มแวร์ใหม่';
+  languageCatalog.es.deviceBuildNote = 'El RPC de Studio solo escribe las acciones reales del firmware del panel DEVICE. Asigna las acciones CPI y desplazamiento −/+ a teclas. La posición de sensores, valores iniciales, suspensión, auto-mouse y bindings del encoder requieren otro perfil de firmware y una nueva escritura.';
+  languageCatalog.de.deviceBuildNote = 'Über das Studio-RPC werden nur echte Firmware-Aktionen aus dem DEVICE-Bereich geschrieben. Weise CPI- und Scroll- Aktionen −/+ Tasten zu. Sensorposition, Anfangswerte, Schlafmodus, Auto-Maus und Encoder-Sensorbindungen erfordern ein Firmware-Profil und erneutes Flashen.';
+
   var rpcVerificationCatalog = {
     ja: { title: '実機への書き込み確認', description: '保存後に実機を再読み取りし、送信した内容と一致した場合だけ成功と判定します。', prepare: '変更を準備', write: '書き込み送信', save: '保存応答', verify: '実機再読み取り', idle: '待機中', running: '実行中', success: '成功', failure: '失敗', resultIdle: '未実行', resultRunning: '確認中', resultSuccess: '実機反映成功', resultFailure: '実機反映を確認できません' },
     en: { title: 'Device write verification', description: 'The device is read again after saving. Success is shown only when the values match.', prepare: 'Prepare changes', write: 'Send write', save: 'Save response', verify: 'Read device again', idle: 'Waiting', running: 'Running', success: 'Success', failure: 'Failed', resultIdle: 'Not run', resultRunning: 'Verifying', resultSuccess: 'Device updated', resultFailure: 'Device update not verified' },
@@ -623,7 +633,7 @@
     if (!inspector) return;
     var transfer = document.createElement('section');
     transfer.className = 'map-transfer';
-    transfer.innerHTML = '<h3>設定ファイル</h3><p>キーマップ、マクロ、タップダンス、デバイス設定を1つのJSONに保存できます。</p><div class="map-transfer-actions"><button type="button" data-export-map>JSONをダウンロード</button><button type="button" data-import-map>JSONを読み込む</button></div><input type="file" accept="application/json,.json" data-import-map-file hidden><span class="map-transfer-status" role="status" aria-live="polite">ブラウザー内にも自動保存されます。</span>';
+    transfer.innerHTML = '<h3>キーマップ設定ファイル</h3><p>実機RPCで読み書きできるキーマップだけをJSONに保存します。マクロ、センサー設定、スリープ設定は含めません。</p><div class="map-transfer-actions"><button type="button" data-export-map>JSONをダウンロード</button><button type="button" data-import-map>JSONを読み込む</button></div><input type="file" accept="application/json,.json" data-import-map-file hidden><span class="map-transfer-status" role="status" aria-live="polite">ブラウザー内にも自動保存されます。</span>';
     inspector.insertBefore(transfer, inspector.querySelector('.footer-note'));
     var exportButton = transfer.querySelector('[data-export-map]');
     var importButton = transfer.querySelector('[data-import-map]');
@@ -637,10 +647,7 @@
         layout: 'sosho-44',
         exportedAt: new Date().toISOString(),
         keymap: validKeymap(readJsonStorage('sosho-local-keymap-v1', {})),
-        defaultKeymap: validKeymap(readJsonStorage('sosho-default-keymap-v1', {})),
-        macros: validMacros(readJsonStorage('sosho-local-macros-v1', [])),
-        tapDance: validTapDance(readJsonStorage('sosho-tap-dance-v1', [])),
-        deviceSettings: validDeviceSettings(readJsonStorage('sosho-device-settings-v1', {}))
+        defaultKeymap: validKeymap(readJsonStorage('sosho-default-keymap-v1', {}))
       };
       var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
       var url = URL.createObjectURL(blob);
@@ -665,9 +672,6 @@
         }
         writeJsonStorage('sosho-local-keymap-v1', validKeymap(payload.keymap || payload.assignments));
         writeJsonStorage('sosho-default-keymap-v1', validKeymap(payload.defaultKeymap));
-        writeJsonStorage('sosho-local-macros-v1', validMacros(payload.macros));
-        writeJsonStorage('sosho-tap-dance-v1', validTapDance(payload.tapDance));
-        writeJsonStorage('sosho-device-settings-v1', validDeviceSettings(payload.deviceSettings));
         status.textContent = 'JSONを読み込みました。画面を更新します。';
         window.setTimeout(function () { window.location.reload(); }, 250);
       }).catch(function (error) {
@@ -1102,8 +1106,8 @@
     /* paletteGroups is scoped to the inline editor bootstrap.  Reading that
      * private variable here raised a ReferenceError and stopped the Studio
      * shell before it could install its layout. */
-    var shellFunctionActions = ['Ctrl', 'Shift', 'Alt', 'GUI', 'MO 0', 'MO 1', 'MO 2', 'MO 3', 'TO 0', 'TO 1', 'TO 2', 'TO 3', 'TG 0', 'TG 1', 'TG 2', 'TG 3', 'TT 0', 'TT 1', 'TT 2', 'TT 3', 'OSL 0', 'OSL 1', 'OSL 2', 'OSL 3', 'Tap Dance', 'Macro 0', 'Macro 1'];
-    var shellDeviceActions = ['CPI −', 'CPI ＋', 'Trackpad −', 'Trackpad ＋', '押している間だけスクロール', 'スクロール切替', 'Auto Mouse ON/OFF', 'BT0', 'BT1', 'BT2', 'BT3', 'BT4', 'BT CLR', 'BT CLR ALL', 'Mouse Left', 'Mouse Right', 'Mouse Middle', 'Mouse Back', 'Mouse Forward', 'Wheel Up', 'Wheel Down', 'Wheel Left', 'Wheel Right'];
+    var shellFunctionActions = ['Ctrl', 'Shift', 'Alt', 'GUI', 'MO 0', 'MO 1', 'MO 2', 'MO 3', 'TO 0', 'TO 1', 'TO 2', 'TO 3', 'TG 0', 'TG 1', 'TG 2', 'TG 3', 'TT 0', 'TT 1', 'TT 2', 'TT 3', 'OSL 0', 'OSL 1', 'OSL 2', 'OSL 3', 'Tap Dance'];
+    var shellDeviceActions = ['CPI −', 'CPI ＋', 'Trackpad −', 'Trackpad ＋', 'Scroll −', 'Scroll ＋', '押している間だけスクロール', 'スクロール切替', 'BT0', 'BT1', 'BT2', 'BT3', 'BT4', 'BT CLR', 'BT CLR ALL', 'Mouse Left', 'Mouse Right', 'Mouse Middle', 'Mouse Back', 'Mouse Forward', 'Wheel Up', 'Wheel Down', 'Wheel Left', 'Wheel Right'];
 
     /* Keep one action palette.  The first implementation left the legacy
      * renderPalette() toolbar inside #palette and then appended this enhanced
@@ -1111,7 +1115,7 @@
     var functionsDetail = document.createElement('details');
     functionsDetail.className = 'palette-group';
     functionsDetail.dataset.paletteCategory = 'functions';
-    functionsDetail.innerHTML = '<summary>ファンクション <span>修飾キー / レイヤー / マクロ</span></summary><div class="palette-grid" data-functions-palette></div><p class="palette-help">修飾キーやレイヤー、マクロをキーへドラッグ＆ドロップしてください。</p>';
+    functionsDetail.innerHTML = '<summary>ファンクション <span>修飾キー / レイヤー</span></summary><div class="palette-grid" data-functions-palette></div><p class="palette-help">修飾キーやレイヤーをキーへドラッグ＆ドロップしてください。</p>';
     additions.insertBefore(functionsDetail, additions.querySelector('[data-layer-palette]').closest('.palette-group'));
     var functionsPalette = functionsDetail.querySelector('[data-functions-palette]');
     shellFunctionActions.forEach(function (name) { appendActionChip(functionsPalette, name, name, 'function-chip'); });
@@ -1120,7 +1124,7 @@
     [['TO(0)', 'TO 0'], ['TO(1)', 'TO 1'], ['TO(2)', 'TO 2'], ['TO(3)', 'TO 3'], ['TG(0)', 'TG 0'], ['TG(1)', 'TG 1'], ['TG(2)', 'TG 2'], ['TG(3)', 'TG 3'], ['TT(0)', 'TT 0'], ['TT(1)', 'TT 1'], ['TT(2)', 'TT 2'], ['TT(3)', 'TT 3'], ['MO(0)', 'MO 0'], ['MO(1)', 'MO 1'], ['MO(2)', 'MO 2'], ['MO(3)', 'MO 3'], ['OSL(0)', 'OSL 0'], ['OSL(1)', 'OSL 1'], ['DF(0)', 'DF 0'], ['DF(1)', 'DF 1'], ['DF(2)', 'DF 2'], ['DF(3)', 'DF 3']].forEach(function (entry) { appendActionChip(layerPalette, entry[0], entry[1]); });
 
     var specialPalette = additions.querySelector('[data-special-palette]');
-    [['押下中スクロール', 'SCROLL_HOLD'], ['スクロール切替', 'SCROLL_TOGGLE'], ['CPI −', 'CPI_DOWN'], ['CPI ＋', 'CPI_UP'], ['パッド倍率 −', 'TP_SCALE_DOWN'], ['パッド倍率 ＋', 'TP_SCALE_UP'], ['RESET', 'RESET'], ['BOOTLOADER', 'BOOTLOADER'], ['CapsLock', 'CAPSLOCK'], ['PrintScreen', 'PSCRN']].forEach(function (entry) { appendActionChip(specialPalette, entry[0], entry[1], 'special-chip'); });
+    [['押下中スクロール', 'SCROLL_HOLD'], ['スクロール切替', 'SCROLL_TOGGLE'], ['CPI −', 'CPI_DOWN'], ['CPI ＋', 'CPI_UP'], ['パッド倍率 −', 'TP_SCALE_DOWN'], ['パッド倍率 ＋', 'TP_SCALE_UP'], ['スクロール量 −', 'SCROLL_DOWN'], ['スクロール量 ＋', 'SCROLL_UP'], ['RESET', 'RESET'], ['BOOTLOADER', 'BOOTLOADER'], ['CapsLock', 'CAPSLOCK'], ['PrintScreen', 'PSCRN']].forEach(function (entry) { appendActionChip(specialPalette, entry[0], entry[1], 'special-chip'); });
 
     var asciiPalette = additions.querySelector('[data-ascii-palette]');
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.split('').forEach(function (character) { appendActionChip(asciiPalette, character, 'ASCII_' + character, 'ascii-chip'); });
@@ -1229,32 +1233,13 @@
     var devicePanel = document.createElement('div');
     devicePanel.className = 'device-settings-panel';
     devicePanel.dataset.paletteCategory = 'device';
-    devicePanel.innerHTML = '<section class="device-settings-card device-settings-card-wide"><h4 data-pointer-profile-title>左右のポインティングデバイス</h4><p data-pointer-profile-description>実機のセンサー配置に合わせて、左右のトラックボール／トラックパッド構成を選択します。</p><label>センサー配置<select data-pointer-profile><option value="right-ball-left-pad">右：トラックボール / 左：トラックパッド</option><option value="left-ball-right-pad">左：トラックボール / 右：トラックパッド</option></select></label></section>' +
-      '<section class="device-settings-card"><h4 data-device-ball-title>トラックボール</h4><p data-device-ball-description>移動量のCPIを調整します。</p><div class="device-setting-actions"><button type="button" data-trackball-step="-100">CPI −</button><button type="button" data-trackball-step="0">標準</button><button type="button" data-trackball-step="100">CPI ＋</button><span class="device-setting-value" data-trackball-value></span></div></section>' +
-      '<section class="device-settings-card"><h4 data-device-pad-title>トラックパッド</h4><p data-device-pad-description>カーソル移動倍率を調整します。</p><div class="device-setting-actions"><button type="button" data-trackpad-step="-0.25">移動倍率 −</button><button type="button" data-trackpad-step="0">標準</button><button type="button" data-trackpad-step="0.25">移動倍率 ＋</button><span class="device-setting-value" data-trackpad-value></span></div></section>' +
-      '<section class="device-settings-card device-settings-card-wide"><h4>オートマウスレイヤー</h4><p>トラックボール／トラックパッドが動いている間と、停止後の指定時間だけ指定レイヤーを保持します。</p><div class="device-setting-form"><label class="device-setting-checkbox"><input type="checkbox" data-auto-mouse-enabled aria-label="オートマウス ON/OFF">オートマウス ON / OFF</label><label>保持するレイヤー<select data-auto-mouse-layer><option value="0">Layer 0</option><option value="1">Layer 1</option><option value="2">Layer 2</option><option value="3">Layer 3</option></select></label><label>停止後の保持時間(ms)<input type="number" data-auto-mouse-timeout min="0" max="60000" step="10"></label></div></section>' +
-      '<section class="device-settings-card device-settings-card-wide"><h4>スクロールモード</h4><p>下のボタンをキーへドラッグして割り当てると、押している間だけトラックボール／トラックパッドをスクロールモードにします。</p><button type="button" class="device-action-chip" draggable="true" data-scroll-hold-action>押している間だけスクロール</button><div class="device-setting-form"><label class="device-setting-checkbox"><input type="checkbox" data-scroll-diagonal>斜めスクロールを許可</label><label class="device-setting-checkbox"><input type="checkbox" data-scroll-axis-lock>明確な縦横入力を軸ロック</label><label>軸ロック判定<select data-scroll-axis-threshold><option value="1.5">弱め (1.5×)</option><option value="1.8">標準 (1.8×)</option><option value="2.2">強め (2.2×)</option><option value="3">かなり強め (3×)</option></select></label><label><span data-scroll-scale-label>スクロール量</span><input type="range" data-scroll-scale min="5" max="100" step="5"><span class="device-setting-value" data-scroll-scale-value></span></label><div class="device-setting-actions"><button type="button" data-scroll-divider-step="-1">分割 −</button><button type="button" data-scroll-divider-step="0">標準</button><button type="button" data-scroll-divider-step="1">分割 ＋</button><span class="device-setting-value" data-scroll-divider-value></span></div></div></section>' +
-      '<p class="device-setting-note">値はJSONとこのブラウザーへ保存します。CPI・スクロール量・左右センサー配置はファームウェアのビルド設定です。自動スリープはWebアプリでは変更せず、ダウンロードZIP内のsleep-*フォルダから選択してください。公式ZMK Studioの標準RPCはキーマップ編集用です。</p>';
+    devicePanel.innerHTML = '<p class="device-setting-note">センサー配置、初期CPI、初期スクロール倍率、スリープ時間、オートマウス、エンコーダーのセンサーバインドは、キーマップRPCでは変更できないため、この画面から外しています。変更する場合は対応するファームウェアプロファイルを選んで書き換えてください。</p>';
     var deviceActions = document.createElement('section');
     deviceActions.className = 'device-settings-card device-settings-card-wide device-action-palette';
     deviceActions.innerHTML = '<h4>デバイスアクション</h4><p>マウスボタン、ホイール、CPI、スクロールモードをキーへ割り当てます。</p><div class="palette-grid" data-device-actions></div>';
     devicePanel.insertBefore(deviceActions, devicePanel.firstChild);
     shellDeviceActions.forEach(function (name) { appendActionChip(deviceActions.querySelector('[data-device-actions]'), name, name, 'device-chip'); });
     palette.appendChild(devicePanel);
-    var legacyProfilePanel = devicePanel.querySelector('[data-pointer-profile-title]');
-    if (legacyProfilePanel && legacyProfilePanel.parentElement) legacyProfilePanel.parentElement.hidden = true;
-    var modulePanel = document.createElement('section');
-    modulePanel.className = 'device-settings-card device-settings-card-wide';
-    modulePanel.innerHTML = '<h4 data-module-layout-title>モジュール配置</h4><p data-module-layout-description>左・右を個別に選択できます。ブランクのダミーモジュールは None を選んでください。</p><div class="device-setting-form module-selection-grid"><label><span data-left-module-label>左モジュール</span><select data-left-module><option value="trackpad">トラックパッド</option><option value="trackball">トラックボール</option><option value="none">None（ダミー）</option></select></label><label><span data-right-module-label>右モジュール</span><select data-right-module><option value="trackball">トラックボール</option><option value="trackpad">トラックパッド</option><option value="none">None（ダミー）</option></select></label></div>';
-    devicePanel.insertBefore(modulePanel, devicePanel.firstChild);
-    var encoderPanel = document.createElement('section');
-    encoderPanel.className = 'device-settings-card device-settings-card-wide';
-    encoderPanel.innerHTML = '<h4 data-encoder-title>ロータリーエンコーダー</h4><p>ロータリーエンコーダーは回転方向ごとにアクションを設定します。</p><p data-encoder-runtime-note>左右回転へ通常キーやデバイス操作を割り当て、JSONへ保存できます。現在のファームウェアのsensor-bindingsへ実機反映するには再ビルドが必要です。</p><div class="encoder-settings-grid"><fieldset><legend data-left-module-label>左モジュール</legend><label><span>反時計回り</span><select data-encoder-left-ccw><option value="scroll-left">左右スクロール（左）</option><option value="scroll-right">左右スクロール（右）</option><option value="scroll-up">上下スクロール（上）</option><option value="scroll-down">上下スクロール（下）</option><option value="none">未設定</option></select></label><label><span>時計回り</span><select data-encoder-left-cw><option value="scroll-right">左右スクロール（右）</option><option value="scroll-left">左右スクロール（左）</option><option value="scroll-up">上下スクロール（上）</option><option value="scroll-down">上下スクロール（下）</option><option value="none">未設定</option></select></label></fieldset><fieldset><legend data-right-module-label>右モジュール</legend><label><span>反時計回り</span><select data-encoder-right-ccw><option value="scroll-down">上下スクロール（下）</option><option value="scroll-up">上下スクロール（上）</option><option value="scroll-left">左右スクロール（左）</option><option value="scroll-right">左右スクロール（右）</option><option value="none">未設定</option></select></label><label><span>時計回り</span><select data-encoder-right-cw><option value="scroll-up">上下スクロール（上）</option><option value="scroll-down">上下スクロール（下）</option><option value="scroll-left">左右スクロール（左）</option><option value="scroll-right">左右スクロール（右）</option><option value="none">未設定</option></select></label></fieldset></div>';
-    devicePanel.insertBefore(encoderPanel, modulePanel.nextSibling);
-    var autoMouseCard = devicePanel.querySelector('[data-auto-mouse-enabled]');
-    if (autoMouseCard && autoMouseCard.closest) autoMouseCard.closest('section').dataset.autoMouseCard = 'true';
-    var scrollCard = devicePanel.querySelector('[data-scroll-diagonal]');
-    if (scrollCard && scrollCard.closest) scrollCard.closest('section').dataset.scrollCard = 'true';
 
     var tabBar = document.createElement('div');
     tabBar.className = 'palette-tabs';
@@ -1330,112 +1315,12 @@
     function saveDeviceSettings() {
       deviceSettings = validDeviceSettings(deviceSettings);
       try { localStorage.setItem('sosho-device-settings-v1', JSON.stringify(deviceSettings)); } catch (error) {}
-      devicePanel.querySelector('[data-pointer-profile]').value = deviceSettings.pointerProfile;
-      devicePanel.querySelector('[data-left-module]').value = deviceSettings.leftModule;
-      devicePanel.querySelector('[data-right-module]').value = deviceSettings.rightModule;
-      devicePanel.querySelector('[data-encoder-left-ccw]').value = deviceSettings.encoderLeftCcw;
-      devicePanel.querySelector('[data-encoder-left-cw]').value = deviceSettings.encoderLeftCw;
-      devicePanel.querySelector('[data-encoder-right-ccw]').value = deviceSettings.encoderRightCcw;
-      devicePanel.querySelector('[data-encoder-right-cw]').value = deviceSettings.encoderRightCw;
-      devicePanel.querySelector('[data-trackball-value]').textContent = deviceSettings.trackballCpi + ' CPI';
-      devicePanel.querySelector('[data-trackpad-value]').textContent = deviceSettings.trackpadScale.toFixed(2) + '×';
-      devicePanel.querySelector('[data-auto-mouse-enabled]').checked = deviceSettings.autoMouseEnabled;
-      devicePanel.querySelector('[data-auto-mouse-layer]').value = String(deviceSettings.autoMouseLayer);
-      devicePanel.querySelector('[data-auto-mouse-timeout]').value = String(deviceSettings.autoMouseTimeoutMs);
-      devicePanel.querySelector('[data-scroll-diagonal]').checked = deviceSettings.scrollDiagonal;
-      devicePanel.querySelector('[data-scroll-axis-lock]').checked = deviceSettings.scrollAxisLock;
-      devicePanel.querySelector('[data-scroll-axis-threshold]').value = String(deviceSettings.scrollAxisThreshold);
-      devicePanel.querySelector('[data-scroll-scale]').value = String(deviceSettings.scrollScalePercent);
-      devicePanel.querySelector('[data-scroll-scale-value]').textContent = deviceSettings.scrollScalePercent + '%';
-      devicePanel.querySelector('[data-scroll-divider-value]').textContent = '分割 ' + deviceSettings.scrollDivider;
-      devicePanel.querySelector('[data-device-ball-title]').textContent = 'トラックボール';
-      devicePanel.querySelector('[data-device-pad-title]').textContent = 'トラックパッド';
       if (typeof window.soshoRefreshPhysicalTitles === 'function') window.soshoRefreshPhysicalTitles(window.soshoCurrentCopy);
       if (typeof window.soshoRefreshDeviceMarkers === 'function') window.soshoRefreshDeviceMarkers(window.soshoCurrentCopy);
-      document.querySelectorAll('.encoder-target').forEach(function (button) { renderEncoderAssignment(button, button.dataset.target); });
     }
-    devicePanel.querySelector('[data-pointer-profile]').addEventListener('change', function (event) {
-      deviceSettings.pointerProfile = event.target.value;
-      saveDeviceSettings();
-      createEncoderTargets();
-    });
-    ['left', 'right'].forEach(function (side) {
-      devicePanel.querySelector('[data-' + side + '-module]').addEventListener('change', function (event) {
-        deviceSettings[side + 'Module'] = event.target.value;
-        saveDeviceSettings();
-        createEncoderTargets();
-      });
-    });
-    [['left', 'ccw'], ['left', 'cw'], ['right', 'ccw'], ['right', 'cw']].forEach(function (entry) {
-      var field = 'encoder' + entry[0].charAt(0).toUpperCase() + entry[0].slice(1) + entry[1].charAt(0).toUpperCase() + entry[1].slice(1);
-      devicePanel.querySelector('[data-encoder-' + entry[0] + '-' + entry[1] + ']').addEventListener('change', function (event) {
-        deviceSettings[field] = event.target.value;
-        saveDeviceSettings();
-        createEncoderTargets();
-      });
-    });
-    devicePanel.querySelectorAll('[data-trackball-step]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        var step = Number(button.dataset.trackballStep);
-        deviceSettings.trackballCpi = step === 0 ? 600 : Math.max(200, Math.min(1200, deviceSettings.trackballCpi + step));
-        saveDeviceSettings();
-      });
-    });
-    devicePanel.querySelectorAll('[data-trackpad-step]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        var step = Number(button.dataset.trackpadStep);
-        deviceSettings.trackpadScale = step === 0 ? 1 : Math.max(.5, Math.min(2, Number((deviceSettings.trackpadScale + step).toFixed(2))));
-        saveDeviceSettings();
-      });
-    });
-    devicePanel.querySelector('[data-auto-mouse-enabled]').addEventListener('change', function (event) {
-      deviceSettings.autoMouseEnabled = event.target.checked;
-      saveDeviceSettings();
-    });
-    devicePanel.querySelector('[data-auto-mouse-layer]').addEventListener('change', function (event) {
-      deviceSettings.autoMouseLayer = Number(event.target.value);
-      saveDeviceSettings();
-    });
-    devicePanel.querySelector('[data-auto-mouse-timeout]').addEventListener('change', function (event) {
-      deviceSettings.autoMouseTimeoutMs = Number(event.target.value);
-      saveDeviceSettings();
-    });
-    devicePanel.querySelector('[data-scroll-diagonal]').addEventListener('change', function (event) {
-      deviceSettings.scrollDiagonal = event.target.checked;
-      saveDeviceSettings();
-    });
-    devicePanel.querySelector('[data-scroll-axis-lock]').addEventListener('change', function (event) {
-      deviceSettings.scrollAxisLock = event.target.checked;
-      saveDeviceSettings();
-    });
-    devicePanel.querySelector('[data-scroll-axis-threshold]').addEventListener('change', function (event) {
-      deviceSettings.scrollAxisThreshold = Number(event.target.value);
-      saveDeviceSettings();
-    });
-    devicePanel.querySelector('[data-scroll-scale]').addEventListener('input', function (event) {
-      deviceSettings.scrollScalePercent = Number(event.target.value);
-      saveDeviceSettings();
-    });
-    devicePanel.querySelectorAll('[data-scroll-divider-step]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        var step = Number(button.dataset.scrollDividerStep);
-        deviceSettings.scrollDivider = step === 0 ? 4 : Math.max(1, Math.min(16, deviceSettings.scrollDivider + step));
-        saveDeviceSettings();
-      });
-    });
-    var scrollHoldAction = devicePanel.querySelector('[data-scroll-hold-action]');
-    scrollHoldAction.addEventListener('dragstart', function (event) {
-      event.dataTransfer.setData('text/plain', 'action:SCROLL_HOLD');
-    });
     window.soshoDeviceSettings = {
       get: function () { return Object.assign({}, deviceSettings); },
-      setEncoder: function (side, direction, value) {
-        var field = 'encoder' + String(side).charAt(0).toUpperCase() + String(side).slice(1) + String(direction).charAt(0).toUpperCase() + String(direction).slice(1);
-        if (Object.prototype.hasOwnProperty.call(deviceSettings, field)) {
-          deviceSettings[field] = value;
-          saveDeviceSettings();
-        }
-      }
+      writableByStudioRpc: false
     };
     saveDeviceSettings();
     showPaletteCategory('basic');
@@ -1463,6 +1348,10 @@
   }
 
   function createEncoderTargets() {
+    /* Encoder sensor bindings are build-time device-tree bindings, not part
+     * of the official ZMK Studio keymap RPC. Do not render controls that only
+     * change browser storage and can never reach the connected device. */
+    return;
     var layer = activeLayerIndex();
     var changed = false;
     document.querySelectorAll('#keyboard .half').forEach(function (half) {

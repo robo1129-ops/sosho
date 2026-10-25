@@ -29,7 +29,7 @@ assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /mapTransferDescript
 assert.match(html, /右側Central/);
 assert.doesNotMatch(html, /id="connect-ble"/);
 assert.doesNotMatch(html, /BLE診断/);
-assert.match(html, /USB専用の反映範囲/);
+assert.doesNotMatch(html, /class="macro-panel"/);
 assert.doesNotMatch(html, /暗号化BLEサービス/);
 assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /defaultKeymap/);
 assert.match(css, /\.remap-palette-tab\[aria-selected=/);
@@ -40,12 +40,14 @@ assert.match(fs.readFileSync('sosho-rpc-ui.js', 'utf8'), /soshoConnectionError/)
 assert.match(fs.readFileSync('sosho-macro-transport.js', 'utf8'), /MAX_MACROS = 16/);
 assert.match(html, /USB CDC-ACM/);
 assert.match(html, /ZmkBleTransport/);
-assert.match(html, /sosho-macro-transport/);
+assert.doesNotMatch(html, /sosho-macro-transport/);
 assert.doesNotMatch(fs.readFileSync('ui-enhancements.js', 'utf8'), /sleepMode|sleepMinutes|data-sleep-/);
 assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /sleep-\*|sleep-5m|sleep-off/);
 assert.match(html, /現在のレイアウトを読み込む/);
 assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /data-left-module/);
 assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /encoderLeftCcw/);
+assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /writableByStudioRpc: false/);
+assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /キーマップ設定ファイル/);
 assert.match(fs.readFileSync('sosho-rpc-ui.js', 'utf8'), /hidUsageLabel/);
 assert.match(fs.readFileSync('sosho-rpc-ui.js', 'utf8'), /global\.soshoReadKeymap/);
 assert.match(fs.readFileSync('sosho-rpc-ui.js', 'utf8'), /firstHidUsage/);

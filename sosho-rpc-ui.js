@@ -98,6 +98,7 @@
     return crc & 0xffff;
   }
   var soshoControlsBehaviorId = crc16Ansi('sosho_controls');
+  var soshoWheelBehaviorId = crc16Ansi('sosho_wheel');
   function parameterName(detail, parameter, value) {
     var sets = detail && detail.metadata || [];
     for (var i = 0; i < sets.length; i++) {
@@ -568,6 +569,8 @@
       'Trackpad -': /^Trackpad\s*-$/i,
       'Trackpad +': /^Trackpad\s*\+$/i,
       'Auto Mouse ON/OFF': /^Auto\s+Mouse\s+(?:ON\/OFF|Toggle)$/i,
+      'Scroll -': /^Scroll\s*-$/i,
+      'Scroll +': /^Scroll\s*\+$/i,
       'Wheel Up': /^Wheel\s+Up$/i,
       'Wheel Down': /^Wheel\s+Down$/i,
       'Wheel Left': /^Wheel\s+Left$/i,
@@ -590,6 +593,19 @@
       });
       if (customBinding) return customBinding;
 
+      // Wheel actions are a separate SO-SHO behavior, not parameters 7-10
+      // of sosho_controls. Resolve that behavior explicitly when metadata is
+      // unavailable so a sparse Studio response cannot send an invalid value
+      // to the controls behavior.
+      var wheelValue = { 'Wheel Up': 0, 'Wheel Down': 1, 'Wheel Left': 2, 'Wheel Right': 3 }[customAction];
+      if (wheelValue !== undefined) {
+        var advertisedWheel = behaviorIds.some(function (id) { return Number(id) === soshoWheelBehaviorId; });
+        if (!advertisedWheel && deviceState && deviceState.info && /sosho/i.test(String(deviceState.info.name || ''))) {
+          advertisedWheel = true;
+        }
+        if (advertisedWheel) return { behaviorId: soshoWheelBehaviorId, param1: wheelValue, param2: 0 };
+      }
+
       // Some firmware exposes the behavior ID through listAllBehaviors but
       // cannot return its metadata. It is still safe to emit the binding:
       // the ID is advertised by the device and the parameter values are the
@@ -611,8 +627,7 @@
       if (advertisedControls) {
         var controlValue = {
           'CPI -': 0, 'CPI +': 1, 'Trackpad -': 2, 'Trackpad +': 3,
-          'Auto Mouse ON/OFF': 4, 'Wheel Up': 5, 'Wheel Down': 6,
-          'Wheel Left': 7, 'Wheel Right': 8
+          'Auto Mouse ON/OFF': 4, 'Scroll -': 5, 'Scroll +': 6
         }[customAction];
         if (controlValue !== undefined) return { behaviorId: soshoControlsBehaviorId, param1: controlValue, param2: 0 };
         if (macroMatch) {
