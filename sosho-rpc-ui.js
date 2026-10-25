@@ -259,7 +259,8 @@
         var id = uiId(layerIndex, position);
         rawById[id] = binding;
         labelById[id] = bindingLabel(binding);
-        editor.setAssignment(id, labelById[id]);
+        if (editor.setDeviceAssignment) editor.setDeviceAssignment(id, labelById[id]);
+        else editor.setAssignment(id, labelById[id]);
       });
     });
     if (typeof global.soshoSetKeymapLoaded === 'function') global.soshoSetKeymapLoaded(true);
@@ -425,7 +426,8 @@
           // Preserve bindings that came from the device verbatim. This is
           // essential for behavior bindings whose metadata is not editable
           // through the generic key picker (for example Mod-Tap/Layer-Tap).
-          var desired = desiredLabel === labelById[id] ? original : (holdLabel ? resolveHoldTapBinding(desiredLabel, holdLabel) : resolveBinding(desiredLabel, original));
+          var unchangedDeviceBinding = editor.isDeviceAssignmentUnchanged && editor.isDeviceAssignmentUnchanged(id, desiredLabel);
+          var desired = unchangedDeviceBinding && !holdLabel ? original : (holdLabel ? resolveHoldTapBinding(desiredLabel, holdLabel) : resolveBinding(desiredLabel, original));
           if (!desired) throw new Error(id + ' の割り当てを公式behavior bindingへ変換できません: ' + desiredLabel);
           if (!sameBinding(original, desired)) changes.push({ layerId: layer.id, keyPosition: position, binding: desired });
         });
