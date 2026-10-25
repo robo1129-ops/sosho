@@ -29,6 +29,8 @@ assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /mapTransferDescript
 assert.match(html, /右側Central/);
 assert.doesNotMatch(html, /id="connect-ble"/);
 assert.doesNotMatch(html, /BLE診断/);
+assert.doesNotMatch(html, /BLE Output/);
+assert.doesNotMatch(html, /Bluetooth.*(?:保存|書き込み|write)/i);
 assert.doesNotMatch(html, /class="macro-panel"/);
 assert.doesNotMatch(html, /暗号化BLEサービス/);
 assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /defaultKeymap/);
