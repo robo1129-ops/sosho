@@ -273,7 +273,7 @@ addMacroButton.addEventListener('click',function(){var index=0;while(macros[inde
 connectUsbAuthorized.addEventListener('click',async function(){if(!usb||typeof usb.connectAuthorized!=='function'||typeof usb.getAuthorizedPorts!=='function'){showConnectionError('許可済みUSBへの再接続を利用できません。','ページを再読み込みしてから、USB接続を選び直してください。');transportStatus('許可済みUSB再接続は利用できません');return}if(activeTransport&&activeTransport.isConnected){transportStatus('先に現在の接続を切断してください');return}clearConnectionError();connectUsbAuthorized.disabled=true;var ports=await usb.getAuthorizedPorts();appendLog('usb','許可済みUSBポートを順番に確認: '+ports.length+'件');var success=false;for(var i=0;i<ports.length&&!success;i++){activeTransport=usb;var opened=await usb.connectAuthorized(ports[i]);if(!opened)continue;success=await finishTransport(usb);if(!success&&usb.isConnected)await usb.disconnect(true);if(!success)activeTransport=null}if(!success){activeTransport=null;if(!pendingTransportError)pendingTransportError=ports.length?'許可済みUSBポートからStudio RPC応答を受信できませんでした。':'許可済みUSBポートがありません。初回は「右側USB / COM接続」を押してください。';transportStatus('未接続')}connectUsbAuthorized.disabled=false});
 })();
 </script>
-<script src="/sosho/sosho-rpc-ui.js?v=jis-label-normalize"></script>
+  <script src="/sosho/sosho-rpc-ui.js?v=kana-hid"></script>
 <script src="/sosho/ui-enhancements.js?v=write-verify-1"></script>
 </body>
 </html>
