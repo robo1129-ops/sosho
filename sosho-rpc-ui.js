@@ -312,6 +312,13 @@
       deviceState = await rpc.readDeviceState();
       behaviorById = Object.create(null);
       (deviceState.behaviors || []).forEach(function (detail) { behaviorById[String(detail.id)] = detail; });
+      // Keep a read-only diagnostic snapshot available while validating
+      // custom behavior resolution against real firmware.  It is not used by
+      // the editor write path and contains only the behavior metadata already
+      // returned by the connected device.
+      global.soshoBehaviorDiagnostics = (deviceState.behaviors || []).map(function (detail) {
+        return { id: detail.id, displayName: detail.displayName, metadata: detail.metadata };
+      });
       mapDeviceState();
       global.soshoStudioState = { rpc: rpc, deviceState: deviceState, rawById: rawById, labelById: labelById };
       var lockText = deviceState.lockState === 1 ? 'Studioロック解除済み' : deviceState.lockState === 0 ? 'Studioロック中（キーボードの&studio_unlockを押すと保存可能）' : 'lockState=' + deviceState.lockState;
