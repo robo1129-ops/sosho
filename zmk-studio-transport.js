@@ -322,7 +322,10 @@
       } catch (listError) {}
       var details = [];
       for (var i = 0; i < ids.length; i++) { try { details.push(await self.getBehaviorDetails(ids[i])); } catch (error) {} }
-      return { info: info, lockState: lockState, keymap: keymap, behaviors: details };
+      // Keep the advertised IDs even when an older/custom firmware rejects a
+      // detail request. SO-SHO controls are valid Studio behaviors and must
+      // still be resolvable from their stable local ID in that situation.
+      return { info: info, lockState: lockState, keymap: keymap, behaviors: details, behaviorIds: ids };
     };
     try { return await readAll(); }
     catch (error) {
@@ -335,7 +338,10 @@
   };
   StudioRpcClient.prototype.writeKeymap = async function (changes) {
     for (var i = 0; i < changes.length; i++) await this.setLayerBinding(changes[i].layerId, changes[i].keyPosition, changes[i].binding);
-    await this.saveChanges();
+    // Some firmware builds reject a saveChanges call when there is no edit.
+    // Return a fresh map for a no-op while preserving the normal transaction
+    // for real changes.
+    if (changes.length) await this.saveChanges();
     return this.getKeymap();
   };
 

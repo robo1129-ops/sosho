@@ -10,6 +10,7 @@
   var rawById = Object.create(null);
   var labelById = Object.create(null);
   var behaviorById = Object.create(null);
+  var behaviorIds = [];
   var readInProgress = false;
   var writePhase = 'idle';
   var verificationRoot = document.getElementById('rpc-verification');
@@ -83,6 +84,20 @@
   }
 
   function detailFor(id) { return behaviorById[String(id)] || null; }
+
+  // ZMK Studio derives a behavior's local ID from the device-tree node name
+  // with Zephyr's CRC16/ANSI implementation (reflected polynomial, 0xffff
+  // initial value). The custom SO-SHO behavior is named sosho_controls.
+  function crc16Ansi(text) {
+    var crc = 0xffff;
+    var bytes = new TextEncoder().encode(String(text || ''));
+    for (var i = 0; i < bytes.length; i++) {
+      crc ^= bytes[i];
+      for (var bit = 0; bit < 8; bit++) crc = (crc & 1) ? ((crc >>> 1) ^ 0xA001) : (crc >>> 1);
+    }
+    return crc & 0xffff;
+  }
+  var soshoControlsBehaviorId = crc16Ansi('sosho_controls');
   function parameterName(detail, parameter, value) {
     var sets = detail && detail.metadata || [];
     for (var i = 0; i < sets.length; i++) {
@@ -360,6 +375,7 @@
       var rpc = new global.ZmkStudioRpc(transport);
       deviceState = await rpc.readDeviceState();
       behaviorById = Object.create(null);
+      behaviorIds = (deviceState.behaviorIds || []).map(Number).filter(function (id) { return Number.isFinite(id); });
       (deviceState.behaviors || []).forEach(function (detail) { behaviorById[String(detail.id)] = detail; });
       // Keep a read-only diagnostic snapshot available while validating
       // custom behavior resolution against real firmware.  It is not used by
@@ -570,6 +586,30 @@
         });
       });
       if (customBinding) return customBinding;
+
+      // Some firmware exposes the behavior ID through listAllBehaviors but
+      // cannot return its metadata. It is still safe to emit the binding:
+      // the ID is advertised by the device and the parameter values are the
+      // constants defined by sosho_behavior_controls.c.
+      var advertisedControls = behaviorIds.some(function (id) { return Number(id) === soshoControlsBehaviorId; });
+      if (!advertisedControls) {
+        advertisedControls = Object.keys(behaviorById).some(function (id) {
+          var detail = behaviorById[id] || {};
+          return Number(id) === soshoControlsBehaviorId || /sosho[_ -]?controls/i.test(String(detail.displayName || detail.name || ''));
+        });
+      }
+      if (advertisedControls) {
+        var controlValue = {
+          'CPI -': 0, 'CPI +': 1, 'Trackpad -': 2, 'Trackpad +': 3,
+          'Auto Mouse ON/OFF': 4, 'Wheel Up': 5, 'Wheel Down': 6,
+          'Wheel Left': 7, 'Wheel Right': 8
+        }[customAction];
+        if (controlValue !== undefined) return { behaviorId: soshoControlsBehaviorId, param1: controlValue, param2: 0 };
+        if (macroMatch) {
+          var macroValue = 9 + Number(macroMatch[1]);
+          if (macroValue >= 9 && macroValue <= 24) return { behaviorId: soshoControlsBehaviorId, param1: macroValue, param2: 0 };
+        }
+      }
     }
     // Mouse button actions use the firmware's Mouse Key Press behavior.  The
     // palette uses human-readable names while ZMK Studio exposes MB1..MB5 as
