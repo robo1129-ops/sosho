@@ -480,7 +480,7 @@
       if (mouseBinding) return mouseBinding;
     }
     function normalizeKeyName(value) {
-      return String(value || '').toUpperCase().replace(/[\\s_\-\/]+/g, '');
+      return String(value || '').toUpperCase().replace(/[\s_\-\/]+/g, '');
     }
     function keyboardUsageForLabel(value) {
       var normalized = normalizeKeyName(value);
