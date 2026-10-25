@@ -466,7 +466,7 @@
       this._setLog('USBポート選択完了（VID=0x' + ((port.getInfo && port.getInfo().usbVendorId || 0).toString(16)) + ' PID=0x' + ((port.getInfo && port.getInfo().usbProductId || 0).toString(16)) + '）');
       return await this._open(port);
     }
-    catch (error) { this.port = null; this.reader = null; this.reading = false; this._setDevice('—'); this._setLog('USB接続失敗 [' + (error && error.name ? error.name : 'Error') + ']: ' + (error && error.message ? error.message : 'unknown error')); this._setStatus(error && error.name === 'NotFoundError' ? 'USBデバイス選択がキャンセルされました' : 'USB接続失敗: ' + (error && error.message ? error.message : 'unknown error')); return false; }
+    catch (error) { this.port = null; this.reader = null; this.reading = false; this._setDevice('—'); this._setLog('USB接続失敗 [' + (error && error.name ? error.name : 'Error') + ']: ' + (error && error.message ? error.message : 'unknown error')); this._setStatus(error && error.name === 'NotFoundError' ? 'USBシリアルポートが選択されませんでした。ブートローダー中はUF2書き込みを使用してください。' : 'USB接続失敗: ' + (error && error.message ? error.message : 'unknown error')); return false; }
     finally { this._connecting = false; }
   };
   ZmkSerialTransport.prototype.getAuthorizedPorts = async function () {

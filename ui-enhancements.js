@@ -245,6 +245,29 @@
     }[language];
     setText('.download-card > div:first-child span', downloadDescription || copy.downloadDescription);
     setText('.download-actions a:first-child', copy.latestZip);
+    var bootloaderCopy = ({
+      ja: { heading: 'ブートローダー書き込み', description: 'ブートローダー中はキーマップRPCを使わず、UF2を専用ドライブへ書き込みます。', help: '先にZIPを展開してUF2を選択し、次にXIAOのブートローダードライブを選択してください。', selectFile: 'UF2を選択', selectDrive: 'ドライブを選択', write: 'UF2を書き込む', file: 'UF2: 未選択', drive: 'ドライブ: 未選択', idle: 'UF2ファイルとブートローダードライブを選択してください。' },
+      en: { heading: 'Bootloader writer', description: 'Bootloader mode is a USB mass-storage drive, not a keymap RPC connection. Write a UF2 to that drive.', help: 'Extract the ZIP, select a UF2, then select the XIAO bootloader drive.', selectFile: 'Select UF2', selectDrive: 'Select drive', write: 'Write UF2', file: 'UF2: not selected', drive: 'Drive: not selected', idle: 'Select a UF2 file and the bootloader drive.' },
+      'zh-CN': { heading: '引导加载程序写入', description: '引导加载程序模式是 USB 存储驱动器，不是键位 RPC 连接。请将 UF2 写入该驱动器。', help: '解压 ZIP，选择 UF2，然后选择 XIAO 引导加载程序驱动器。', selectFile: '选择 UF2', selectDrive: '选择驱动器', write: '写入 UF2', file: 'UF2：未选择', drive: '驱动器：未选择', idle: '请选择 UF2 文件和引导加载程序驱动器。' },
+      ko: { heading: '부트로더 기록', description: '부트로더 모드는 키맵 RPC 연결이 아닌 USB 저장 드라이브입니다. UF2를 드라이브에 기록하세요.', help: 'ZIP을 압축 해제하고 UF2를 선택한 다음 XIAO 부트로더 드라이브를 선택하세요.', selectFile: 'UF2 선택', selectDrive: '드라이브 선택', write: 'UF2 기록', file: 'UF2: 미선택', drive: '드라이브: 미선택', idle: 'UF2 파일과 부트로더 드라이브를 선택하세요.' },
+      th: { heading: 'เขียนบูตโหลดเดอร์', description: 'โหมดบูตโหลดเดอร์เป็นไดรฟ์ USB ไม่ใช่การเชื่อมต่อ RPC ของคีย์แมป ให้เขียน UF2 ลงไดรฟ์นี้', help: 'แตกไฟล์ ZIP เลือก UF2 แล้วเลือกไดรฟ์บูตโหลดเดอร์ของ XIAO', selectFile: 'เลือก UF2', selectDrive: 'เลือกไดรฟ์', write: 'เขียน UF2', file: 'UF2: ยังไม่ได้เลือก', drive: 'ไดรฟ์: ยังไม่ได้เลือก', idle: 'เลือกไฟล์ UF2 และไดรฟ์บูตโหลดเดอร์' },
+      es: { heading: 'Escritor del bootloader', description: 'El modo bootloader es una unidad USB, no una conexión RPC de mapas. Escribe un UF2 en esa unidad.', help: 'Extrae el ZIP, selecciona un UF2 y después la unidad bootloader de XIAO.', selectFile: 'Seleccionar UF2', selectDrive: 'Seleccionar unidad', write: 'Escribir UF2', file: 'UF2: no seleccionado', drive: 'Unidad: no seleccionada', idle: 'Selecciona un archivo UF2 y la unidad bootloader.' },
+      de: { heading: 'Bootloader-Schreiber', description: 'Der Bootloader ist ein USB-Laufwerk, keine Keymap-RPC-Verbindung. Schreibe eine UF2-Datei auf dieses Laufwerk.', help: 'ZIP entpacken, UF2 auswählen und anschließend das XIAO-Bootloader-Laufwerk wählen.', selectFile: 'UF2 auswählen', selectDrive: 'Laufwerk auswählen', write: 'UF2 schreiben', file: 'UF2: nicht ausgewählt', drive: 'Laufwerk: nicht ausgewählt', idle: 'UF2-Datei und Bootloader-Laufwerk auswählen.' }
+    })[language] || null;
+    if (bootloaderCopy) {
+      setText('#bootloader-heading', bootloaderCopy.heading);
+      setText('#bootloader-description', bootloaderCopy.description);
+      setText('#bootloader-help', bootloaderCopy.help);
+      setText('[data-bootloader-select-file]', bootloaderCopy.selectFile);
+      setText('[data-bootloader-select-drive]', bootloaderCopy.selectDrive);
+      setText('[data-bootloader-write]', bootloaderCopy.write);
+      var bootFile = document.querySelector('#bootloader-file-name');
+      var bootDrive = document.querySelector('#bootloader-drive-name');
+      var bootStatus = document.querySelector('#bootloader-status');
+      if (bootFile && !bootFile.dataset.selected) bootFile.textContent = bootloaderCopy.file;
+      if (bootDrive && !bootDrive.dataset.selected) bootDrive.textContent = bootloaderCopy.drive;
+      if (bootStatus && (!bootStatus.dataset.state || bootStatus.dataset.state === 'idle')) bootStatus.textContent = bootloaderCopy.idle;
+    }
     setText('.map-transfer h3', copy.mapTransferHeading || copy.defaultHeading);
     setText('.map-transfer p', copy.mapTransferDescription || copy.defaultDescription);
     setText('[data-export-map]', copy.mapExport || copy.save);
@@ -352,6 +375,154 @@
       '<a href="' + firmwareZipUrl + '" download="sosho-firmware-latest.zip" rel="noopener">最新ZIPをダウンロード</a>' +
       '</div>';
     notice.insertAdjacentElement('afterend', card);
+  }
+
+  /* A UF2 bootloader is a USB mass-storage volume, not a Web Serial/RPC
+   * endpoint. Keep its workflow separate from keymap editing so selecting a
+   * bootloader drive cannot be mistaken for a failed Studio connection. */
+  function setupBootloaderWriter() {
+    if (document.querySelector('.bootloader-card')) return;
+    var card = document.createElement('section');
+    card.className = 'bootloader-card card';
+    card.setAttribute('aria-labelledby', 'bootloader-heading');
+    card.innerHTML = '' +
+      '<div class="bootloader-copy">' +
+        '<strong id="bootloader-heading">ブートローダー書き込み</strong>' +
+        '<span id="bootloader-description">ブートローダー中はキーマップRPCを使わず、UF2を専用ドライブへ書き込みます。</span>' +
+        '<small id="bootloader-help">先にZIPを展開してUF2を選択し、次にXIAOのブートローダードライブを選択してください。</small>' +
+      '</div>' +
+      '<div class="bootloader-actions">' +
+        '<button type="button" data-bootloader-select-file>UF2を選択</button>' +
+        '<button type="button" data-bootloader-select-drive>ドライブを選択</button>' +
+        '<button type="button" data-bootloader-write disabled>UF2を書き込む</button>' +
+      '</div>' +
+      '<div class="bootloader-selection"><span id="bootloader-file-name">UF2: 未選択</span><span id="bootloader-drive-name">ドライブ: 未選択</span></div>' +
+      '<input type="file" accept=".uf2,application/octet-stream" data-bootloader-file-input hidden>' +
+      '<span id="bootloader-status" class="bootloader-status" role="status" aria-live="polite">UF2ファイルとブートローダードライブを選択してください。</span>';
+    var download = document.querySelector('.download-card');
+    var workspace = document.querySelector('.workspace');
+    if (download) download.insertAdjacentElement('afterend', card);
+    else if (workspace) workspace.insertAdjacentElement('beforebegin', card);
+    else document.body.appendChild(card);
+
+    var state = { file: null, directory: null, writing: false };
+    var selectFile = card.querySelector('[data-bootloader-select-file]');
+    var selectDrive = card.querySelector('[data-bootloader-select-drive]');
+    var writeButton = card.querySelector('[data-bootloader-write]');
+    var fallbackInput = card.querySelector('[data-bootloader-file-input]');
+    var fileName = card.querySelector('#bootloader-file-name');
+    var driveName = card.querySelector('#bootloader-drive-name');
+    var status = card.querySelector('#bootloader-status');
+    var selectedFileLabel = { ja: 'UF2: 選択済み', en: 'UF2: selected', 'zh-CN': 'UF2：已选择', ko: 'UF2: 선택됨', th: 'UF2: เลือกแล้ว', es: 'UF2: seleccionado', de: 'UF2: ausgewählt' };
+    var selectedDriveLabel = { ja: 'ブートローダードライブ: 選択済み', en: 'Bootloader drive: selected', 'zh-CN': '引导加载程序驱动器：已选择', ko: '부트로더 드라이브: 선택됨', th: 'ไดรฟ์บูตโหลดเดอร์: เลือกแล้ว', es: 'Unidad de arranque: seleccionada', de: 'Bootloader-Laufwerk: ausgewählt' };
+    function language() { return storedLanguage(); }
+    function localized(map, fallback) { return map[language()] || map.en || fallback; }
+    function setStatus(message, stateName) {
+      status.textContent = message;
+      status.dataset.state = stateName || 'idle';
+    }
+    function updateWriteButton() {
+      writeButton.disabled = state.writing || !state.file || !state.directory;
+    }
+    function errorMessage(error, fallback) {
+      if (error && error.name === 'AbortError') return '';
+      return error && error.message ? error.message : fallback;
+    }
+    async function validateUf2(file) {
+      if (!file || !/\.uf2$/i.test(file.name || '')) throw new Error('UF2ファイルを選択してください。');
+      if (!file.size || file.size < 512 || file.size % 512 !== 0) throw new Error('UF2のサイズが正しくありません。');
+      var bytes = new Uint8Array(await file.slice(0, 512).arrayBuffer());
+      var view = new DataView(bytes.buffer);
+      if (view.getUint32(0, true) !== 0x0A324655 || view.getUint32(4, true) !== 0x9E5D5157 || view.getUint32(508, true) !== 0x0AB16F30) {
+        throw new Error('UF2のヘッダーを確認できません。XIAO nRF52840用のUF2を選択してください。');
+      }
+      return file;
+    }
+    async function selectUf2File(file) {
+      try {
+        state.file = await validateUf2(file);
+        fileName.dataset.selected = 'true';
+        fileName.textContent = localized(selectedFileLabel, 'UF2: selected') + ' (' + state.file.name + ', ' + state.file.size.toLocaleString() + ' bytes)';
+        setStatus(localized({ ja: 'UF2を確認しました。ドライブを選択してください。', en: 'UF2 validated. Select the bootloader drive.', 'zh-CN': 'UF2 已验证。请选择引导加载程序驱动器。', ko: 'UF2를 확인했습니다. 부트로더 드라이브를 선택하세요.', th: 'ตรวจสอบ UF2 แล้ว เลือกไดรฟ์บูตโหลดเดอร์', es: 'UF2 validado. Selecciona la unidad de arranque.', de: 'UF2 geprüft. Bootloader-Laufwerk auswählen.' }, 'UF2 validated. Select the bootloader drive.'), 'ok');
+      } catch (error) {
+        state.file = null;
+        fileName.dataset.selected = '';
+        fileName.textContent = localized({ ja: 'UF2: 未選択', en: 'UF2: not selected', 'zh-CN': 'UF2：未选择', ko: 'UF2: 미선택', th: 'UF2: ยังไม่ได้เลือก', es: 'UF2: no seleccionado', de: 'UF2: nicht ausgewählt' }, 'UF2: not selected');
+        var message = errorMessage(error, 'UF2を確認できません。');
+        if (message) setStatus(message, 'error');
+      }
+      updateWriteButton();
+    }
+    selectFile.addEventListener('click', async function () {
+      try {
+        if (typeof window.showOpenFilePicker === 'function') {
+          var handles = await window.showOpenFilePicker({ multiple: false, types: [{ description: 'UF2 firmware', accept: { 'application/octet-stream': ['.uf2'] } }] });
+          if (handles && handles[0]) await selectUf2File(await handles[0].getFile());
+        } else {
+          fallbackInput.click();
+        }
+      } catch (error) {
+        var message = errorMessage(error, 'UF2の選択に失敗しました。');
+        if (message) setStatus(message, 'error');
+      }
+    });
+    fallbackInput.addEventListener('change', function () {
+      var file = fallbackInput.files && fallbackInput.files[0];
+      if (file) selectUf2File(file);
+      fallbackInput.value = '';
+    });
+    selectDrive.addEventListener('click', async function () {
+      if (typeof window.showDirectoryPicker !== 'function') {
+        setStatus(localized({ ja: 'このブラウザーはドライブ選択に対応していません。ChromeまたはEdgeの最新版で開いてください。', en: 'This browser cannot select a drive. Use the latest Chrome or Edge.', 'zh-CN': '此浏览器不支持选择驱动器。请使用最新版 Chrome 或 Edge。', ko: '이 브라우저는 드라이브 선택을 지원하지 않습니다. 최신 Chrome 또는 Edge를 사용하세요.', th: 'เบราว์เซอร์นี้ไม่รองรับการเลือกไดรฟ์ ใช้ Chrome หรือ Edge รุ่นล่าสุด', es: 'Este navegador no permite seleccionar una unidad. Usa Chrome o Edge actualizado.', de: 'Dieser Browser unterstützt keine Laufwerksauswahl. Aktuelles Chrome oder Edge verwenden.' }, 'This browser cannot select a drive.'), 'error');
+        return;
+      }
+      try {
+        var directory = await window.showDirectoryPicker({ mode: 'readwrite' });
+        var names = [];
+        for await (var entry of directory.values()) names.push(String(entry.name || '').toUpperCase());
+        if (!names.some(function (name) { return name === 'INFO_UF2.TXT' || name === 'INDEX.HTM'; })) throw new Error('UF2ブートローダードライブではありません。INFO_UF2.TXT または INDEX.HTM が見つかりません。');
+        state.directory = directory;
+        driveName.dataset.selected = 'true';
+        driveName.textContent = localized(selectedDriveLabel, 'Bootloader drive: selected');
+        setStatus(localized({ ja: 'ブートローダードライブを確認しました。UF2を書き込めます。', en: 'Bootloader drive validated. The UF2 is ready to write.', 'zh-CN': '已确认引导加载程序驱动器。可以写入 UF2。', ko: '부트로더 드라이브를 확인했습니다. UF2를 기록할 수 있습니다.', th: 'ยืนยันไดรฟ์บูตโหลดเดอร์แล้ว พร้อมเขียน UF2', es: 'Unidad de arranque validada. UF2 listo para escribir.', de: 'Bootloader-Laufwerk geprüft. UF2 kann geschrieben werden.' }, 'Bootloader drive validated. The UF2 is ready to write.'), 'ok');
+      } catch (error) {
+        state.directory = null;
+        driveName.dataset.selected = '';
+        driveName.textContent = localized({ ja: 'ドライブ: 未選択', en: 'Drive: not selected', 'zh-CN': '驱动器：未选择', ko: '드라이브: 미선택', th: 'ไดรฟ์: ยังไม่ได้เลือก', es: 'Unidad: no seleccionada', de: 'Laufwerk: nicht ausgewählt' }, 'Drive: not selected');
+        var message = errorMessage(error, 'ブートローダードライブの選択に失敗しました。');
+        if (message) setStatus(message, 'error');
+      }
+      updateWriteButton();
+    });
+    async function verifyPermission(directory) {
+      if (!directory || typeof directory.queryPermission !== 'function') return true;
+      var options = { mode: 'readwrite' };
+      if (await directory.queryPermission(options) === 'granted') return true;
+      return typeof directory.requestPermission === 'function' && await directory.requestPermission(options) === 'granted';
+    }
+    writeButton.addEventListener('click', async function () {
+      if (state.writing || !state.file || !state.directory) return;
+      state.writing = true;
+      updateWriteButton();
+      var writable = null;
+      try {
+        if (!await verifyPermission(state.directory)) throw new Error('ブートローダードライブへの書き込み許可がありません。');
+        setStatus(localized({ ja: 'UF2を書き込み中です。ドライブを抜かないでください。', en: 'Writing UF2. Do not disconnect the drive.', 'zh-CN': '正在写入 UF2。请勿断开驱动器。', ko: 'UF2를 기록하는 중입니다. 드라이브를 분리하지 마세요.', th: 'กำลังเขียน UF2 อย่าถอดไดรฟ์', es: 'Escribiendo UF2. No desconectes la unidad.', de: 'UF2 wird geschrieben. Laufwerk nicht trennen.' }, 'Writing UF2. Do not disconnect the drive.'), 'working');
+        var target = await state.directory.getFileHandle('SO-SHO-UPDATE.UF2', { create: true });
+        writable = await target.createWritable();
+        await writable.write(state.file);
+        await writable.close();
+        writable = null;
+        setStatus(localized({ ja: '書き込みを開始しました。ブートローダードライブが切断され、キーボードが再起動すれば完了です。', en: 'The write started. It is complete when the bootloader drive disconnects and the keyboard restarts.', 'zh-CN': '已开始写入。引导加载程序驱动器断开且键盘重启后即完成。', ko: '기록을 시작했습니다. 부트로더 드라이브가 연결 해제되고 키보드가 재시작되면 완료됩니다.', th: 'เริ่มเขียนแล้ว จะเสร็จเมื่อไดรฟ์บูตโหลดเดอร์ตัดการเชื่อมต่อและคีย์บอร์ดรีสตาร์ท', es: 'La escritura comenzó. Finaliza cuando la unidad se desconecte y el teclado se reinicie.', de: 'Schreiben gestartet. Fertig, wenn das Bootloader-Laufwerk getrennt wird und die Tastatur neu startet.' }, 'The write started. Wait for reboot.'), 'ok');
+      } catch (error) {
+        if (writable) try { await writable.abort(); } catch (abortError) {}
+        var message = errorMessage(error, 'UF2の書き込みに失敗しました。');
+        setStatus(message || localized({ ja: 'UF2の書き込みをキャンセルしました。', en: 'UF2 write cancelled.', 'zh-CN': '已取消 UF2 写入。', ko: 'UF2 기록을 취소했습니다.', th: 'ยกเลิกการเขียน UF2 แล้ว', es: 'Escritura UF2 cancelada.', de: 'UF2-Schreiben abgebrochen.' }, 'UF2 write cancelled.'), 'error');
+      }
+      state.writing = false;
+      updateWriteButton();
+    });
+    window.soshoBootloaderWriter = { getState: function () { return { hasFile: !!state.file, hasDrive: !!state.directory, writing: state.writing }; } };
   }
 
   function readJsonStorage(key, fallback) {
@@ -1452,6 +1623,7 @@
     });
     topbar.insertAdjacentElement('afterend', diagnostics);
     if (downloadCard) workspace.insertAdjacentElement('beforebegin', downloadCard);
+    setupBootloaderWriter();
 
     var sidebar = document.createElement('aside');
     sidebar.className = 'studio-sidebar';
