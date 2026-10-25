@@ -210,7 +210,7 @@
       TO: /(^|\s)to(\s|$)|to layer|set layer|switch layer|select layer/,
       TG: /toggle.*layer|layer.*toggle|^tg$/,
       TT: /tap.*toggle|tap.*to.*toggle|^tt$/,
-      OSL: /one.?shot.*layer|layer.*one.?shot|^osl$/
+      OSL: /one.?shot.*layer|layer.*one.?shot|sticky\s+layer|^osl$/
     };
     var pattern = patterns[kind];
     if (!pattern) return null;
@@ -340,6 +340,16 @@
     if (label === labelById[raw && raw._id]) return raw;
     var direct = /^#(-?\d+)\((\d+),(\d+)\)$/.exec(String(label || '').trim());
     if (direct) return { behaviorId: Number(direct[1]), param1: Number(direct[2]), param2: Number(direct[3]) };
+    // The palette uses descriptive Japanese labels for the reserved scroll
+    // layer. Resolve them to the same official layer behaviors as MO(4) and
+    // TG(4), so the user-facing label is not required to be a ZMK token.
+    var descriptiveLayer = String(label || '').trim();
+    if (descriptiveLayer === '押している間だけスクロール') {
+      return resolveBinding('MO 4', raw);
+    }
+    if (descriptiveLayer === 'スクロール切替') {
+      return resolveBinding('TG 4', raw);
+    }
     var requestedLayer = layerActionKind(label);
     if (requestedLayer) {
       var layerDetail = layerBehaviorFor(requestedLayer.kind);
@@ -478,6 +488,39 @@
         });
       });
       if (outputMatch) return outputMatch;
+    }
+    /* SO-SHO firmware controls are ordinary Studio behaviors.  Resolve them
+     * from the metadata advertised by the connected firmware instead of
+     * sending a made-up HID keycode.  This keeps the editor compatible with
+     * the firmware's actual behavior IDs after a build. */
+    var customAction = String(label || '').trim().replace(/[−–—]/g, '-').replace(/\s+/g, ' ');
+    var customActionMatchers = {
+      'CPI -': /^CPI\s*-$/i,
+      'CPI +': /^CPI\s*\+$/i,
+      'Trackpad -': /^Trackpad\s*-$/i,
+      'Trackpad +': /^Trackpad\s*\+$/i,
+      'Auto Mouse ON/OFF': /^Auto\s+Mouse\s+(?:ON\/OFF|Toggle)$/i,
+      'Wheel Up': /^Wheel\s+Up$/i,
+      'Wheel Down': /^Wheel\s+Down$/i,
+      'Wheel Left': /^Wheel\s+Left$/i,
+      'Wheel Right': /^Wheel\s+Right$/i
+    };
+    var macroMatch = /^Macro\s+(\d+)$/i.exec(customAction);
+    var customMatch = customActionMatchers[customAction] ||
+      (macroMatch ? new RegExp('^Macro\\s+' + macroMatch[1] + '$', 'i') : null);
+    if (customMatch) {
+      var customBinding = null;
+      Object.keys(behaviorById).some(function (id) {
+        var detail = behaviorById[id] || {};
+        return (detail.metadata || []).some(function (set) {
+          return (set.param1 || []).some(function (value) {
+            if (value.type !== 'constant' || !customMatch.test(String(value.name || ''))) return false;
+            customBinding = { behaviorId: Number(detail.id), param1: Number(value.constant) || 0, param2: 0 };
+            return true;
+          });
+        });
+      });
+      if (customBinding) return customBinding;
     }
     // Mouse button actions use the firmware's Mouse Key Press behavior.  The
     // palette uses human-readable names while ZMK Studio exposes MB1..MB5 as
