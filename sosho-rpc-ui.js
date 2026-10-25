@@ -177,7 +177,7 @@
       if (typeof global.soshoConnectionError === 'function') {
         global.soshoConnectionError(
           'キーマップ通信に失敗しました。',
-          'USBポートは開けましたが、ZMK Studio RPCの応答がありません。SO-SHOはUSBシリアルポートが2つ表示される場合があるため、コンソールではなくもう一方のUSBシリアルポートを選択してください。右側Central、対応ファームウェア、他のシリアル接続が閉じていることも確認してください。'
+          'USBポートは開けましたが、キーマップRPCの応答がありません。右側Centralを選択し、他のシリアル接続ソフトを閉じてから再接続してください。'
         );
       }
     } else if (/読み取り成功|保存後の再読み取り成功/.test(detail) && typeof global.soshoClearConnectionError === 'function') {

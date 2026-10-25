@@ -65,8 +65,7 @@ vm.runInNewContext(source, context);
   assert.ok(statuses.some((value) => value.includes('USB接続済み')));
 
   await transport.connect();
-  assert.equal(requestOptions.filters[0].usbVendorId, 0x1D50);
-  assert.equal(requestOptions.filters[0].usbProductId, 0x615E);
+  assert.deepEqual(requestOptions, undefined);
   await transport.disconnect();
   console.log('USB/COM RPC fallback test passed');
 })().catch((error) => {

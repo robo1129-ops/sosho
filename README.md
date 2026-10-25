@@ -33,10 +33,10 @@
 
 ## ファームウェアのダウンロード
 
-- [通常プロファイルを含む最新ZIP](https://github.com/robo1129-ops/sosho-firmware/releases/download/latest/sosho-firmware-latest.zip)
+- [全スリープ設定・全モジュール構成を含む最新ZIP](https://github.com/robo1129-ops/sosho-firmware/releases/download/latest/sosho-firmware-latest.zip)
 - [ビルド履歴とZIP生成](https://github.com/robo1129-ops/sosho-firmware/actions/workflows/package-firmware.yml)
 
-ZIPには、右/左のトラックボール・トラックパッド構成と `settings_reset` が入ります。通常構成は右Centralトラックボール + 左Peripheralトラックパッドです。標準トラックパッドが一次タップ／ドラッグに対応します。
+ZIPには、5分・15分・30分・1時間・スリープなしの各フォルダと、右/左のトラックボール・トラックパッド・None構成、`settings_reset` が入ります。通常構成は右Centralトラックボール + 左Peripheralトラックパッドです。右側にトラックパッドを配置する構成はX/Yを反転します。トラックパッドは一次タップとダブルクリックに対応し、右クリックと外周スクロールは含みません。
 
 Webページの「カスタムファームウェアZIPを直接ダウンロード」または「最新ZIPをダウンロード」から、同じリリースZIPを直接取得できます。
 

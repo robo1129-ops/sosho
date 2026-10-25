@@ -458,10 +458,11 @@
     try {
       this._setStatus('右側CentralのUSBデバイス選択待ち…');
       this._setLog('USB requestPort開始（右側Centralを選択）');
-      // SO-SHO exposes two CDC-ACM interfaces with the same VID/PID: one for
-      // the console and one for ZMK Studio RPC.  Keep the chooser scoped to
-      // the keyboard so unrelated serial devices cannot be selected.
-      var port = await navigator.serial.requestPort({ filters: [{ usbVendorId: 0x1D50, usbProductId: 0x615E }] });
+      // The firmware exposes one dedicated CDC-ACM endpoint for the editor.
+      // Do not hard-code a VID/PID filter: bootloader and board revisions can
+      // legitimately enumerate with different identifiers, and an empty
+      // filter lets the user select the right Central explicitly.
+      var port = await navigator.serial.requestPort();
       this._setLog('USBポート選択完了（VID=0x' + ((port.getInfo && port.getInfo().usbVendorId || 0).toString(16)) + ' PID=0x' + ((port.getInfo && port.getInfo().usbProductId || 0).toString(16)) + '）');
       return await this._open(port);
     }

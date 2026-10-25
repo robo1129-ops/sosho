@@ -225,13 +225,13 @@
     /* Touch-named firmware variants were removed from the build matrix. Keep
      * older translation entries from advertising files that no longer exist. */
     var downloadDescription = {
-      ja: '左右の標準トラックボール・トラックパッド構成を含むZIPです。標準トラックパッドは一次タップとドラッグに対応します。',
-      en: 'The ZIP includes the standard trackball and trackpad profiles. The standard trackpad supports primary tap and drag.',
-      'zh-CN': 'ZIP 包含标准轨迹球和触控板配置；标准触控板支持主点击和拖动。',
-      ko: 'ZIP에는 표준 트랙볼 및 트랙패드 프로필이 포함되며, 표준 트랙패드는 탭과 드래그를 지원합니다.',
-      th: 'ZIP มีโปรไฟล์มาตรฐานของแทร็กบอลและแทร็กแพด โดยแทร็กแพดมาตรฐานรองรับการแตะและลาก',
-      es: 'El ZIP incluye los perfiles estándar de trackball y trackpad. El trackpad estándar admite toque y arrastre.',
-      de: 'Das ZIP enthält die Standardprofile für Trackball und Trackpad. Das Standard-Trackpad unterstützt Tippen und Ziehen.'
+      ja: '全スリープ設定・全モジュール構成を含むZIPです。右側トラックパッドはX/Yを反転し、一次タップとダブルクリックに対応します。右クリックと外周スクロールは含みません。',
+      en: 'The ZIP contains every sleep setting and module profile. Right-side trackpads invert X/Y and support primary tap and double-click. Right-click and edge scrolling are not included.',
+      'zh-CN': 'ZIP 包含全部休眠设置和模块配置。右侧触控板会反转 X/Y，并支持主点击和双击。不包含右键和外圈滚动。',
+      ko: 'ZIP에는 모든 절전 설정과 모듈 프로필이 포함됩니다. 오른쪽 트랙패드는 X/Y를 반전하며 기본 탭과 더블 클릭을 지원합니다. 우클릭과 가장자리 스크롤은 포함하지 않습니다.',
+      th: 'ZIP มีการตั้งค่าสลีปและโปรไฟล์โมดูลทั้งหมด แทร็กแพดด้านขวากลับแกน X/Y และรองรับการแตะหลักกับดับเบิลคลิก ไม่รวมคลิกขวาและการเลื่อนขอบ',
+      es: 'El ZIP incluye todos los tiempos de suspensión y perfiles de módulos. El trackpad derecho invierte X/Y y admite toque principal y doble clic. No incluye clic derecho ni desplazamiento por el borde.',
+      de: 'Das ZIP enthält alle Schlafzeiten und Modulprofile. Das rechte Trackpad invertiert X/Y und unterstützt Tippen und Doppelklick. Rechtsklick und Rand-Scrollen sind nicht enthalten.'
     }[language];
     setText('.download-card > div:first-child span', downloadDescription || copy.downloadDescription);
     setText('.download-actions a:first-child', copy.latestZip);
@@ -343,7 +343,7 @@
     card.setAttribute('aria-labelledby', 'firmware-download-heading');
     card.innerHTML = '' +
       '<div><strong id="firmware-download-heading">カスタムファームウェア（全パターン）</strong>' +
-      '<span>通常版に加えて、公式Cirque Pinnacleドライバの一次タップ・ドラッグ対応タッチプロファイルも含むZIPです。</span></div>' +
+      '<span>全スリープ設定・全モジュール構成を含むZIPです。右側トラックパッドはX/Yを反転します。</span></div>' +
       '<div class="download-actions">' +
       '<a href="' + firmwareZipUrl + '" download="sosho-firmware-latest.zip" rel="noopener">最新ZIPをダウンロード</a>' +
       '</div>';
