@@ -348,6 +348,26 @@
             param2: positionalProfile.param2 || 0
           };
         }
+        // A few builds omit the physical id from the decoded map.  In that
+        // case the same bindings are exposed as numeric labels; preserve the
+        // device order rather than inventing a generic HID binding.
+        var numericProfiles = Object.keys(rawById).map(function (id) {
+          return { id: id, binding: rawById[id], label: String(labelById[id] || '') };
+        }).filter(function (entry) {
+          return /^\d+$/.test(entry.label) && /left/.test(entry.id);
+        }).sort(function (a, b) {
+          var an = Number((/([0-9]+)$/.exec(a.id) || [0, 0])[1]);
+          var bn = Number((/([0-9]+)$/.exec(b.id) || [0, 0])[1]);
+          return an - bn;
+        });
+        var numericProfile = numericProfiles[Number(profileNumber[1]) - 1];
+        if (numericProfile && numericProfile.binding) {
+          return {
+            behaviorId: numericProfile.binding.behaviorId,
+            param1: numericProfile.binding.param1 || 0,
+            param2: numericProfile.binding.param2 || 0
+          };
+        }
       }
       // If a clear action is not currently assigned, prefer a behavior whose
       // connected-device metadata names that operation.  This keeps BT CLR
