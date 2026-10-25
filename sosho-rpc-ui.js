@@ -433,6 +433,30 @@
       });
       if (bluetoothMatch) return bluetoothMatch;
     }
+    // Mouse button actions use the firmware's Mouse Key Press behavior.  The
+    // palette uses human-readable names while ZMK Studio exposes MB1..MB5 as
+    // constants, so resolve that mapping explicitly instead of treating the
+    // labels as keyboard HID usages.
+    var mouseButton = /^MOUSE\s+(LEFT|RIGHT|MIDDLE|BACK|FORWARD)$/.exec(String(label || '').trim().toUpperCase());
+    if (mouseButton) {
+      var buttonValue = { LEFT: 1, RIGHT: 2, MIDDLE: 4, BACK: 8, FORWARD: 16 }[mouseButton[1]];
+      var mouseBinding = null;
+      Object.keys(behaviorById).some(function (id) {
+        var detail = behaviorById[id] || {};
+        if (!/mouse\s+key\s+press/i.test(String(detail.displayName || ''))) return false;
+        (detail.metadata || []).some(function (set) {
+          return (set.param1 || []).some(function (value) {
+            if (value.type === 'constant' && Number(value.constant) === buttonValue) {
+              mouseBinding = { behaviorId: Number(detail.id), param1: buttonValue, param2: 0 };
+              return true;
+            }
+            return false;
+          });
+        });
+        return !!mouseBinding;
+      });
+      if (mouseBinding) return mouseBinding;
+    }
     function normalizeKeyName(value) {
       return String(value || '').toUpperCase().replace(/[\\s_\-\/]+/g, '');
     }
