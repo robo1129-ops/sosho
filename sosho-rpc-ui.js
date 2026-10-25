@@ -90,9 +90,9 @@
   // initial value). The custom SO-SHO behavior is named sosho_controls.
   function crc16Ansi(text) {
     var crc = 0xffff;
-    var bytes = new TextEncoder().encode(String(text || ''));
-    for (var i = 0; i < bytes.length; i++) {
-      crc ^= bytes[i];
+    var value = String(text || '');
+    for (var i = 0; i < value.length; i++) {
+      crc ^= value.charCodeAt(i) & 0xff;
       for (var bit = 0; bit < 8; bit++) crc = (crc & 1) ? ((crc >>> 1) ^ 0xA001) : (crc >>> 1);
     }
     return crc & 0xffff;
