@@ -455,6 +455,30 @@
       }
       if (bluetoothMatch) return bluetoothMatch;
     }
+    // Output Selection is also firmware-defined.  Expose the constants that
+    // the connected device advertises instead of inventing a HID keycode.
+    var outputAction = String(label || '').trim().toUpperCase();
+    var outputConstantName = {
+      'USB OUTPUT': /USB\s+OUTPUT/,
+      'BLE OUTPUT': /BLE\s+OUTPUT|BLUETOOTH\s+OUTPUT/,
+      'TOGGLE OUTPUTS': /TOGGLE\s+OUTPUT/,
+      'NO OUTPUT': /NO\s+OUTPUT/
+    }[outputAction];
+    if (outputConstantName) {
+      var outputMatch = null;
+      Object.keys(behaviorById).some(function (id) {
+        var detail = behaviorById[id] || {};
+        if (!/output\s+selection/i.test(String(detail.displayName || ''))) return false;
+        return (detail.metadata || []).some(function (set) {
+          return (set.param1 || []).some(function (value) {
+            if (value.type !== 'constant' || !outputConstantName.test(String(value.name || ''))) return false;
+            outputMatch = { behaviorId: Number(detail.id), param1: Number(value.constant) || 0, param2: 0 };
+            return true;
+          });
+        });
+      });
+      if (outputMatch) return outputMatch;
+    }
     // Mouse button actions use the firmware's Mouse Key Press behavior.  The
     // palette uses human-readable names while ZMK Studio exposes MB1..MB5 as
     // constants, so resolve that mapping explicitly instead of treating the
