@@ -303,6 +303,55 @@
     if (label === labelById[raw && raw._id]) return raw;
     var direct = /^#(-?\d+)\((\d+),(\d+)\)$/.exec(String(label || '').trim());
     if (direct) return { behaviorId: Number(direct[1]), param1: Number(direct[2]), param2: Number(direct[3]) };
+    // Bluetooth profile actions are firmware-defined behaviors, not HID
+    // usages.  The picker exposes them as BT0..BT4 (and clear actions), but
+    // their behavior id/parameter pair is supplied by the connected device.
+    // Reusing a matching binding read from that device is both more precise
+    // and compatible with custom ZMK Studio behavior ids.
+    function bluetoothActionName(value) {
+      var text = String(value || '').trim().toUpperCase().replace(/\s+/g, ' ');
+      var profile = /^BT\s*([0-4])$/.exec(text);
+      if (profile) return 'BT' + profile[1];
+      if (/^BT\s*CLR\s*ALL$/.test(text) || /CLEAR\s+ALL/.test(text)) return 'BT CLR ALL';
+      if (/^BT\s*CLR$/.test(text) || /BLUETOOTH.*(?:CLEAR|CLR)/.test(text)) return 'BT CLR';
+      if (/BLUETOOTH.*SELECT\s+PROFILE/.test(text)) {
+        var suffix = /(?:,|·)\s*([0-4])$/.exec(text);
+        return suffix ? 'BT' + suffix[1] : 'BT0';
+      }
+      return '';
+    }
+    var wantedBluetoothAction = bluetoothActionName(label);
+    if (wantedBluetoothAction) {
+      var deviceAction = Object.keys(rawById).map(function (id) {
+        return { binding: rawById[id], label: labelById[id] };
+      }).find(function (entry) { return bluetoothActionName(entry.label) === wantedBluetoothAction; });
+      if (deviceAction && deviceAction.binding) {
+        return {
+          behaviorId: deviceAction.binding.behaviorId,
+          param1: deviceAction.binding.param1 || 0,
+          param2: deviceAction.binding.param2 || 0
+        };
+      }
+      // If a clear action is not currently assigned, prefer a behavior whose
+      // connected-device metadata names that operation.  This keeps BT CLR
+      // and BT CLR ALL usable even on maps that do not already contain them.
+      var bluetoothMatch = null;
+      Object.keys(behaviorById).some(function (id) {
+        var detail = behaviorById[id] || {};
+        var name = String(detail.displayName || '').toUpperCase();
+        var matches = wantedBluetoothAction === 'BT CLR ALL'
+          ? /BLUETOOTH|BT/.test(name) && /CLEAR|CLR/.test(name) && /ALL/.test(name)
+          : wantedBluetoothAction === 'BT CLR'
+            ? /BLUETOOTH|BT/.test(name) && /CLEAR|CLR/.test(name) && !/ALL/.test(name)
+            : false;
+        if (!matches) return false;
+        var firstSet = (detail.metadata || [])[0] || {};
+        var first = (firstSet.param1 || [])[0];
+        bluetoothMatch = { behaviorId: Number(detail.id), param1: first && first.constant || 0, param2: 0 };
+        return true;
+      });
+      if (bluetoothMatch) return bluetoothMatch;
+    }
     function normalizeKeyName(value) {
       return String(value || '').toUpperCase().replace(/[\\s_\-\/]+/g, '');
     }
