@@ -332,6 +332,23 @@
           param2: deviceAction.binding.param2 || 0
         };
       }
+      // Some sosho firmware revisions expose BT1..BT4 as numeric behavior
+      // labels (the firmware does not provide a display name for them).  The
+      // five profile bindings are placed consecutively in Layer 3's left
+      // module row 2, so retain their official id/parameter pair by position
+      // when the label-based lookup cannot identify them.
+      var profileNumber = /^BT([0-4])$/.exec(wantedBluetoothAction);
+      if (profileNumber) {
+        var profileId = 'l3-left-' + (6 + Number(profileNumber[1]));
+        var positionalProfile = rawById[profileId];
+        if (positionalProfile) {
+          return {
+            behaviorId: positionalProfile.behaviorId,
+            param1: positionalProfile.param1 || 0,
+            param2: positionalProfile.param2 || 0
+          };
+        }
+      }
       // If a clear action is not currently assigned, prefer a behavior whose
       // connected-device metadata names that operation.  This keeps BT CLR
       // and BT CLR ALL usable even on maps that do not already contain them.
