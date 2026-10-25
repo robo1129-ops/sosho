@@ -222,5 +222,12 @@
   };
 
   global.SoshoMacroProtocol = MacroProtocol;
+  global.SoshoMacroCodec = {
+    encode: encodeMacro,
+    decode: decodeMacro,
+    maxMacros: MAX_MACROS,
+    maxSteps: MAX_STEPS,
+    maxWaitMs: MAX_WAIT_MS
+  };
   global.SoshoMacroProtocolConstants = { SERVICE_UUID: SERVICE_UUID, COMMAND_UUID: COMMAND_UUID, RESPONSE_UUID: RESPONSE_UUID, MAX_MACROS: MAX_MACROS };
 })(window);

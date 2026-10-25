@@ -13,6 +13,19 @@ assert.deepStrictEqual(Array.from(protocol.encodeFrame(new Uint8Array([0xAB, 0xA
   0xAB, 0xAC, 0xAB, 0xAC, 0xAC, 0xAC, 0xAD, 1, 0xAD,
 ]);
 
+const sleepRequest = protocol.encodeRequest(8, 'sosho', 'setSleepTimeoutMs', 900000);
+assert.strictEqual(sleepRequest[0], 0x08);
+assert.strictEqual(sleepRequest[1], 0x08);
+assert.strictEqual(sleepRequest[2], 0x3A);
+assert.strictEqual(sleepRequest[4], 0x10);
+
+const macroRequest = protocol.encodeRequest(9, 'macro', 'setMacro', {
+  id: 0,
+  data: new Uint8Array([0, 1, 1, 0, 65]),
+});
+assert.strictEqual(macroRequest[1], 0x09);
+assert.strictEqual(macroRequest[2], 0x32);
+
 const fakeTransport = {
   resolver: null,
   _waitForFrame(timeout) {

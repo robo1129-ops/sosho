@@ -206,6 +206,44 @@
     });
     return result;
   }
+  function decodeMacroData(bytes) {
+    var result = { id: 0, data: new Uint8Array(0) };
+    new ByteReader(bytes).fields(function (number, wireType, value) {
+      if (number === 1 && wireType === 0) result.id = value;
+      else if (number === 2 && wireType === 2) result.data = value;
+    });
+    return result;
+  }
+  function decodeMacroResponse(bytes) {
+    var result = {};
+    new ByteReader(bytes).fields(function (number, wireType, value) {
+      if (number === 1 && wireType === 0) result.macroIds = value >>> 0;
+      else if (number === 2 && wireType === 2) result.getMacro = decodeMacroData(value);
+      else if (number === 3 && wireType === 0) result.setMacro = !!value;
+      else if (number === 4 && wireType === 0) result.deleteMacro = !!value;
+      else if (number === 5 && wireType === 0) result.runMacro = !!value;
+      else if (number === 6 && wireType === 0) result.error = value;
+    });
+    return result;
+  }
+  function decodeSleepSettings(bytes) {
+    var result = {};
+    new ByteReader(bytes).fields(function (number, wireType, value) {
+      if (number === 1 && wireType === 0) result.enabled = !!value;
+      else if (number === 2 && wireType === 0) result.timeoutMs = value >>> 0;
+      else if (number === 3 && wireType === 0) result.runtimeControl = !!value;
+    });
+    return result;
+  }
+  function decodeSoshoResponse(bytes) {
+    var result = {};
+    new ByteReader(bytes).fields(function (number, wireType, value) {
+      if (number === 1 && wireType === 2) result.getSleep = decodeSleepSettings(value);
+      else if (number === 2 && wireType === 2) result.setSleepTimeoutMs = decodeSleepSettings(value);
+      else if (number === 3 && wireType === 0) result.error = value;
+    });
+    return result;
+  }
   function decodeRequestResponse(bytes) {
     var result = { requestId: 0 };
     new ByteReader(bytes).fields(function (number, wireType, value) {
@@ -214,6 +252,8 @@
       if (number === 3 && wireType === 2) { result.subsystem = 'core'; result.data = decodeCoreResponse(value); }
       if (number === 4 && wireType === 2) { result.subsystem = 'behaviors'; result.data = decodeBehaviorResponse(value); }
       if (number === 5 && wireType === 2) { result.subsystem = 'keymap'; result.data = decodeKeymapResponse(value); }
+      if (number === 6 && wireType === 2) { result.subsystem = 'macro'; result.data = decodeMacroResponse(value); }
+      if (number === 7 && wireType === 2) { result.subsystem = 'sosho'; result.data = decodeSoshoResponse(value); }
     });
     return result;
   }
@@ -241,9 +281,22 @@
     if (operation === 'setLayerProps') return fieldMessage(12, concat(fieldVarint(1, payload.layerId), fieldString(2, payload.name)));
     throw new Error('unsupported keymap operation ' + operation);
   }
+  function encodeMacroRequest(operation, payload) {
+    if (operation === 'listMacros') return boolField(1);
+    if (operation === 'getMacro') return fieldVarint(2, payload);
+    if (operation === 'setMacro') return fieldMessage(3, concat(fieldVarint(1, payload.id), fieldBytes(2, payload.data)));
+    if (operation === 'deleteMacro') return fieldVarint(4, payload);
+    if (operation === 'runMacro') return fieldVarint(5, payload);
+    throw new Error('unsupported macro operation ' + operation);
+  }
+  function encodeSoshoRequest(operation, payload) {
+    if (operation === 'getSleep') return boolField(1);
+    if (operation === 'setSleepTimeoutMs') return fieldVarint(2, payload);
+    throw new Error('unsupported SO-SHO operation ' + operation);
+  }
   function encodeRequest(requestId, subsystem, operation, payload) {
-    var tag = subsystem === 'core' ? 3 : subsystem === 'behaviors' ? 4 : 5;
-    var body = subsystem === 'core' ? encodeCoreRequest(operation) : subsystem === 'behaviors' ? encodeBehaviorRequest(operation, payload) : encodeKeymapRequest(operation, payload);
+    var tag = subsystem === 'core' ? 3 : subsystem === 'behaviors' ? 4 : subsystem === 'keymap' ? 5 : subsystem === 'macro' ? 6 : 7;
+    var body = subsystem === 'core' ? encodeCoreRequest(operation) : subsystem === 'behaviors' ? encodeBehaviorRequest(operation, payload) : subsystem === 'keymap' ? encodeKeymapRequest(operation, payload) : subsystem === 'macro' ? encodeMacroRequest(operation, payload) : encodeSoshoRequest(operation, payload);
     return concat(fieldVarint(1, requestId), fieldMessage(tag, body));
   }
 
@@ -286,6 +339,42 @@
   StudioRpcClient.prototype.getKeymap = async function () { return (await this.request('keymap', 'getKeymap')).data.keymap; };
   StudioRpcClient.prototype.listBehaviors = async function () { return (await this.request('behaviors', 'listAllBehaviors')).data.behaviors || []; };
   StudioRpcClient.prototype.getBehaviorDetails = async function (id) { return (await this.request('behaviors', 'getBehaviorDetails', id)).data.behaviorDetails; };
+  StudioRpcClient.prototype.listMacros = async function () { return ((await this.request('macro', 'listMacros')).data.macroIds || 0) >>> 0; };
+  StudioRpcClient.prototype.getMacro = async function (id) {
+    var response = await this.request('macro', 'getMacro', id);
+    var data = response && response.data && response.data.getMacro;
+    if (!data) throw new Error('マクロ読み取り応答が空です');
+    return data;
+  };
+  StudioRpcClient.prototype.setMacro = async function (id, data) {
+    var bytes = data instanceof Uint8Array ? data : new Uint8Array(data || []);
+    var response = await this.request('macro', 'setMacro', { id: id, data: bytes });
+    var result = response && response.data;
+    if (!result || result.setMacro !== true) throw new Error('マクロ保存応答が不正です');
+    return true;
+  };
+  StudioRpcClient.prototype.deleteMacro = async function (id) {
+    var response = await this.request('macro', 'deleteMacro', id);
+    if (!response || !response.data || response.data.deleteMacro !== true) throw new Error('マクロ削除応答が不正です');
+    return true;
+  };
+  StudioRpcClient.prototype.runMacro = async function (id) {
+    var response = await this.request('macro', 'runMacro', id);
+    if (!response || !response.data || response.data.runMacro !== true) throw new Error('マクロ実行応答が不正です');
+    return true;
+  };
+  StudioRpcClient.prototype.getSleepSettings = async function () {
+    var response = await this.request('sosho', 'getSleep');
+    var settings = response && response.data && response.data.getSleep;
+    if (!settings) throw new Error('SO-SHOスリープ設定の応答が空です');
+    return settings;
+  };
+  StudioRpcClient.prototype.setSleepTimeoutMs = async function (timeoutMs) {
+    var response = await this.request('sosho', 'setSleepTimeoutMs', Number(timeoutMs) >>> 0);
+    var settings = response && response.data && response.data.setSleepTimeoutMs;
+    if (!settings) throw new Error('SO-SHOスリープ設定の保存応答が空です');
+    return settings;
+  };
   StudioRpcClient.prototype.setLayerBinding = async function (layerId, keyPosition, binding) {
     var response = await this.request('keymap', 'setLayerBinding', { layerId: layerId, keyPosition: keyPosition, binding: binding });
     var errorCode = response && response.data && response.data.setLayerBindingError;
@@ -686,5 +775,5 @@
   global.ZmkSerialTransport = ZmkSerialTransport;
   global.ZmkBleTransport = ZmkBleTransport;
   global.ZmkStudioRpc = StudioRpcClient;
-  global.ZmkStudioProtocol = { SOF: SOF, ESC: ESC, EOF: EOF_BYTE, BLE_SERVICE_UUID: BLE_SERVICE_UUID, BLE_CHARACTERISTIC_UUID: BLE_CHARACTERISTIC_UUID, MACRO_SERVICE_UUID: MACRO_SERVICE_UUID, BLE_NAME_PREFIXES: BLE_NAME_PREFIXES, BLE_SAFE_WRITE_CHUNK_SIZE: BLE_SAFE_WRITE_CHUNK_SIZE, encodeFrame: encodeFrame, RPC_SCHEMA_SUPPORTED: RPC_SCHEMA_SUPPORTED, RPC_UNSUPPORTED_REASON: RPC_UNSUPPORTED_REASON, decodeStudioResponse: decodeStudioResponse };
+  global.ZmkStudioProtocol = { SOF: SOF, ESC: ESC, EOF: EOF_BYTE, BLE_SERVICE_UUID: BLE_SERVICE_UUID, BLE_CHARACTERISTIC_UUID: BLE_CHARACTERISTIC_UUID, MACRO_SERVICE_UUID: MACRO_SERVICE_UUID, BLE_NAME_PREFIXES: BLE_NAME_PREFIXES, BLE_SAFE_WRITE_CHUNK_SIZE: BLE_SAFE_WRITE_CHUNK_SIZE, encodeFrame: encodeFrame, encodeRequest: encodeRequest, RPC_SCHEMA_SUPPORTED: RPC_SCHEMA_SUPPORTED, RPC_UNSUPPORTED_REASON: RPC_UNSUPPORTED_REASON, decodeStudioResponse: decodeStudioResponse };
 })(window);

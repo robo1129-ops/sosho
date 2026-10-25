@@ -55,7 +55,8 @@
     es: { noticeTitle: 'Conecta el módulo Central derecho por USB', noticeBody: 'Este editor usa Web Serial (USB/COM) para editar el dispositivo. La comunicación entre mitades permanece en el firmware. En Chrome o Edge, conecta el módulo derecho por USB y elige la conexión USB.', connectionDescription: 'Abre el CDC-ACM USB del Central derecho con Web Serial y usa el RPC oficial de ZMK Studio para leer y guardar.', transportNote: 'Abre el CDC-ACM USB del Central derecho con Web Serial y usa el RPC oficial de ZMK Studio para leer y guardar.', logDescription: 'Conserva en esta página el estado anterior y posterior de las operaciones USB y RPC.', usbConnect: 'Conectar USB derecho / COM', usbReconnect: 'Reconectar USB autorizado', bleConnect: '', bleReconnect: '' },
     de: { noticeTitle: 'Rechtes Central-Modul per USB verbinden', noticeBody: 'Dieser Editor verwendet Web Serial (USB/COM) zur Gerätebearbeitung. Die Kommunikation zwischen den Hälften bleibt in der Firmware. Das rechte Modul per USB in Chrome oder Edge verbinden und USB-Verbindung wählen.', connectionDescription: 'Öffnet den USB-CDC-ACM-Port des rechten Central mit Web Serial und verwendet das offizielle ZMK-Studio-RPC zum Lesen und Speichern.', transportNote: 'Öffnet den USB-CDC-ACM-Port des rechten Central mit Web Serial und verwendet das offizielle ZMK-Studio-RPC zum Lesen und Speichern.', logDescription: 'Bewahrt den Zustand vor und nach USB- und RPC-Aktionen auf dieser Seite.', usbConnect: 'Rechtes USB / COM verbinden', usbReconnect: 'Autorisiertes USB erneut verbinden', bleConnect: '', bleReconnect: '' }
   };
-  Object.keys(usbOnlyTransportCopy).forEach(function (language) { Object.assign(transportCopy[language], usbOnlyTransportCopy[language]); });
+  // BLE is an active editor transport again.  Keep the legacy USB-only copy
+  // above as historical data, but do not merge it over the BLE labels.
 
   var physicalCopy = {
     ja: { leftModule: '左モジュール', rightModule: '右モジュール', ballShort: 'トラックボール', padShort: 'トラックパッド', noneShort: 'NONE' },
@@ -179,9 +180,9 @@
     var reconnect = document.getElementById('connect-usb-authorized');
     if (reconnect) reconnect.textContent = copy.usbReconnect;
     var connectBle = document.getElementById('connect-ble');
-    if (connectBle) connectBle.remove();
+    if (connectBle) connectBle.textContent = copy.bleConnect || 'BLE';
     var reconnectBle = document.getElementById('connect-ble-authorized');
-    if (reconnectBle) reconnectBle.remove();
+    if (reconnectBle) reconnectBle.textContent = copy.bleReconnect || 'Reconnect BLE';
     var disconnect = document.getElementById('disconnect');
     if (disconnect) disconnect.textContent = ({ja:'切断', en:'Disconnect', 'zh-CN':'断开', ko:'연결 해제', th:'ตัดการเชื่อมต่อ', es:'Desconectar', de:'Trennen'})[language] || '切断';
     var copyLog = document.getElementById('connection-log-copy');
