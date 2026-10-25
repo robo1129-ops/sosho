@@ -235,13 +235,13 @@
     /* Touch-named firmware variants were removed from the build matrix. Keep
      * older translation entries from advertising files that no longer exist. */
     var downloadDescription = {
-      ja: '全スリープ設定・全モジュール構成を含むZIPです。右側トラックパッドはX/Yを反転し、一次タップとダブルクリックに対応します。右クリックと外周スクロールは含みません。',
-      en: 'The ZIP contains every sleep setting and module profile. Right-side trackpads invert X/Y and support primary tap and double-click. Right-click and edge scrolling are not included.',
-      'zh-CN': 'ZIP 包含全部休眠设置和模块配置。右侧触控板会反转 X/Y，并支持主点击和双击。不包含右键和外圈滚动。',
-      ko: 'ZIP에는 모든 절전 설정과 모듈 프로필이 포함됩니다. 오른쪽 트랙패드는 X/Y를 반전하며 기본 탭과 더블 클릭을 지원합니다. 우클릭과 가장자리 스크롤은 포함하지 않습니다.',
-      th: 'ZIP มีการตั้งค่าสลีปและโปรไฟล์โมดูลทั้งหมด แทร็กแพดด้านขวากลับแกน X/Y และรองรับการแตะหลักกับดับเบิลคลิก ไม่รวมคลิกขวาและการเลื่อนขอบ',
-      es: 'El ZIP incluye todos los tiempos de suspensión y perfiles de módulos. El trackpad derecho invierte X/Y y admite toque principal y doble clic. No incluye clic derecho ni desplazamiento por el borde.',
-      de: 'Das ZIP enthält alle Schlafzeiten und Modulprofile. Das rechte Trackpad invertiert X/Y und unterstützt Tippen und Doppelklick. Rechtsklick und Rand-Scrollen sind nicht enthalten.'
+      ja: 'ZIP内にsleep-5m / 15m / 30m / 60m / offのフォルダと全モジュール構成を収録しています。自動スリープはフォルダを選び、右側トラックパッドはX/Yを反転します。',
+      en: 'The ZIP contains sleep-5m / 15m / 30m / 60m / off folders and all module profiles. Choose the sleep folder in the ZIP; right-side trackpads invert X/Y.',
+      'zh-CN': 'ZIP 包含 sleep-5m / 15m / 30m / 60m / off 文件夹和全部模块配置。请在 ZIP 中选择休眠文件夹；右侧触控板会反转 X/Y。',
+      ko: 'ZIP에는 sleep-5m / 15m / 30m / 60m / off 폴더와 모든 모듈 프로필이 포함됩니다. ZIP에서 절전 폴더를 선택하며 오른쪽 트랙패드는 X/Y를 반전합니다.',
+      th: 'ZIP มีโฟลเดอร์ sleep-5m / 15m / 30m / 60m / off และโปรไฟล์โมดูลทั้งหมด ให้เลือกโฟลเดอร์สลีปใน ZIP โดยแทร็กแพดด้านขวาจะกลับแกน X/Y',
+      es: 'El ZIP incluye carpetas sleep-5m / 15m / 30m / 60m / off y todos los perfiles de módulos. Elige la carpeta de suspensión en el ZIP; el trackpad derecho invierte X/Y.',
+      de: 'Das ZIP enthält die Ordner sleep-5m / 15m / 30m / 60m / off und alle Modulprofile. Wähle den Schlafordner im ZIP; das rechte Trackpad invertiert X/Y.'
     }[language];
     setText('.download-card > div:first-child span', downloadDescription || copy.downloadDescription);
     setText('.download-actions a:first-child', copy.latestZip);
