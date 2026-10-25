@@ -98,10 +98,22 @@
     return languageCatalog[language] && languageCatalog[language][key] || languageCatalog.ja[key];
   }
 
+  var rpcVerificationCatalog = {
+    ja: { title: '実機への書き込み確認', description: '保存後に実機を再読み取りし、送信した内容と一致した場合だけ成功と判定します。', prepare: '変更を準備', write: '書き込み送信', save: '保存応答', verify: '実機再読み取り', idle: '待機中', running: '実行中', success: '成功', failure: '失敗', resultIdle: '未実行', resultRunning: '確認中', resultSuccess: '実機反映成功', resultFailure: '実機反映を確認できません' },
+    en: { title: 'Device write verification', description: 'The device is read again after saving. Success is shown only when the values match.', prepare: 'Prepare changes', write: 'Send write', save: 'Save response', verify: 'Read device again', idle: 'Waiting', running: 'Running', success: 'Success', failure: 'Failed', resultIdle: 'Not run', resultRunning: 'Verifying', resultSuccess: 'Device updated', resultFailure: 'Device update not verified' },
+    'zh-CN': { title: '验证设备写入', description: '保存后再次读取设备，只有发送内容与设备内容一致时才显示成功。', prepare: '准备更改', write: '发送写入', save: '保存响应', verify: '再次读取设备', idle: '等待中', running: '执行中', success: '成功', failure: '失败', resultIdle: '未执行', resultRunning: '验证中', resultSuccess: '设备已更新', resultFailure: '未验证设备更新' },
+    ko: { title: '장치 쓰기 확인', description: '저장 후 장치를 다시 읽고 전송한 값과 일치할 때만 성공으로 표시합니다.', prepare: '변경 준비', write: '쓰기 전송', save: '저장 응답', verify: '장치 다시 읽기', idle: '대기 중', running: '실행 중', success: '성공', failure: '실패', resultIdle: '실행 안 됨', resultRunning: '확인 중', resultSuccess: '장치 반영 성공', resultFailure: '장치 반영 미확인' },
+    th: { title: 'ยืนยันการเขียนลงอุปกรณ์', description: 'หลังบันทึกจะอ่านอุปกรณ์อีกครั้ง และจะแสดงว่าสำเร็จเมื่อค่าตรงกันเท่านั้น', prepare: 'เตรียมการเปลี่ยนแปลง', write: 'ส่งการเขียน', save: 'การตอบกลับการบันทึก', verify: 'อ่านอุปกรณ์อีกครั้ง', idle: 'รอดำเนินการ', running: 'กำลังทำงาน', success: 'สำเร็จ', failure: 'ล้มเหลว', resultIdle: 'ยังไม่ทำงาน', resultRunning: 'กำลังตรวจสอบ', resultSuccess: 'อัปเดตอุปกรณ์แล้ว', resultFailure: 'ยังยืนยันการอัปเดตไม่ได้' },
+    es: { title: 'Verificación de escritura', description: 'Después de guardar se vuelve a leer el dispositivo; solo se muestra éxito si los valores coinciden.', prepare: 'Preparar cambios', write: 'Enviar escritura', save: 'Respuesta de guardado', verify: 'Leer dispositivo otra vez', idle: 'En espera', running: 'En curso', success: 'Correcto', failure: 'Fallido', resultIdle: 'No ejecutado', resultRunning: 'Verificando', resultSuccess: 'Dispositivo actualizado', resultFailure: 'Actualización no verificada' },
+    de: { title: 'Schreibprüfung des Geräts', description: 'Nach dem Speichern wird das Gerät erneut gelesen. Erfolg wird nur bei übereinstimmenden Werten angezeigt.', prepare: 'Änderungen vorbereiten', write: 'Schreiben senden', save: 'Speicherantwort', verify: 'Gerät erneut lesen', idle: 'Wartend', running: 'Läuft', success: 'Erfolgreich', failure: 'Fehlgeschlagen', resultIdle: 'Nicht ausgeführt', resultRunning: 'Prüfung läuft', resultSuccess: 'Gerät aktualisiert', resultFailure: 'Geräteänderung nicht bestätigt' }
+  };
+
   function applyLanguage(language) {
     language = Object.prototype.hasOwnProperty.call(languageCatalog, language) ? language : 'ja';
     var copy = Object.assign({}, languageCatalog.ja, languageCatalog[language], transportCopy[language] || transportCopy.en, physicalCopy[language] || physicalCopy.en, sleepCopy[language] || sleepCopy.en, deviceCopy[language] || deviceCopy.en);
     window.soshoCurrentCopy = copy;
+    var verificationCopy = rpcVerificationCatalog[language] || rpcVerificationCatalog.ja;
+    window.soshoRpcVerificationLabels = verificationCopy;
     document.documentElement.lang = language;
     document.title = copy.title;
     function setText(selector, value) {
@@ -189,6 +201,13 @@
     setText('#transport-note', copy.transportNote);
     setText('#connection-log-description', copy.logDescription);
     setText('#rpc-description', copy.rpcDescription);
+    setText('#rpc-verification-title', verificationCopy.title);
+    setText('#rpc-verification-description', verificationCopy.description);
+    document.querySelectorAll('[data-rpc-verify-label]').forEach(function (element) {
+      var key = element.getAttribute('data-rpc-verify-label');
+      if (verificationCopy[key]) element.textContent = verificationCopy[key];
+    });
+    if (typeof window.soshoRefreshRpcVerification === 'function') window.soshoRefreshRpcVerification();
     setText('#editor-hint', copy.editorHint);
     setFirstText('#reference-note', copy.referenceNote);
     setText('.layout-badge', copy.layoutBadge);

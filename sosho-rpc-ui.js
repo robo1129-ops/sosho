@@ -11,9 +11,69 @@
   var labelById = Object.create(null);
   var behaviorById = Object.create(null);
   var readInProgress = false;
+  var verificationRoot = document.getElementById('rpc-verification');
+  var verificationModel = {
+    prepare: { state: 'idle', detail: 'USB接続と読み取りが必要です。' },
+    write: { state: 'idle', detail: '保存を押すと開始します。' },
+    save: { state: 'idle', detail: 'ファームウェアの保存応答を待ちます。' },
+    verify: { state: 'idle', detail: '実機の現在値と照合します。' }
+  };
+  var verificationResult = { state: 'idle', detail: 'まだ実機への書き込み確認は実行されていません。' };
+  var defaultVerificationLabels = {
+    idle: '待機中', running: '実行中', success: '成功', failure: '失敗',
+    resultIdle: '未実行', resultRunning: '確認中', resultSuccess: '実機反映成功', resultFailure: '実機反映を確認できません'
+  };
 
   if (footer) footer.textContent = 'ローカル編集はlocalStorageに保存されます。公式RPCで読み取りに成功した後だけ、実機への書き込みボタンが有効になります。';
   if (!editor || !readButton || !writeButton || typeof global.ZmkStudioRpc !== 'function') return;
+
+  function verificationLabels() {
+    return Object.assign({}, defaultVerificationLabels, global.soshoRpcVerificationLabels || {});
+  }
+
+  function renderVerification() {
+    if (!verificationRoot) return;
+    var labels = verificationLabels();
+    Object.keys(verificationModel).forEach(function (key) {
+      var item = verificationRoot.querySelector('[data-rpc-verify-step="' + key + '"]');
+      if (!item) return;
+      var model = verificationModel[key];
+      item.dataset.state = model.state;
+      var stateNode = item.querySelector('.rpc-verify-state');
+      var detailNode = item.querySelector('.rpc-verify-detail');
+      if (stateNode) stateNode.textContent = labels[model.state] || model.state;
+      if (detailNode) detailNode.textContent = model.detail || '';
+    });
+    var result = document.getElementById('rpc-verification-result');
+    if (result) {
+      result.dataset.state = verificationResult.state;
+      result.textContent = labels['result' + verificationResult.state.charAt(0).toUpperCase() + verificationResult.state.slice(1)] || verificationResult.state;
+    }
+    var detail = document.getElementById('rpc-verification-detail');
+    if (detail) { detail.dataset.state = verificationResult.state; detail.textContent = verificationResult.detail || ''; }
+  }
+
+  function setVerificationStep(key, state, detail) {
+    if (!verificationModel[key]) return;
+    verificationModel[key] = { state: state, detail: String(detail || '') };
+    renderVerification();
+  }
+
+  function setVerificationResult(state, detail) {
+    verificationResult = { state: state, detail: String(detail || '') };
+    renderVerification();
+  }
+
+  function resetVerification(detail) {
+    setVerificationStep('prepare', 'idle', 'USB接続と読み取りが必要です。');
+    setVerificationStep('write', 'idle', '保存を押すと開始します。');
+    setVerificationStep('save', 'idle', 'ファームウェアの保存応答を待ちます。');
+    setVerificationStep('verify', 'idle', '実機の現在値と照合します。');
+    setVerificationResult('idle', detail || 'まだ実機への書き込み確認は実行されていません。');
+  }
+
+  global.soshoRefreshRpcVerification = renderVerification;
+  renderVerification();
 
   function uiId(layerIndex, position) {
     var row = position < 12 ? 0 : position < 24 ? 1 : position < 36 ? 2 : 3;
@@ -210,7 +270,10 @@
     if (!transport.canWriteKeymap) { setStatus('接続済みですが、公式ZMK Studio GATTサービスが見つかりません'); return false; }
     readInProgress = true;
     try {
-      readButton.disabled = true; writeButton.disabled = true; setStatus('公式RPCでキーマップを読み取り中…');
+      readButton.disabled = true; writeButton.disabled = true;
+      setVerificationStep('prepare', 'running', '実機の現在のキーマップを読み取っています。');
+      setVerificationResult('running', '実機の現在値を確認しています。');
+      setStatus('公式RPCでキーマップを読み取り中…');
       var rpc = new global.ZmkStudioRpc(transport);
       deviceState = await rpc.readDeviceState();
       behaviorById = Object.create(null);
@@ -218,10 +281,15 @@
       mapDeviceState();
       global.soshoStudioState = { rpc: rpc, deviceState: deviceState, rawById: rawById, labelById: labelById };
       var lockText = deviceState.lockState === 1 ? 'Studioロック解除済み' : deviceState.lockState === 0 ? 'Studioロック中（キーボードの&studio_unlockを押すと保存可能）' : 'lockState=' + deviceState.lockState;
+      setVerificationStep('prepare', 'success', deviceState.keymap.layers.length + 'レイヤーを読み取りました。' + (deviceState.info && deviceState.info.name ? ' ' + deviceState.info.name : ''));
+      setVerificationResult('idle', '読み取り済みです。変更後に保存すると、実機を再読み取りして一致確認します。');
       setStatus('読み取り成功: ' + (deviceState.info && deviceState.info.name ? deviceState.info.name : 'sosho') + ' / ' + deviceState.keymap.layers.length + ' layers / ' + lockText);
       return true;
     } catch (error) {
-      deviceState = null; if (typeof global.soshoSetKeymapLoaded === 'function') global.soshoSetKeymapLoaded(false); setStatus('公式RPC読み取り失敗: ' + (error.message || error));
+      deviceState = null; if (typeof global.soshoSetKeymapLoaded === 'function') global.soshoSetKeymapLoaded(false);
+      setVerificationStep('prepare', 'failure', error.message || String(error));
+      setVerificationResult('failure', '実機の現在値を読み取れなかったため、保存結果を確認できません。');
+      setStatus('公式RPC読み取り失敗: ' + (error.message || error));
       return false;
     } finally { readInProgress = false; updateButtons(); }
   }
@@ -318,12 +386,33 @@
     return match;
   }
 
+  function bindingsEqual(a, b) {
+    return !!a && !!b && String(a.behaviorId) === String(b.behaviorId) && Number(a.param1 || 0) === Number(b.param1 || 0) && Number(a.param2 || 0) === Number(b.param2 || 0);
+  }
+
+  function findLayer(keymap, layerId) {
+    return (keymap && keymap.layers || []).find(function (layer) { return String(layer.id) === String(layerId); }) || null;
+  }
+
+  function findVerificationMismatches(keymap, changes) {
+    return changes.filter(function (change) {
+      var layer = findLayer(keymap, change.layerId);
+      var actual = layer && layer.bindings ? layer.bindings[change.keyPosition] : null;
+      return !bindingsEqual(actual, change.binding);
+    });
+  }
+
   async function writeKeymap() {
     var transport = editor.getTransport();
     if (!deviceState || !transport || !transport.isConnected || !transport.canWriteKeymap) { setStatus('先にキーマップを読み取り、公式RPC接続を確認してください'); return; }
     if (deviceState.lockState !== 1) { setStatus('Studioロック中です。キーボードのLayer 3にある&studio_unlockを押してから、もう一度読み取りを実行してください'); return; }
     var changes = [];
     try {
+      setVerificationStep('prepare', 'running', '画面の変更内容を実機へ送る準備をしています。');
+      setVerificationStep('write', 'idle', '書き込み送信を待っています。');
+      setVerificationStep('save', 'idle', 'ファームウェアの保存応答を待ちます。');
+      setVerificationStep('verify', 'idle', '保存後に実機を再読み取りします。');
+      setVerificationResult('running', '書き込み処理を開始しました。');
       deviceState.keymap.layers.forEach(function (layer, layerIndex) {
         layer.bindings.forEach(function (original, position) {
           var id = uiId(layerIndex, position);
@@ -335,16 +424,37 @@
           if (!sameBinding(original, desired)) changes.push({ layerId: layer.id, keyPosition: position, binding: desired });
         });
       });
+      setVerificationStep('prepare', 'success', changes.length ? changes.length + '件の変更を準備しました。' : '変更はありません。保存状態を再確認します。');
+      setVerificationStep('write', 'running', changes.length ? changes.length + '件を公式RPCへ送信中です。' : '保存状態を公式RPCへ確認中です。');
       setStatus(changes.length ? changes.length + '件を公式RPCで保存中…' : '変更なし。保存後の再読み取りを行います…');
       var rpc = global.soshoStudioState.rpc;
       var afterWrite = await rpc.writeKeymap(changes);
+      setVerificationStep('write', 'success', changes.length ? changes.length + '件の書き込み要求を送信しました。' : '書き込み対象はありませんでした。');
+      setVerificationStep('save', 'success', 'ファームウェアから保存応答を受信しました。');
+      setVerificationStep('verify', 'running', '保存後の実機キーマップを再読み取りしています。');
+      setStatus('保存応答を受信しました。実機を再読み取り中…');
       deviceState.keymap = afterWrite;
       var verified = await rpc.readDeviceState();
+      var mismatches = findVerificationMismatches(verified.keymap, changes);
+      if (mismatches.length) {
+        var mismatchError = new Error('再読み取りで ' + mismatches.length + '件の差分が残っています');
+        mismatchError.verification = true;
+        throw mismatchError;
+      }
       deviceState = verified;
       mapDeviceState();
       var lockText = verified.lockState === 1 ? 'Studioロック解除済み' : verified.lockState === 0 ? 'Studioロック中' : 'lockState=' + verified.lockState;
+      setVerificationStep('verify', 'success', '再読み取りした実機の値が送信内容と一致しました。');
+      setVerificationResult('success', '実機反映成功：保存応答と再読み取りの一致を確認しました。');
       setStatus('保存・再読み取り成功: ' + changes.length + '件 / ' + lockText);
-    } catch (error) { setStatus('公式RPC書き込み失敗: ' + (error.message || error)); }
+    } catch (error) {
+      var errorText = error.message || String(error);
+      if (verificationModel.write.state === 'running') setVerificationStep('write', 'failure', errorText);
+      else if (verificationModel.save.state === 'running' || verificationModel.save.state === 'idle') setVerificationStep('save', 'failure', errorText);
+      if (verificationModel.verify.state === 'running') setVerificationStep('verify', 'failure', errorText);
+      setVerificationResult('failure', error.verification ? '保存応答は受信しましたが、再読み取りの値が一致しません。' : '書き込み処理に失敗したため、実機反映を確認できません。');
+      setStatus('公式RPC書き込み失敗: ' + errorText);
+    }
     finally { updateButtons(); }
   }
 
