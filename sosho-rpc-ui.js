@@ -558,7 +558,10 @@
      * from the metadata advertised by the connected firmware instead of
      * sending a made-up HID keycode.  This keeps the editor compatible with
      * the firmware's actual behavior IDs after a build. */
-    var customAction = String(label || '').trim().replace(/[−–—]/g, '-').replace(/\s+/g, ' ');
+    var customAction = String(label || '').trim()
+      .replace(/[−–—－]/g, '-')
+      .replace(/[＋]/g, '+')
+      .replace(/\s+/g, ' ');
     var customActionMatchers = {
       'CPI -': /^CPI\s*-$/i,
       'CPI +': /^CPI\s*\+$/i,
