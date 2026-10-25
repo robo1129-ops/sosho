@@ -80,6 +80,8 @@ assert.match(html, /data-key-popover-apply-selection/);
 assert.match(html, /通常キー（押したとき）/);
 assert.match(html, /タップ \/ ホールド（別の動作）/);
 assert.match(html, /getHoldAssignments/);
+assert.match(html, /sleep-timeout-minutes/);
+assert.match(html, /1〜1440/);
 assert.match(html, /macro-step-builder/);
 assert.match(html, /macro-step:/);
 assert.match(html, /data-macro-dropzone/);

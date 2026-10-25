@@ -92,13 +92,13 @@
 
   /* These values are deliberately explicit: the editor no longer presents
    * controls that only update local JSON. */
-  languageCatalog.ja.deviceBuildNote = '実機へ保存できるのは、DEVICEパレットの実機対応アクションだけです。CPIとスクロール量は「−／＋」アクションをキーに割り当てます。センサー配置・初期値・スリープ・オートマウス・エンコーダーのセンサーバインドはファームウェアプロファイルの選択と書き換えが必要です。';
-  languageCatalog.en.deviceBuildNote = 'Only DEVICE actions are written through the Studio RPC. Assign CPI and scroll −/+ actions to keys. Sensor placement, initial values, sleep, auto-mouse, and encoder sensor bindings require a firmware profile and reflash.';
-  languageCatalog['zh-CN'].deviceBuildNote = '只有 DEVICE 面板中的实机操作会通过 Studio RPC 写入。请将 CPI 和滚动 −/+ 操作分配给按键。传感器布局、初始值、休眠、自动鼠标和编码器传感器绑定需要选择并重新写入固件。';
-  languageCatalog.ko.deviceBuildNote = 'Studio RPC로 기록되는 것은 DEVICE 패널의 실제 펌웨어 동작뿐입니다. CPI와 스크롤 −/+ 동작을 키에 할당하세요. 센서 배치, 초기값, 절전, 자동 마우스, 인코더 센서 바인딩은 펌웨어 프로필을 다시 기록해야 합니다.';
-  languageCatalog.th.deviceBuildNote = 'Studio RPC จะเขียนได้เฉพาะการทำงานของเฟิร์มแวร์จริงในแผง DEVICE เท่านั้น ให้กำหนด CPI และการเลื่อน −/+ ให้กับปุ่ม การจัดวางเซนเซอร์ ค่าเริ่มต้น สลีป ออโตเมาส์ และ sensor binding ของเอนโคเดอร์ต้องเลือกและเขียนเฟิร์มแวร์ใหม่';
-  languageCatalog.es.deviceBuildNote = 'El RPC de Studio solo escribe las acciones reales del firmware del panel DEVICE. Asigna las acciones CPI y desplazamiento −/+ a teclas. La posición de sensores, valores iniciales, suspensión, auto-mouse y bindings del encoder requieren otro perfil de firmware y una nueva escritura.';
-  languageCatalog.de.deviceBuildNote = 'Über das Studio-RPC werden nur echte Firmware-Aktionen aus dem DEVICE-Bereich geschrieben. Weise CPI- und Scroll- Aktionen −/+ Tasten zu. Sensorposition, Anfangswerte, Schlafmodus, Auto-Maus und Encoder-Sensorbindungen erfordern ein Firmware-Profil und erneutes Flashen.';
+  languageCatalog.ja.deviceBuildNote = 'DEVICEのCPI・スクロール量の増減、マクロ、実行時スリープは拡張RPC対応ファームウェアへ保存できます。センサー配置・初期値・軸設定・エンコーダーのセンサーバインドはファームウェアプロファイルの選択と書き換えが必要です。';
+  languageCatalog.en.deviceBuildNote = 'DEVICE CPI/scroll actions, macros, and runtime sleep are saved when the firmware supports the SO-SHO RPC extension. Sensor placement, initial values, axis settings, and encoder bindings still require a firmware profile and reflash.';
+  languageCatalog['zh-CN'].deviceBuildNote = '支持 SO-SHO RPC 扩展的固件可以保存 DEVICE 的 CPI/滚动操作、宏和运行时休眠。传感器布局、初始值、轴设置和编码器绑定仍需要选择并重新写入固件。';
+  languageCatalog.ko.deviceBuildNote = 'SO-SHO RPC 확장 펌웨어에서는 DEVICE CPI/스크롤 동작, 매크로와 런타임 절전을 저장할 수 있습니다. 센서 배치, 초기값, 축 설정과 인코더 바인딩은 펌웨어 프로필을 다시 기록해야 합니다.';
+  languageCatalog.th.deviceBuildNote = 'เฟิร์มแวร์ที่รองรับส่วนขยาย SO-SHO RPC สามารถบันทึก CPI/การเลื่อนของ DEVICE มาโคร และสลีปขณะทำงานได้ การจัดวางเซนเซอร์ ค่าเริ่มต้น การตั้งค่าแกน และการผูกเอนโคเดอร์ยังต้องเลือกและเขียนเฟิร์มแวร์ใหม่';
+  languageCatalog.es.deviceBuildNote = 'El firmware con la extensión RPC de SO-SHO puede guardar acciones de CPI/desplazamiento, macros y suspensión en tiempo de ejecución. La posición de sensores, valores iniciales, ejes y bindings del encoder aún requieren otro perfil de firmware y una nueva escritura.';
+  languageCatalog.de.deviceBuildNote = 'Firmware mit der SO-SHO-RPC-Erweiterung kann CPI-/Scroll-Aktionen, Makros und den Laufzeit-Schlafmodus speichern. Sensorposition, Anfangswerte, Achsen und Encoderbindungen benötigen weiterhin ein Firmware-Profil und erneutes Flashen.';
 
   var rpcVerificationCatalog = {
     ja: { title: '実機への書き込み確認', description: '保存後に実機を再読み取りし、送信した内容と一致した場合だけ成功と判定します。', prepare: '変更を準備', write: '書き込み送信', save: '保存応答', verify: '実機再読み取り', idle: '待機中', running: '実行中', success: '成功', failure: '失敗', resultIdle: '未実行', resultRunning: '確認中', resultSuccess: '実機反映成功', resultFailure: '実機反映を確認できません' },
@@ -108,6 +108,16 @@
     th: { title: 'ยืนยันการเขียนลงอุปกรณ์', description: 'หลังบันทึกจะอ่านอุปกรณ์อีกครั้ง และจะแสดงว่าสำเร็จเมื่อค่าตรงกันเท่านั้น', prepare: 'เตรียมการเปลี่ยนแปลง', write: 'ส่งการเขียน', save: 'การตอบกลับการบันทึก', verify: 'อ่านอุปกรณ์อีกครั้ง', idle: 'รอดำเนินการ', running: 'กำลังทำงาน', success: 'สำเร็จ', failure: 'ล้มเหลว', resultIdle: 'ยังไม่ทำงาน', resultRunning: 'กำลังตรวจสอบ', resultSuccess: 'อัปเดตอุปกรณ์แล้ว', resultFailure: 'ยังยืนยันการอัปเดตไม่ได้' },
     es: { title: 'Verificación de escritura', description: 'Después de guardar se vuelve a leer el dispositivo; solo se muestra éxito si los valores coinciden.', prepare: 'Preparar cambios', write: 'Enviar escritura', save: 'Respuesta de guardado', verify: 'Leer dispositivo otra vez', idle: 'En espera', running: 'En curso', success: 'Correcto', failure: 'Fallido', resultIdle: 'No ejecutado', resultRunning: 'Verificando', resultSuccess: 'Dispositivo actualizado', resultFailure: 'Actualización no verificada' },
     de: { title: 'Schreibprüfung des Geräts', description: 'Nach dem Speichern wird das Gerät erneut gelesen. Erfolg wird nur bei übereinstimmenden Werten angezeigt.', prepare: 'Änderungen vorbereiten', write: 'Schreiben senden', save: 'Speicherantwort', verify: 'Gerät erneut lesen', idle: 'Wartend', running: 'Läuft', success: 'Erfolgreich', failure: 'Fehlgeschlagen', resultIdle: 'Nicht ausgeführt', resultRunning: 'Prüfung läuft', resultSuccess: 'Gerät aktualisiert', resultFailure: 'Geräteänderung nicht bestätigt' }
+  };
+
+  var sleepCopy = {
+    ja: { heading: '自動スリープ', description: 'SO-SHO拡張RPC対応ファームウェアへ保存します。オフ、または1〜1440分を設定できます。', preset: 'プリセット', off: 'オフ', five: '5分', fifteen: '15分', thirty: '30分', hour: '1時間', custom: '分単位で指定', minutes: '分単位（1〜1440）', read: '現在値を読み込む', save: 'スリープ設定を保存' },
+    en: { heading: 'Auto sleep', description: 'Save this setting to firmware with the SO-SHO RPC extension. Choose off or 1–1440 minutes.', preset: 'Preset', off: 'Off', five: '5 minutes', fifteen: '15 minutes', thirty: '30 minutes', hour: '1 hour', custom: 'Specify minutes', minutes: 'Minutes (1–1440)', read: 'Read current value', save: 'Save sleep setting' },
+    'zh-CN': { heading: '自动休眠', description: '保存到支持 SO-SHO RPC 扩展的固件。可选择关闭或 1–1440 分钟。', preset: '预设', off: '关闭', five: '5 分钟', fifteen: '15 分钟', thirty: '30 分钟', hour: '1 小时', custom: '指定分钟', minutes: '分钟（1–1440）', read: '读取当前值', save: '保存休眠设置' },
+    ko: { heading: '자동 절전', description: 'SO-SHO RPC 확장 펌웨어에 저장합니다. 끄거나 1~1440분을 설정할 수 있습니다.', preset: '프리셋', off: '끔', five: '5분', fifteen: '15분', thirty: '30분', hour: '1시간', custom: '분 지정', minutes: '분(1~1440)', read: '현재 값 읽기', save: '절전 설정 저장' },
+    th: { heading: 'สลีปอัตโนมัติ', description: 'บันทึกลงเฟิร์มแวร์ที่รองรับส่วนขยาย SO-SHO RPC เลือกปิดหรือ 1–1440 นาที', preset: 'ค่าล่วงหน้า', off: 'ปิด', five: '5 นาที', fifteen: '15 นาที', thirty: '30 นาที', hour: '1 ชั่วโมง', custom: 'ระบุจำนวนนาที', minutes: 'นาที (1–1440)', read: 'อ่านค่าปัจจุบัน', save: 'บันทึกการตั้งค่าสลีป' },
+    es: { heading: 'Suspensión automática', description: 'Guarda este ajuste en firmware con la extensión RPC de SO-SHO. Elige apagado o 1–1440 minutos.', preset: 'Preajuste', off: 'Desactivada', five: '5 minutos', fifteen: '15 minutos', thirty: '30 minutos', hour: '1 hora', custom: 'Especificar minutos', minutes: 'Minutos (1–1440)', read: 'Leer valor actual', save: 'Guardar suspensión' },
+    de: { heading: 'Automatischer Schlafmodus', description: 'Speichert die Einstellung in Firmware mit SO-SHO-RPC-Erweiterung. Aus oder 1–1440 Minuten wählen.', preset: 'Voreinstellung', off: 'Aus', five: '5 Minuten', fifteen: '15 Minuten', thirty: '30 Minuten', hour: '1 Stunde', custom: 'Minuten angeben', minutes: 'Minuten (1–1440)', read: 'Aktuellen Wert lesen', save: 'Schlafmodus speichern' }
   };
 
   function applyLanguage(language) {
@@ -205,6 +215,15 @@
     setText('#rpc-description', copy.rpcDescription);
     setText('#rpc-verification-title', verificationCopy.title);
     setText('#rpc-verification-description', verificationCopy.description);
+    var sleep = sleepCopy[language] || sleepCopy.en;
+    setText('#sleep-settings-heading', sleep.heading);
+    setText('#sleep-settings-description', sleep.description);
+    setText('#sleep-timeout-select-label', sleep.preset);
+    setText('#sleep-timeout-minutes-label', sleep.minutes);
+    setText('#read-sleep-settings', sleep.read);
+    setText('#save-sleep-settings', sleep.save);
+    var sleepOptions = document.querySelectorAll('#sleep-timeout-select option');
+    [sleep.off, sleep.five, sleep.fifteen, sleep.thirty, sleep.hour, sleep.custom].forEach(function (label, index) { if (sleepOptions[index]) sleepOptions[index].textContent = label; });
     document.querySelectorAll('[data-rpc-verify-label]').forEach(function (element) {
       var key = element.getAttribute('data-rpc-verify-label');
       if (verificationCopy[key]) element.textContent = verificationCopy[key];
