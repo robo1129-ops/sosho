@@ -26,8 +26,6 @@
   };
 
   if (footer) footer.textContent = 'ローカル編集はlocalStorageに保存されます。USB接続中に保存を押すと、現在の実機キーマップを自動読み取りしてから書き込み・再読み取り確認まで実行します。';
-  if (!editor || !readButton || !writeButton || typeof global.ZmkStudioRpc !== 'function') return;
-
   function verificationLabels() {
     return Object.assign({}, defaultVerificationLabels, global.soshoRpcVerificationLabels || {});
   }
@@ -96,14 +94,47 @@
     return '';
   }
 
+  var modifierBits = {
+    LCTRL: 0x01, LSHIFT: 0x02, LSHFT: 0x02, LALT: 0x04, LGUI: 0x08,
+    RCTRL: 0x10, RSHIFT: 0x20, RSHFT: 0x20, RALT: 0x40, RGUI: 0x80
+  };
+  var modifierAliases = {
+    CTRL: 'LCTRL', LCTRL: 'LCTRL', RCTRL: 'RCTRL', SHIFT: 'LSHIFT', LSHIFT: 'LSHIFT', LSHFT: 'LSHIFT',
+    RSHIFT: 'RSHIFT', RSHFT: 'RSHIFT', ALT: 'LALT', LALT: 'LALT', RALT: 'RALT',
+    GUI: 'LGUI', WIN: 'LGUI', LGUI: 'LGUI', RGUI: 'RGUI'
+  };
+  var modifierLabels = {
+    LCTRL: 'Ctrl', LSHIFT: 'Shift', LALT: 'Alt', LGUI: 'GUI',
+    RCTRL: 'Right Ctrl', RSHIFT: 'Right Shift', RALT: 'Right Alt', RGUI: 'Right GUI'
+  };
+  function canonicalModifier(value) {
+    return modifierAliases[String(value || '').trim().toUpperCase()] || '';
+  }
+  function parseModifiedLabel(value) {
+    var parts = String(value || '').trim().split('+');
+    if (parts.length < 2) return { base: String(value || '').trim(), modifiers: [], mask: 0, valid: false };
+    var modifiers = [], mask = 0;
+    for (var i = 0; i < parts.length - 1; i++) {
+      var modifier = canonicalModifier(parts[i]);
+      if (!modifier || modifiers.indexOf(modifier) >= 0) continue;
+      modifiers.push(modifier);
+      mask |= modifierBits[modifier];
+    }
+    var valid = modifiers.length === parts.length - 1 && !!parts[parts.length - 1];
+    return { base: parts[parts.length - 1], modifiers: modifiers, mask: mask, valid: valid };
+  }
   function hidUsageLabel(value) {
     var number = Number(value);
     if (!Number.isFinite(number)) return '';
     var usage = number >>> 0;
-    if (Math.floor(usage / 0x10000) !== 0x07) return '';
+    if (((usage >>> 16) & 0xff) !== 0x07) return '';
+    var modifierMask = usage >>> 24;
     var code = usage & 0xffff;
-    if (code >= 0x04 && code <= 0x1d) return String.fromCharCode(65 + code - 0x04);
-    if (code >= 0x1e && code <= 0x27) return String(code === 0x27 ? 0 : code - 0x1d);
+    var modifierText = [];
+    Object.keys(modifierBits).forEach(function (name) {
+      var canonical = canonicalModifier(name);
+      if (canonical && modifierText.indexOf(canonical) < 0 && (modifierMask & modifierBits[name])) modifierText.push(canonical);
+    });
     var names = {
       0x28: 'ENTER', 0x29: 'ESC', 0x2a: 'BACKSPACE', 0x2b: 'TAB', 0x2c: 'SPACE',
       0x2d: '-', 0x2e: '=', 0x2f: '[', 0x30: ']', 0x31: '\\', 0x33: ';', 0x34: "'", 0x35: '`',
@@ -113,8 +144,14 @@
       0x51: 'DOWN', 0x52: 'UP', 0x53: 'NUM LOCK', 0xe0: 'LCTRL', 0xe1: 'LSHIFT',
       0xe2: 'LALT', 0xe3: 'LGUI', 0xe4: 'RCTRL', 0xe5: 'RSHIFT', 0xe6: 'RALT', 0xe7: 'RGUI'
     };
-    if (code >= 0x3a && code <= 0x45) return 'F' + String(code - 0x39);
-    return names[code] || 'HID 0x' + code.toString(16).toUpperCase();
+    var base = code >= 0x04 && code <= 0x1d
+      ? String.fromCharCode(65 + code - 0x04)
+      : code >= 0x1e && code <= 0x27
+        ? String(code === 0x27 ? 0 : code - 0x1d)
+        : code >= 0x3a && code <= 0x45
+          ? 'F' + String(code - 0x39)
+          : (names[code] || 'HID 0x' + code.toString(16).toUpperCase());
+    return modifierText.length ? modifierText.map(function (name) { return modifierLabels[name] || name; }).join('+') + '+' + base : base;
   }
 
   function readableParameter(value) {
@@ -173,7 +210,8 @@
   }
 
   function keyboardUsageForHoldLabel(value) {
-    var normalized = String(value || '').toUpperCase().replace(/[\s_\-\/]+/g, '');
+    var modified = parseModifiedLabel(value);
+    var normalized = String(modified.valid ? modified.base : value || '').toUpperCase().replace(/[\s_\-\/]+/g, '');
     var named = {
       BACKSPACE: 0x2a, BSPC: 0x2a, ENTER: 0x28, RET: 0x28, RETURN: 0x28,
       ESCAPE: 0x29, ESC: 0x29, TAB: 0x2b, SPACE: 0x2c, SPC: 0x2c,
@@ -189,8 +227,19 @@
     if (code === undefined && /^[0-9]$/.test(normalized)) code = normalized === '0' ? 0x27 : 0x1d + Number(normalized);
     var functionKey = /^F([1-9]|1[0-9]|2[0-4])$/.exec(normalized);
     if (code === undefined && functionKey) code = 0x39 + Number(functionKey[1]);
-    return code === undefined ? null : (0x07 << 16) | code;
+    return code === undefined ? null : ((modified.valid ? modified.mask : 0) << 24) | (0x07 << 16) | code;
   }
+
+  // Expose the pure conversion path for the local smoke test.  This does not
+  // expose transport handles or device state; it only makes modifier parsing
+  // and HID packing testable without a connected keyboard.
+  global.soshoModifierDiagnostics = {
+    parse: parseModifiedLabel,
+    label: hidUsageLabel,
+    keyboardUsage: keyboardUsageForHoldLabel
+  };
+
+  if (!editor || !readButton || !writeButton || typeof global.ZmkStudioRpc !== 'function') return;
 
   function layerNumberFromLabel(value) {
     var match = /^(?:MO|TO|TG|TT|OSL|LAYER|MOMENTARY LAYER|LAYER TOGGLE|TAP-TOGGLE LAYER|ONE-SHOT LAYER)\s*(\d+)$/i.exec(String(value || '').trim());
@@ -550,7 +599,8 @@
       return String(value || '').toUpperCase().replace(/[\s_\-\/]+/g, '');
     }
     function keyboardUsageForLabel(value) {
-      var normalized = normalizeKeyName(value);
+      var modified = parseModifiedLabel(value);
+      var normalized = normalizeKeyName(modified.valid ? modified.base : value);
       var named = {
         BACKSPACE: 0x2a, BSPC: 0x2a, KCBSPC: 0x2a,
         ENTER: 0x28, RET: 0x28, RETURN: 0x28, KCENTER: 0x28, KCRET: 0x28,
@@ -587,7 +637,7 @@
       if (code === undefined && /^[0-9]$/.test(normalized)) code = normalized === '0' ? 0x27 : 0x1d + Number(normalized);
       var functionKey = /^F([1-9]|1[0-9]|2[0-4])$/.exec(normalized);
       if (code === undefined && functionKey) code = 0x39 + Number(functionKey[1]);
-      return code === undefined ? null : (0x07 << 16) | code;
+      return code === undefined ? null : ((modified.valid ? modified.mask : 0) << 24) | (0x07 << 16) | code;
     }
     function keyNameAliases(value) {
       var normalized = normalizeKeyName(value);
