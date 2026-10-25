@@ -11,6 +11,7 @@
   var labelById = Object.create(null);
   var behaviorById = Object.create(null);
   var readInProgress = false;
+  var writePhase = 'idle';
   var verificationRoot = document.getElementById('rpc-verification');
   var verificationModel = {
     prepare: { state: 'idle', detail: 'USB接続と読み取りが必要です。' },
@@ -24,7 +25,7 @@
     resultIdle: '未実行', resultRunning: '確認中', resultSuccess: '実機反映成功', resultFailure: '実機反映を確認できません'
   };
 
-  if (footer) footer.textContent = 'ローカル編集はlocalStorageに保存されます。公式RPCで読み取りに成功した後だけ、実機への書き込みボタンが有効になります。';
+  if (footer) footer.textContent = 'ローカル編集はlocalStorageに保存されます。USB接続中に保存を押すと、現在の実機キーマップを自動読み取りしてから書き込み・再読み取り確認まで実行します。';
   if (!editor || !readButton || !writeButton || typeof global.ZmkStudioRpc !== 'function') return;
 
   function verificationLabels() {
@@ -408,25 +409,49 @@
 
   async function writeKeymap() {
     var transport = editor.getTransport();
-    if (!deviceState || !transport || !transport.isConnected || !transport.canWriteKeymap) { setStatus('先にキーマップを読み取り、公式RPC接続を確認してください'); return; }
-    if (deviceState.lockState !== 1) { setStatus('Studioロック中です。キーボードのLayer 3にある&studio_unlockを押してから、もう一度読み取りを実行してください'); return; }
+    function failBeforeWrite(message) {
+      setVerificationStep('prepare', 'failure', message);
+      setVerificationStep('write', 'failure', '書き込み送信は実行されませんでした。');
+      setVerificationStep('save', 'idle', '書き込み送信前のため未実行です。');
+      setVerificationStep('verify', 'idle', '保存後の再読み取りは未実行です。');
+      setVerificationResult('failure', '書き込み送信まで到達できませんでした。');
+      setStatus(message);
+      return false;
+    }
+    if (!transport || !transport.isConnected || !transport.canWriteKeymap) {
+      return failBeforeWrite('USB接続または公式RPC接続を確認できません。保存処理は実行されませんでした。');
+    }
+    // Saving is self-contained: if a page reload or a reconnect left no
+    // cached device state, read the current map automatically before building
+    // the write request instead of requiring a separate Read action.
+    if (!deviceState) {
+      setVerificationResult('running', '保存を押したため、実機の現在キーマップを自動読み取りしています。');
+      if (!(await readKeymap()) || !deviceState) {
+        return failBeforeWrite('実機の現在キーマップを自動読み取りできません。書き込み送信は実行されませんでした。');
+      }
+    }
+    if (deviceState.lockState !== 1) {
+      return failBeforeWrite('Studioロック中です。キーボードのLayer 3にある&studio_unlockを押してから、もう一度保存してください。');
+    }
     var changes = [];
+    writePhase = 'prepare';
     try {
       setVerificationStep('prepare', 'running', '画面の変更内容を実機へ送る準備をしています。');
       setVerificationStep('write', 'idle', '書き込み送信を待っています。');
       setVerificationStep('save', 'idle', 'ファームウェアの保存応答を待ちます。');
       setVerificationStep('verify', 'idle', '保存後に実機を再読み取りします。');
       setVerificationResult('running', '書き込み処理を開始しました。');
+      var editedAssignments = editor.getLocalAssignments ? editor.getLocalAssignments() : editor.getAssignments();
       deviceState.keymap.layers.forEach(function (layer, layerIndex) {
         layer.bindings.forEach(function (original, position) {
           var id = uiId(layerIndex, position);
           original._id = id;
-          var desiredLabel = editor.getAssignments()[id] || labelById[id];
+          var desiredLabel = editedAssignments[id] || labelById[id];
           var holdLabel = editor.getHoldAssignments && editor.getHoldAssignments()[id];
           // Preserve bindings that came from the device verbatim. This is
           // essential for behavior bindings whose metadata is not editable
           // through the generic key picker (for example Mod-Tap/Layer-Tap).
-          var unchangedDeviceBinding = editor.isDeviceAssignmentUnchanged && editor.isDeviceAssignmentUnchanged(id, desiredLabel);
+          var unchangedDeviceBinding = !holdLabel && ((editor.isDeviceAssignmentUnchanged && editor.isDeviceAssignmentUnchanged(id, desiredLabel)) || desiredLabel === labelById[id]);
           var desired = unchangedDeviceBinding && !holdLabel ? original : (holdLabel ? resolveHoldTapBinding(desiredLabel, holdLabel) : resolveBinding(desiredLabel, original));
           if (!desired) throw new Error(id + ' の割り当てを公式behavior bindingへ変換できません: ' + desiredLabel);
           if (!sameBinding(original, desired)) changes.push({ layerId: layer.id, keyPosition: position, binding: desired });
@@ -436,11 +461,13 @@
       setVerificationStep('write', 'running', changes.length ? changes.length + '件を公式RPCへ送信中です。' : '保存状態を公式RPCへ確認中です。');
       setStatus(changes.length ? changes.length + '件を公式RPCで保存中…' : '変更なし。保存後の再読み取りを行います…');
       var rpc = global.soshoStudioState.rpc;
+      writePhase = 'write';
       var afterWrite = await rpc.writeKeymap(changes);
       setVerificationStep('write', 'success', changes.length ? changes.length + '件の書き込み要求を送信しました。' : '書き込み対象はありませんでした。');
       setVerificationStep('save', 'success', 'ファームウェアから保存応答を受信しました。');
       setVerificationStep('verify', 'running', '保存後の実機キーマップを再読み取りしています。');
       setStatus('保存応答を受信しました。実機を再読み取り中…');
+      writePhase = 'verify';
       deviceState.keymap = afterWrite;
       var verified = await rpc.readDeviceState();
       var mismatches = findVerificationMismatches(verified.keymap, changes);
@@ -457,13 +484,24 @@
       setStatus('保存・再読み取り成功: ' + changes.length + '件 / ' + lockText);
     } catch (error) {
       var errorText = error.message || String(error);
-      if (verificationModel.write.state === 'running') setVerificationStep('write', 'failure', errorText);
-      else if (verificationModel.save.state === 'running' || verificationModel.save.state === 'idle') setVerificationStep('save', 'failure', errorText);
-      if (verificationModel.verify.state === 'running') setVerificationStep('verify', 'failure', errorText);
+      if (writePhase === 'prepare') {
+        setVerificationStep('prepare', 'failure', errorText);
+        setVerificationStep('write', 'failure', '書き込み送信は実行されませんでした。');
+        setVerificationStep('save', 'idle', '書き込み送信前のため未実行です。');
+        setVerificationStep('verify', 'idle', '保存後の再読み取りは未実行です。');
+      } else if (writePhase === 'write') {
+        setVerificationStep('write', 'failure', errorText);
+        setVerificationStep('save', 'idle', '保存応答を受信できなかったため未確認です。');
+        setVerificationStep('verify', 'idle', '保存後の再読み取りは未実行です。');
+      } else if (writePhase === 'verify') {
+        setVerificationStep('verify', 'failure', errorText);
+      }
       setVerificationResult('failure', error.verification ? '保存応答は受信しましたが、再読み取りの値が一致しません。' : '書き込み処理に失敗したため、実機反映を確認できません。');
       setStatus('公式RPC書き込み失敗: ' + errorText);
+      return false;
     }
-    finally { updateButtons(); }
+    finally { writePhase = 'idle'; updateButtons(); }
+    return true;
   }
 
   function updateButtons() {
@@ -471,7 +509,7 @@
     var ready = !!(transport && transport.isConnected && transport.canWriteKeymap);
     if (!ready && deviceState) { deviceState = null; global.soshoStudioState = null; }
     readButton.disabled = !ready;
-    writeButton.disabled = !ready || !deviceState || deviceState.lockState !== 1;
+    writeButton.disabled = !ready || !!(deviceState && deviceState.lockState !== 1);
   }
 
   readButton.addEventListener('click', readKeymap);
