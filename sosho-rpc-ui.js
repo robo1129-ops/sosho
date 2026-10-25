@@ -592,6 +592,13 @@
       // the ID is advertised by the device and the parameter values are the
       // constants defined by sosho_behavior_controls.c.
       var advertisedControls = behaviorIds.some(function (id) { return Number(id) === soshoControlsBehaviorId; });
+      // The dedicated SO-SHO firmware identifies itself as "sosho" but some
+      // builds omit custom IDs from listAllBehaviors. Keep the fallback
+      // available for this app's own device rather than rejecting a valid
+      // CPI binding before the RPC request is attempted.
+      if (!advertisedControls && deviceState && deviceState.info && /sosho/i.test(String(deviceState.info.name || ''))) {
+        advertisedControls = true;
+      }
       if (!advertisedControls) {
         advertisedControls = Object.keys(behaviorById).some(function (id) {
           var detail = behaviorById[id] || {};
