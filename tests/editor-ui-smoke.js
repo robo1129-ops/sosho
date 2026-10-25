@@ -33,6 +33,7 @@ assert.doesNotMatch(html, /BLE Output/);
 assert.doesNotMatch(html, /Bluetooth.*(?:保存|書き込み|write)/i);
 assert.doesNotMatch(html, /class="macro-panel"/);
 assert.doesNotMatch(html, /暗号化BLEサービス/);
+assert.doesNotMatch(fs.readFileSync('ui-enhancements.js', 'utf8'), /setupBootloaderWriter\(\);/);
 assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /defaultKeymap/);
 assert.match(css, /\.remap-palette-tab\[aria-selected=/);
 assert.match(css, /\.keyboard-frame \.bottom-row \.key:nth-child\(4\)/);

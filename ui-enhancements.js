@@ -1512,7 +1512,8 @@
     });
     topbar.insertAdjacentElement('afterend', diagnostics);
     if (downloadCard) workspace.insertAdjacentElement('beforebegin', downloadCard);
-    setupBootloaderWriter();
+    /* UF2 remains available through the firmware ZIP download.  Bootloader
+     * drive selection and flashing are intentionally outside this editor. */
 
     var sidebar = document.createElement('aside');
     sidebar.className = 'studio-sidebar';
