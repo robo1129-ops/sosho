@@ -406,6 +406,27 @@
     if (label === labelById[raw && raw._id]) return raw;
     var direct = /^#(-?\d+)\((\d+),(\d+)\)$/.exec(String(label || '').trim());
     if (direct) return { behaviorId: Number(direct[1]), param1: Number(direct[2]), param2: Number(direct[3]) };
+    // Reset and Bootloader are zero-parameter ZMK behaviors.  They are not
+    // HID usages and therefore must be resolved from the behavior registry;
+    // falling through to keyboardUsageForLabel() produces an invalid binding
+    // and makes a normal keymap save fail at the last step.
+    var builtinReset = String(label || '').trim().toUpperCase();
+    if (builtinReset === 'RESET' || builtinReset === 'BOOTLOADER') {
+      var resetDetail = null;
+      Object.keys(behaviorById).some(function (id) {
+        var detail = behaviorById[id] || {};
+        var name = String(detail.displayName || detail.name || '').trim().toUpperCase();
+        var matches = builtinReset === 'BOOTLOADER'
+          ? /BOOT\s*LOADER/.test(name)
+          : /^(SYSTEM\s+)?RESET$/.test(name);
+        if (!matches) return false;
+        resetDetail = detail;
+        return true;
+      });
+      if (resetDetail && Number.isFinite(Number(resetDetail.id))) {
+        return { behaviorId: Number(resetDetail.id), param1: 0, param2: 0 };
+      }
+    }
     // The palette uses descriptive Japanese labels for the reserved scroll
     // layer. Resolve them to the same official layer behaviors as MO(4) and
     // TG(4), so the user-facing label is not required to be a ZMK token.
@@ -821,7 +842,12 @@
           // through the generic key picker (for example Mod-Tap/Layer-Tap).
           var unchangedDeviceBinding = !holdLabel && ((editor.isDeviceAssignmentUnchanged && editor.isDeviceAssignmentUnchanged(id, desiredLabel)) || desiredLabel === labelById[id]);
           var desired = unchangedDeviceBinding && !holdLabel ? original : (holdLabel ? resolveHoldTapBinding(desiredLabel, holdLabel) : resolveBinding(desiredLabel, original));
-          if (!desired) throw new Error(id + ' の割り当てを公式behavior bindingへ変換できません: ' + desiredLabel);
+          if (!desired) {
+            if (/^(BOOTLOADER|RESET)$/i.test(String(desiredLabel || '').trim())) {
+              throw new Error(desiredLabel + ' は接続中ファームウェアのbehavior一覧にありません。UF2のブートローダー書き込みはキーマップ割り当てとは別経路です。');
+            }
+            throw new Error(id + ' の割り当てを公式behavior bindingへ変換できません: ' + desiredLabel);
+          }
           if (!sameBinding(original, desired)) changes.push({ layerId: layer.id, keyPosition: position, binding: desired });
         });
       });
