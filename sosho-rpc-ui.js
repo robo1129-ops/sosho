@@ -197,6 +197,35 @@
     return match ? Number(match[1]) : null;
   }
 
+  function layerActionKind(value) {
+    var text = String(value || '').trim().toUpperCase().replace(/[\u2010-\u2015\s_\-\/]+/g, ' ');
+    var match = /^(MO|TO|TG|TT|OSL)\s*(\d+)$/.exec(text);
+    if (!match) return null;
+    return { kind: match[1], layer: Number(match[2]) };
+  }
+
+  function layerBehaviorFor(kind) {
+    var patterns = {
+      MO: /momentary|momentary layer|^mo$|layer.*hold|hold.*layer/,
+      TO: /(^|\s)to(\s|$)|to layer|set layer|switch layer|select layer/,
+      TG: /toggle.*layer|layer.*toggle|^tg$/,
+      TT: /tap.*toggle|tap.*to.*toggle|^tt$/,
+      OSL: /one.?shot.*layer|layer.*one.?shot|^osl$/
+    };
+    var pattern = patterns[kind];
+    if (!pattern) return null;
+    var ids = Object.keys(behaviorById);
+    for (var i = 0; i < ids.length; i++) {
+      var detail = behaviorById[ids[i]] || {};
+      var name = String(detail.displayName || '').trim().toLowerCase();
+      var hasLayer = (detail.metadata || []).some(function (set) {
+        return (set.param1 || []).some(function (value) { return value.type === 'layer_id'; });
+      });
+      if (hasLayer && pattern.test(name)) return detail;
+    }
+    return null;
+  }
+
   function holdTapParameter(detail, slot, label) {
     var values = [];
     (detail && detail.metadata || []).some(function (set) {
@@ -303,6 +332,13 @@
     if (label === labelById[raw && raw._id]) return raw;
     var direct = /^#(-?\d+)\((\d+),(\d+)\)$/.exec(String(label || '').trim());
     if (direct) return { behaviorId: Number(direct[1]), param1: Number(direct[2]), param2: Number(direct[3]) };
+    var requestedLayer = layerActionKind(label);
+    if (requestedLayer) {
+      var layerDetail = layerBehaviorFor(requestedLayer.kind);
+      if (layerDetail) {
+        return { behaviorId: Number(layerDetail.id), param1: requestedLayer.layer, param2: 0 };
+      }
+    }
     // Bluetooth profile actions are firmware-defined behaviors, not HID
     // usages.  The picker exposes them as BT0..BT4 (and clear actions), but
     // their behavior id/parameter pair is supplied by the connected device.
