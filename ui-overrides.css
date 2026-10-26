@@ -1743,8 +1743,8 @@ body {
 }
 .key:hover { border-color: #9b84ff !important; box-shadow: 0 0 0 2px #9275ff33, 0 2px 0 #0a0e13 !important; }
 .key.selected { border-color: var(--studio-purple) !important; background: #594a88 !important; color: #fff !important; box-shadow: 0 0 0 2px #9275ff66 !important; }
-.key.assigned { background: #293544 !important; border-color: #526477 !important; }
-.key.square { background: #2e2850 !important; border-color: #7362c2 !important; }
+.key.assigned { background: #1d4938 !important; border-color: #53c996 !important; }
+.key.square { background: #222b35 !important; border-color: #475565 !important; }
 .encoder-cluster { border-color: var(--studio-line) !important; background: #171e27 !important; }
 .encoder-target { background: #222c37 !important; border-color: #475565 !important; }
 .device-marker { border-color: #34404d !important; background: #171e27 !important; }
