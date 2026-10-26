@@ -158,7 +158,7 @@
       0x47: 'SCROLL LOCK', 0x48: 'PAUSE', 0x49: 'INSERT', 0x4a: 'HOME', 0x4b: 'PAGE UP',
       0x4c: 'DELETE', 0x4d: 'END', 0x4e: 'PAGE DOWN', 0x4f: 'RIGHT', 0x50: 'LEFT',
       0x51: 'DOWN', 0x52: 'UP', 0x53: 'NUM LOCK', 0xe0: 'LCTRL', 0xe1: 'LSHIFT',
-      0xe2: 'LALT', 0xe3: 'LGUI', 0xe4: 'RCTRL', 0xe5: 'RSHIFT', 0xe6: 'RALT', 0xe7: 'RGUI'
+      0x94: '半角/全角', 0xe2: 'LALT', 0xe3: 'LGUI', 0xe4: 'RCTRL', 0xe5: 'RSHIFT', 0xe6: 'RALT', 0xe7: 'RGUI'
     };
     var base = code >= 0x04 && code <= 0x1d
       ? String.fromCharCode(65 + code - 0x04)
@@ -234,6 +234,17 @@
     return !!a && !!b && a.behaviorId === b.behaviorId && a.param1 === b.param1 && a.param2 === b.param2;
   }
 
+  // USB HID usage 0x94 is the Japanese 半角/全角 key (ZMK names it LANG5).
+  // Keep this conversion explicit because the Japanese display label can be
+  // written with either slash direction and Chromium may preserve full-width
+  // punctuation from the action palette.
+  function japaneseHalfFullwidthCode(value) {
+    var text = String(value || '').trim().toUpperCase();
+    if (/^(?:半角\s*[\/／]\s*全角|全角\s*[\/／]\s*半角)$/.test(text)) return 0x94;
+    var compact = text.replace(/[\s_\-\/／（）()]+/g, '');
+    return compact === '半角全角' || compact === '全角半角' || compact === 'LANG5' || compact === 'HANKAKUZENKAKU' ? 0x94 : null;
+  }
+
   function keyboardUsageForHoldLabel(value) {
     var modified = parseModifiedLabel(value);
     var normalized = String(modified.valid ? modified.base : value || '').toUpperCase().replace(/[\s_\-\/]+/g, '');
@@ -271,7 +282,8 @@
       '）': (0x02 << 24) | (0x07 << 16) | 0x27, '＃': (0x02 << 24) | (0x07 << 16) | 0x20,
       '＄': (0x02 << 24) | (0x07 << 16) | 0x21, '％': (0x02 << 24) | (0x07 << 16) | 0x22
     };
-    var code = named[normalized];
+    var code = japaneseHalfFullwidthCode(modified.valid ? modified.base : value);
+    if (code === null) code = named[normalized];
     if (code === undefined && /^[A-Z]$/.test(normalized)) code = 0x04 + normalized.charCodeAt(0) - 65;
     if (code === undefined && /^[0-9]$/.test(normalized)) code = normalized === '0' ? 0x27 : 0x1d + Number(normalized);
     var functionKey = /^F([1-9]|1[0-9]|2[0-4])$/.exec(normalized);
@@ -776,7 +788,8 @@
         '）': (0x02 << 24) | (0x07 << 16) | 0x27, '＃': (0x02 << 24) | (0x07 << 16) | 0x20,
         '＄': (0x02 << 24) | (0x07 << 16) | 0x21, '％': (0x02 << 24) | (0x07 << 16) | 0x22
       };
-      var code = named[normalized];
+      var code = japaneseHalfFullwidthCode(modified.valid ? modified.base : value);
+      if (code === null) code = named[normalized];
       if (code === undefined && /^[A-Z]$/.test(normalized)) code = 0x04 + normalized.charCodeAt(0) - 65;
       if (code === undefined && /^[0-9]$/.test(normalized)) code = normalized === '0' ? 0x27 : 0x1d + Number(normalized);
       var functionKey = /^F([1-9]|1[0-9]|2[0-4])$/.exec(normalized);
@@ -800,7 +813,11 @@
         DOWN: ['DOWN', 'DOWNARROW', 'KCDOWN'],
         INSERT: ['INSERT', 'INS', 'KCINSERT'],
         HOME: ['HOME', 'KCHOME'],
-        END: ['END', 'KCEND']
+        END: ['END', 'KCEND'],
+        '半角全角': ['半角全角', '全角半角', 'LANG5', 'HANKAKUZENKAKU'],
+        '全角半角': ['半角全角', '全角半角', 'LANG5', 'HANKAKUZENKAKU'],
+        LANG5: ['半角全角', '全角半角', 'LANG5', 'HANKAKUZENKAKU'],
+        HANKAKUZENKAKU: ['半角全角', '全角半角', 'LANG5', 'HANKAKUZENKAKU']
       };
       return [normalized].concat(aliases[normalized] || []);
     }
@@ -828,6 +845,7 @@
       var detail = behaviorById[id];
       (detail.metadata || []).some(function (set) {
         return (set.param1 || []).some(function (value) {
+          if (value.type === 'constant' && desiredUsage !== null && Number(value.constant) === (desiredUsage & 0xffff)) { match = { behaviorId: detail.id, param1: value.constant, param2: 0 }; return true; }
           if (value.type === 'constant' && isWantedConstant(value)) { match = { behaviorId: detail.id, param1: value.constant, param2: 0 }; return true; }
           if (value.type === 'hid_usage' && desiredUsage !== null) { match = { behaviorId: detail.id, param1: desiredUsage, param2: 0 }; return true; }
           return false;

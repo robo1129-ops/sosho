@@ -45,9 +45,10 @@ const cases = [
   ['RCTRL+RALT+DELETE', ['RCTRL', 'RALT'], key.DELETE, 'Right Ctrl+Right Alt+DELETE'],
   ['LSHFT+S', ['LSHIFT'], key.S, 'Shift+S'],
   ['RSHFT+S', ['RSHIFT'], key.S, 'Right Shift+S'],
-  ['半角/全角', [], 0x94, 'HID 0x94'],
-  ['全角/半角', [], 0x94, 'HID 0x94'],
-  ['LANG5', [], 0x94, 'HID 0x94']
+  ['半角/全角', [], 0x94, '半角/全角'],
+  ['全角/半角', [], 0x94, '半角/全角'],
+  ['LANG5', [], 0x94, '半角/全角'],
+  ['LALT+半角/全角', ['LALT'], 0x94, 'Alt+半角/全角']
 ];
 
 for (const [label, modifiers, code, display] of cases) {
@@ -78,6 +79,12 @@ if (!/function keyboardUsageForLabel\(value\)[\s\S]*parseModifiedLabel\(value\)/
 }
 if (!/return code === undefined \? null : \(\(modified\.valid \? modified\.mask : 0\) << 24\)/.test(source)) {
   throw new Error('resolveBinding does not pack modifier bits');
+}
+if (!/function japaneseHalfFullwidthCode\(value\)/.test(source)) {
+  throw new Error('Japanese 半角/全角 canonicalization is missing');
+}
+if (!/0x94:\s*'半角\/全角'/.test(source)) {
+  throw new Error('HID 0x94 is not displayed as 半角/全角');
 }
 if (!/\['Shift','LSHIFT'\]/.test(fs.readFileSync('index.html', 'utf8'))) {
   throw new Error('UI does not use the canonical LSHIFT value');
