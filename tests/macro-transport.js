@@ -94,6 +94,18 @@ vm.runInNewContext(source, context);
   assert.match(readBack[0].steps, /LSHFT\|press\|1/);
   assert.match(readBack[0].steps, /S\|tap\|1/);
   assert.match(readBack[0].steps, /LSHFT\|release\|1/);
+
+  const longSteps = Array.from({ length: 64 }, (_, index) => `A|tap|${index + 1}`).join('\n');
+  await protocol.writeAll([{
+    name: '64-step macro',
+    target: 'l0-left-0',
+    steps: longSteps,
+  }]);
+  const longReadBack = await protocol.readAll();
+  assert.equal(longReadBack.length, 1);
+  assert.equal(longReadBack[0].name, '64-step macro');
+  assert.equal(longReadBack[0].steps.split('\n').length, 64);
+  assert.match(longReadBack[0].steps, /A\|tap\|64/);
   console.log('BLE macro write/read-back simulation passed');
 })().catch((error) => {
   console.error(error);

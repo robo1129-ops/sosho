@@ -324,6 +324,11 @@
         rpcError.code = decoded.response.data.simpleError;
         throw rpcError;
       }
+      if (decoded.response.data && decoded.response.data.error !== undefined) {
+        var subsystemError = new Error('ZMK Studio RPC error ' + decoded.response.data.error);
+        subsystemError.code = decoded.response.data.error;
+        throw subsystemError;
+      }
       return decoded.response;
     }
     throw new Error('ZMK Studio RPC response timeout');

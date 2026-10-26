@@ -8,7 +8,8 @@
   var OP = { HELLO: 1, UNLOCK: 2, GET: 3, SET: 4, DELETE: 5, RUN: 6, SET_BEGIN: 7, SET_CHUNK: 8, SET_COMMIT: 9 };
   var STATUS = { OK: 0, BAD_FRAME: 1, BAD_CRC: 2, AUTH_REQUIRED: 3, TOO_LARGE: 4, BAD_VALUE: 5 };
   var MAX_MACROS = 16;
-  var MAX_STEPS = 8;
+  var MAX_STEPS = 64;
+  var MAX_PAYLOAD = 512;
   var MAX_WAIT_MS = 60000;
 
   var encoder = typeof TextEncoder === 'function' ? new TextEncoder() : null;
@@ -105,7 +106,7 @@
     var target = utf8((macro && macro.target) || '');
     if (name.length > 24 || target.length > 32) throw new Error('マクロ名または割り当て先が長すぎます');
     var lines = String((macro && macro.steps) || 'A|tap|1').split(/\r?\n/).filter(Boolean);
-    if (lines.length > MAX_STEPS) throw new Error('マクロのステップ数は8個までです');
+    if (lines.length > MAX_STEPS) throw new Error('マクロのステップ数は64個までです');
     var out = new Uint8Array(4 + name.length + target.length + lines.length * 7);
     out[0] = id; out[1] = lines.length; out[2] = name.length; out[3] = target.length;
     out.set(name, 4); out.set(target, 4 + name.length);
@@ -119,6 +120,7 @@
       put16(out, offset + 5, wait);
       offset += 7;
     });
+    if (out.length > MAX_PAYLOAD) throw new Error('マクロのデータが512バイトを超えています');
     return out;
   }
 
@@ -227,6 +229,7 @@
     decode: decodeMacro,
     maxMacros: MAX_MACROS,
     maxSteps: MAX_STEPS,
+    maxPayload: MAX_PAYLOAD,
     maxWaitMs: MAX_WAIT_MS
   };
   global.SoshoMacroProtocolConstants = { SERVICE_UUID: SERVICE_UUID, COMMAND_UUID: COMMAND_UUID, RESPONSE_UUID: RESPONSE_UUID, MAX_MACROS: MAX_MACROS };

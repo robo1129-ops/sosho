@@ -1,0 +1,11 @@
+{
+  "name": "sosho-keymap-editor",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "syntax-check": "node tests/syntax-check.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

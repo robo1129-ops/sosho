@@ -54,7 +54,7 @@ Webページの「カスタムファームウェアZIPを直接ダウンロー�
 
 公式Studio keymap schemaにはマクロ定義の作成・編集・削除RPCがありません。現在のUSB専用Webアプリでは、マクロをJSONとブラウザーへ保存し、未実装のUSBマクロRPCを成功扱いにしません。実機でマクロを動かす場合は、マクロを組み込んだファームウェアをビルドして書き込む必要があります。
 
-マクロは最大8個、各マクロ最大8ステップです。手順は `KEY|MODE|WAIT_MS`、MODEは `tap` / `press` / `release`、待ち時間は0〜60000ミリ秒です。保存形式はJSONとlocalStorageです。MIDIは対象外です。
+マクロは最大16個、各マクロ最大64ステップ・512バイトです。手順は `KEY|MODE|WAIT_MS`、MODEは `tap` / `press` / `release`、待ち時間は0〜60000ミリ秒です。保存形式はJSONとlocalStorageです。MIDIは対象外です。
 
 ## 接続とStudio
 
