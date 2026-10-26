@@ -99,6 +99,13 @@
   languageCatalog.th.deviceBuildNote = 'เฟิร์มแวร์ที่รองรับส่วนขยาย SO-SHO RPC สามารถบันทึก CPI/การเลื่อนของ DEVICE มาโคร และสลีปขณะทำงานได้ การจัดวางเซนเซอร์ ค่าเริ่มต้น การตั้งค่าแกน และการผูกเอนโคเดอร์ยังต้องเลือกและเขียนเฟิร์มแวร์ใหม่';
   languageCatalog.es.deviceBuildNote = 'El firmware con la extensión RPC de SO-SHO puede guardar acciones de CPI/desplazamiento, macros y suspensión en tiempo de ejecución. La posición de sensores, valores iniciales, ejes y bindings del encoder aún requieren otro perfil de firmware y una nueva escritura.';
   languageCatalog.de.deviceBuildNote = 'Firmware mit der SO-SHO-RPC-Erweiterung kann CPI-/Scroll-Aktionen, Makros und den Laufzeit-Schlafmodus speichern. Sensorposition, Anfangswerte, Achsen und Encoderbindungen benötigen weiterhin ein Firmware-Profil und erneutes Flashen.';
+  languageCatalog.ja.deviceBuildNote = 'DEVICEのCPI・スクロール量の増減、マクロ、実行時スリープは拡張RPC対応ファームウェアへ保存できます。スリープ時間ごとの別ファームウェアは不要です。センサー配置・初期値・軸設定・エンコーダーのセンサーバインドはファームウェアプロファイルの選択と書き換えが必要です。';
+  languageCatalog.en.deviceBuildNote = 'DEVICE CPI/scroll actions, macros, and runtime sleep are saved by the SO-SHO RPC firmware. Separate firmware per sleep time is not needed. Sensor placement, initial values, axis settings, and encoder bindings still require a firmware profile and reflash.';
+  languageCatalog['zh-CN'].deviceBuildNote = '支持 SO-SHO RPC 扩展的固件可以保存 DEVICE 的 CPI/滚动操作、宏和运行时休眠，不需要按休眠时间准备不同固件。传感器布局、初始值、轴设置和编码器绑定仍需要选择并重新写入固件。';
+  languageCatalog.ko.deviceBuildNote = 'SO-SHO RPC 확장 펌웨어에서는 DEVICE CPI/스크롤 동작, 매크로와 런타임 절전을 저장할 수 있으므로 절전 시간별 별도 펌웨어가 필요하지 않습니다. 센서 배치, 초기값, 축 설정과 인코더 바인딩은 펌웨어 프로필을 다시 기록해야 합니다.';
+  languageCatalog.th.deviceBuildNote = 'เฟิร์มแวร์ที่รองรับส่วนขยาย SO-SHO RPC สามารถบันทึก CPI/การเลื่อน มาโคร และสลีปขณะทำงานได้ จึงไม่ต้องมีเฟิร์มแวร์แยกตามเวลา การจัดวางเซนเซอร์ ค่าเริ่มต้น การตั้งค่าแกน และการผูกเอนโคเดอร์ยังต้องเลือกและเขียนเฟิร์มแวร์ใหม่';
+  languageCatalog.es.deviceBuildNote = 'El firmware con la extensión RPC de SO-SHO guarda acciones de CPI/desplazamiento, macros y suspensión en tiempo de ejecución, por lo que no hace falta un firmware separado por tiempo. La posición de sensores, valores iniciales, ejes y bindings del encoder aún requieren un perfil y una nueva escritura.';
+  languageCatalog.de.deviceBuildNote = 'Firmware mit der SO-SHO-RPC-Erweiterung speichert CPI-/Scroll-Aktionen, Makros und den Laufzeit-Schlafmodus; separate Firmware je Schlafzeit ist nicht nötig. Sensorposition, Anfangswerte, Achsen und Encoderbindungen benötigen weiterhin ein Firmware-Profil und erneutes Flashen.';
 
   var rpcVerificationCatalog = {
     ja: { title: '実機への書き込み確認', description: '保存後に実機を再読み取りし、送信した内容と一致した場合だけ成功と判定します。', prepare: '変更を準備', write: '書き込み送信', save: '保存応答', verify: '実機再読み取り', idle: '待機中', running: '実行中', success: '成功', failure: '失敗', resultIdle: '未実行', resultRunning: '確認中', resultSuccess: '実機反映成功', resultFailure: '実機反映を確認できません' },
@@ -265,13 +272,13 @@
     /* Touch-named firmware variants were removed from the build matrix. Keep
      * older translation entries from advertising files that no longer exist. */
     var downloadDescription = {
-      ja: 'ZIP内にsleep-5m / 15m / 30m / 60m / offのフォルダと全モジュール構成を収録しています。自動スリープはフォルダを選び、右側トラックパッドはX/Yを反転します。',
-      en: 'The ZIP contains sleep-5m / 15m / 30m / 60m / off folders and all module profiles. Choose the sleep folder in the ZIP; right-side trackpads invert X/Y.',
-      'zh-CN': 'ZIP 包含 sleep-5m / 15m / 30m / 60m / off 文件夹和全部模块配置。请在 ZIP 中选择休眠文件夹；右侧触控板会反转 X/Y。',
-      ko: 'ZIP에는 sleep-5m / 15m / 30m / 60m / off 폴더와 모든 모듈 프로필이 포함됩니다. ZIP에서 절전 폴더를 선택하며 오른쪽 트랙패드는 X/Y를 반전합니다.',
-      th: 'ZIP มีโฟลเดอร์ sleep-5m / 15m / 30m / 60m / off และโปรไฟล์โมดูลทั้งหมด ให้เลือกโฟลเดอร์สลีปใน ZIP โดยแทร็กแพดด้านขวาจะกลับแกน X/Y',
-      es: 'El ZIP incluye carpetas sleep-5m / 15m / 30m / 60m / off y todos los perfiles de módulos. Elige la carpeta de suspensión en el ZIP; el trackpad derecho invierte X/Y.',
-      de: 'Das ZIP enthält die Ordner sleep-5m / 15m / 30m / 60m / off und alle Modulprofile. Wähle den Schlafordner im ZIP; das rechte Trackpad invertiert X/Y.'
+      ja: 'ZIPには各ハードウェア構成のファームウェアを収録しています。スリープ時間ごとの別ファームウェアは不要で、接続後にWebアプリからオフまたは1〜1440分を保存できます。',
+      en: 'The ZIP contains one firmware per hardware profile. Separate sleep-time firmware is not needed; after connecting, save Off or 1–1440 minutes from the Web app.',
+      'zh-CN': 'ZIP 每种硬件配置只包含一个固件。不需要按休眠时间准备不同固件；连接后可在 Web 应用中保存关闭或 1–1440 分钟。',
+      ko: 'ZIP에는 하드웨어 프로필별 펌웨어 하나가 들어 있습니다. 절전 시간별 펌웨어는 필요하지 않으며 연결 후 웹 앱에서 끄기 또는 1~1440분을 저장할 수 있습니다.',
+      th: 'ZIP มีเฟิร์มแวร์หนึ่งชุดต่อโปรไฟล์ฮาร์ดแวร์ ไม่ต้องใช้เฟิร์มแวร์แยกตามเวลา หลังเชื่อมต่อแล้วให้บันทึกปิดหรือ 1–1440 นาทีจากเว็บแอป',
+      es: 'El ZIP contiene un firmware por perfil de hardware. No hace falta un firmware por tiempo de suspensión; tras conectar, guarda Desactivada o 1–1440 minutos desde la Web.',
+      de: 'Das ZIP enthält eine Firmware je Hardwareprofil. Separate Firmware je Schlafzeit ist nicht nötig; nach dem Verbinden lassen sich Aus oder 1–1440 Minuten in der Web-App speichern.'
     }[language];
     setText('.download-card > div:first-child span', downloadDescription || copy.downloadDescription);
     setText('.download-actions a:first-child', copy.latestZip);
