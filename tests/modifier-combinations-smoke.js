@@ -52,9 +52,14 @@ const cases = [
 
 for (const [label, modifiers, code, display] of cases) {
   const parsed = diagnostics.parse(label);
-  if (!parsed.valid) throw new Error(`${label} was rejected`);
-  if (parsed.mask !== modifiers.reduce((value, name) => value | bit[name], 0)) {
-    throw new Error(`${label} produced mask 0x${parsed.mask.toString(16)}`);
+  const expectedMask = modifiers.reduce((value, name) => value | bit[name], 0);
+  if (modifiers.length) {
+    if (!parsed.valid) throw new Error(`${label} was rejected`);
+    if (parsed.mask !== expectedMask) {
+      throw new Error(`${label} produced mask 0x${parsed.mask.toString(16)}`);
+    }
+  } else if (parsed.valid && parsed.mask !== 0) {
+    throw new Error(`${label} unexpectedly parsed as a modified key`);
   }
   const usage = diagnostics.keyboardUsage(label);
   if (usage !== expected(modifiers, code)) {
