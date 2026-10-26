@@ -44,7 +44,10 @@ const cases = [
   ['LSHIFT+LGUI+ENTER', ['LSHIFT', 'LGUI'], key.ENTER, 'Shift+GUI+ENTER'],
   ['RCTRL+RALT+DELETE', ['RCTRL', 'RALT'], key.DELETE, 'Right Ctrl+Right Alt+DELETE'],
   ['LSHFT+S', ['LSHIFT'], key.S, 'Shift+S'],
-  ['RSHFT+S', ['RSHIFT'], key.S, 'Right Shift+S']
+  ['RSHFT+S', ['RSHIFT'], key.S, 'Right Shift+S'],
+  ['半角/全角', [], 0x94, 'HID 0x94'],
+  ['全角/半角', [], 0x94, 'HID 0x94'],
+  ['LANG5', [], 0x94, 'HID 0x94']
 ];
 
 for (const [label, modifiers, code, display] of cases) {

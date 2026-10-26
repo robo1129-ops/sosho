@@ -246,6 +246,8 @@
       CTRL: 0xe0, LCTRL: 0xe0, SHIFT: 0xe1, LSHIFT: 0xe1,
       ALT: 0xe2, LALT: 0xe2, GUI: 0xe3, WIN: 0xe3,
       RCTRL: 0xe4, RSHIFT: 0xe5, RALT: 0xe6, RGUI: 0xe7,
+      // LANG5 is the USB/ZMK alias for the Japanese 半角/全角 key.
+      '半角全角': 0x94, '全角半角': 0x94, LANG5: 0x94, HANKAKUZENKAKU: 0x94,
       '"': (0x02 << 24) | (0x07 << 16) | 0x34,
       '@': (0x02 << 24) | (0x07 << 16) | 0x1f,
       ':': (0x02 << 24) | (0x07 << 16) | 0x33,
@@ -741,7 +743,8 @@
         INTERNATIONAL1: 0x87, KCINTERNATIONAL1: 0x87,
         INTERNATIONAL2: 0x88, KCINTERNATIONAL2: 0x88,
         'かな': 0x88, KANA: 0x88, KCKANA: 0x88,
-        '半角全角': 0x94,
+        // Accept both Japanese display orders and the LANG5 alias.
+        '半角全角': 0x94, '全角半角': 0x94, LANG5: 0x94, HANKAKUZENKAKU: 0x94,
         RIGHT: 0x4f, RIGHTARROW: 0x4f, KCRIGHT: 0x4f,
         LEFT: 0x50, LEFTARROW: 0x50, KCLEFT: 0x50,
         DOWN: 0x51, DOWNARROW: 0x51, KCDOWN: 0x51,
