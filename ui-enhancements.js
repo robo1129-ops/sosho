@@ -1126,9 +1126,10 @@
       chip.draggable = true;
       chip.textContent = entry[0];
       chip.title = entry[0] + ' (' + entry[1] + ') をキーマップへドラッグ';
-      chip.addEventListener('click', function () { choosePaletteAction(chip, entry[1]); });
+      var paletteAction = entry[0] === '半角/全角' ? entry[0] : entry[1];
+      chip.addEventListener('click', function () { choosePaletteAction(chip, paletteAction); });
       chip.addEventListener('dragstart', function (event) {
-        event.dataTransfer.setData('text/plain', 'action:' + entry[1]);
+        event.dataTransfer.setData('text/plain', 'action:' + paletteAction);
       });
       jisPalette.appendChild(chip);
     });
