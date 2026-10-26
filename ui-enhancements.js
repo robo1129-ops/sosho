@@ -395,7 +395,10 @@
   var subtitle = document.querySelector('.subtitle');
   if (subtitle) subtitle.textContent = 'SO-SHO実機配列に合わせたキーマップ・マクロ編集ページ';
   var firmwareRepoLink = document.querySelector('a[href="https://github.com/robo1129-ops/sosho-firmware"]');
-  var firmwareZipUrl = 'https://github.com/robo1129-ops/sosho-firmware/releases/download/latest/sosho-firmware-latest.zip';
+  // The runtime-configurable package is committed as a public repository
+  // asset so the download remains available even while the release workflow
+  // is being repaired. It contains only the six required module profiles.
+  var firmwareZipUrl = 'https://raw.githubusercontent.com/robo1129-ops/sosho-firmware/main/downloads/sosho-firmware-runtime-local.zip';
   if (firmwareRepoLink) {
     firmwareRepoLink.href = firmwareZipUrl;
     firmwareRepoLink.textContent = 'カスタムファームウェアZIPを直接ダウンロード';
@@ -407,7 +410,7 @@
     card.setAttribute('aria-labelledby', 'firmware-download-heading');
     card.innerHTML = '' +
       '<div><strong id="firmware-download-heading">カスタムファームウェア（全パターン）</strong>' +
-      '<span>全スリープ設定・全モジュール構成を含むZIPです。右側トラックパッドはX/Yを反転します。</span></div>' +
+      '<span>右/左のトラックボール・トラックパッド・Noneの6構成を含む実行時スリープ対応ZIPです。スリープ時間は接続後にWebアプリから保存できます。</span></div>' +
       '<div class="download-actions">' +
       '<a href="' + firmwareZipUrl + '" download="sosho-firmware-latest.zip" rel="noopener">最新ZIPをダウンロード</a>' +
       '</div>';
