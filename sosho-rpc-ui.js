@@ -221,6 +221,15 @@
     return behaviorName + (params.length ? ' · ' + params.join(', ') : '');
   }
 
+  function holdTapLabels(binding) {
+    var detail = detailFor(binding && binding.behaviorId);
+    var name = String(detail && detail.displayName || '').toLowerCase();
+    if (!detail || !/(hold|mod|layer).*tap|tap.*(hold|mod|layer)/.test(name)) return null;
+    var hold = parameterName(detail, 1, binding.param1) || readableParameter(binding.param1);
+    var tap = parameterName(detail, 2, binding.param2) || readableParameter(binding.param2);
+    return hold && tap ? { hold: hold, tap: tap } : null;
+  }
+
   function sameBinding(a, b) {
     return !!a && !!b && a.behaviorId === b.behaviorId && a.param1 === b.param1 && a.param2 === b.param2;
   }
@@ -236,7 +245,29 @@
       RIGHT: 0x4f, LEFT: 0x50, DOWN: 0x51, UP: 0x52,
       CTRL: 0xe0, LCTRL: 0xe0, SHIFT: 0xe1, LSHIFT: 0xe1,
       ALT: 0xe2, LALT: 0xe2, GUI: 0xe3, WIN: 0xe3,
-      RCTRL: 0xe4, RSHIFT: 0xe5, RALT: 0xe6, RGUI: 0xe7
+      RCTRL: 0xe4, RSHIFT: 0xe5, RALT: 0xe6, RGUI: 0xe7,
+      '"': (0x02 << 24) | (0x07 << 16) | 0x34,
+      '@': (0x02 << 24) | (0x07 << 16) | 0x1f,
+      ':': (0x02 << 24) | (0x07 << 16) | 0x33,
+      '+': (0x02 << 24) | (0x07 << 16) | 0x2e,
+      '_': (0x02 << 24) | (0x07 << 16) | 0x2d,
+      '<': (0x02 << 24) | (0x07 << 16) | 0x36,
+      '>': (0x02 << 24) | (0x07 << 16) | 0x37,
+      '?': (0x02 << 24) | (0x07 << 16) | 0x38,
+      '~': (0x02 << 24) | (0x07 << 16) | 0x35,
+      '{': (0x02 << 24) | (0x07 << 16) | 0x2f,
+      '}': (0x02 << 24) | (0x07 << 16) | 0x30,
+      '|': (0x02 << 24) | (0x07 << 16) | 0x31,
+      '「': 0x2f, '」': 0x30, '＠': (0x02 << 24) | (0x07 << 16) | 0x1f,
+      '：': (0x02 << 24) | (0x07 << 16) | 0x33, '；': 0x33,
+      '＋': (0x02 << 24) | (0x07 << 16) | 0x2e, '－': (0x02 << 24) | (0x07 << 16) | 0x2d,
+      '＿': (0x02 << 24) | (0x07 << 16) | 0x2d, '＜': (0x02 << 24) | (0x07 << 16) | 0x36,
+      '＞': (0x02 << 24) | (0x07 << 16) | 0x37, '？': (0x02 << 24) | (0x07 << 16) | 0x38,
+      '／': (0x02 << 24) | (0x07 << 16) | 0x38, '＼': (0x02 << 24) | (0x07 << 16) | 0x31,
+      '＾': (0x02 << 24) | (0x07 << 16) | 0x23, '＆': (0x02 << 24) | (0x07 << 16) | 0x24,
+      '＊': (0x02 << 24) | (0x07 << 16) | 0x25, '（': (0x02 << 24) | (0x07 << 16) | 0x26,
+      '）': (0x02 << 24) | (0x07 << 16) | 0x27, '＃': (0x02 << 24) | (0x07 << 16) | 0x20,
+      '＄': (0x02 << 24) | (0x07 << 16) | 0x21, '％': (0x02 << 24) | (0x07 << 16) | 0x22
     };
     var code = named[normalized];
     if (code === undefined && /^[A-Z]$/.test(normalized)) code = 0x04 + normalized.charCodeAt(0) - 65;
@@ -353,9 +384,11 @@
       layer.bindings.forEach(function (binding, position) {
         var id = uiId(layerIndex, position);
         rawById[id] = binding;
-        labelById[id] = bindingLabel(binding);
+        var holdTap = holdTapLabels(binding);
+        labelById[id] = holdTap ? holdTap.tap : bindingLabel(binding);
         if (editor.setDeviceAssignment) editor.setDeviceAssignment(id, labelById[id]);
         else editor.setAssignment(id, labelById[id]);
+        if (holdTap && editor.setDeviceHoldAssignment) editor.setDeviceHoldAssignment(id, holdTap.hold);
       });
     });
     if (typeof global.soshoSetKeymapLoaded === 'function') global.soshoSetKeymapLoaded(true);
@@ -716,7 +749,29 @@
         CTRL: 0xe0, LCTRL: 0xe0, RCTRL: 0xe4,
         SHIFT: 0xe1, LSHIFT: 0xe1, RSHIFT: 0xe5,
         ALT: 0xe2, LALT: 0xe2, RALT: 0xe6,
-        GUI: 0xe3, WIN: 0xe3, LGUI: 0xe3, RGUI: 0xe7
+        GUI: 0xe3, WIN: 0xe3, LGUI: 0xe3, RGUI: 0xe7,
+        '"': (0x02 << 24) | (0x07 << 16) | 0x34,
+        '@': (0x02 << 24) | (0x07 << 16) | 0x1f,
+        ':': (0x02 << 24) | (0x07 << 16) | 0x33,
+        '+': (0x02 << 24) | (0x07 << 16) | 0x2e,
+        '_': (0x02 << 24) | (0x07 << 16) | 0x2d,
+        '<': (0x02 << 24) | (0x07 << 16) | 0x36,
+        '>': (0x02 << 24) | (0x07 << 16) | 0x37,
+        '?': (0x02 << 24) | (0x07 << 16) | 0x38,
+        '~': (0x02 << 24) | (0x07 << 16) | 0x35,
+        '{': (0x02 << 24) | (0x07 << 16) | 0x2f,
+        '}': (0x02 << 24) | (0x07 << 16) | 0x30,
+        '|': (0x02 << 24) | (0x07 << 16) | 0x31,
+        '「': 0x2f, '」': 0x30, '＠': (0x02 << 24) | (0x07 << 16) | 0x1f,
+        '：': (0x02 << 24) | (0x07 << 16) | 0x33, '；': 0x33,
+        '＋': (0x02 << 24) | (0x07 << 16) | 0x2e, '－': (0x02 << 24) | (0x07 << 16) | 0x2d,
+        '＿': (0x02 << 24) | (0x07 << 16) | 0x2d, '＜': (0x02 << 24) | (0x07 << 16) | 0x36,
+        '＞': (0x02 << 24) | (0x07 << 16) | 0x37, '？': (0x02 << 24) | (0x07 << 16) | 0x38,
+        '／': (0x02 << 24) | (0x07 << 16) | 0x38, '＼': (0x02 << 24) | (0x07 << 16) | 0x31,
+        '＾': (0x02 << 24) | (0x07 << 16) | 0x23, '＆': (0x02 << 24) | (0x07 << 16) | 0x24,
+        '＊': (0x02 << 24) | (0x07 << 16) | 0x25, '（': (0x02 << 24) | (0x07 << 16) | 0x26,
+        '）': (0x02 << 24) | (0x07 << 16) | 0x27, '＃': (0x02 << 24) | (0x07 << 16) | 0x20,
+        '＄': (0x02 << 24) | (0x07 << 16) | 0x21, '％': (0x02 << 24) | (0x07 << 16) | 0x22
       };
       var code = named[normalized];
       if (code === undefined && /^[A-Z]$/.test(normalized)) code = 0x04 + normalized.charCodeAt(0) - 65;

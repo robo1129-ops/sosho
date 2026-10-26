@@ -1538,7 +1538,7 @@
     var sidebar = document.createElement('aside');
     sidebar.className = 'studio-sidebar';
     sidebar.setAttribute('aria-label', 'キーマップナビゲーション');
-    sidebar.innerHTML = '<div class="studio-sidebar-heading">配列:</div><div class="studio-layout-name">sosho</div><div class="studio-sidebar-heading studio-layers-heading">レイヤー:</div><div class="studio-layer-controls"><span>レイヤー</span><button type="button" data-studio-layer-minus aria-label="レイヤー数を減らす">−</button><button type="button" data-studio-layer-plus aria-label="レイヤー数を増やす">＋</button></div><div class="studio-sidebar-content"></div>';
+    sidebar.innerHTML = '<div class="studio-sidebar-heading">配列:</div><div class="studio-layout-name">sosho</div><div class="studio-sidebar-heading studio-layers-heading">レイヤー:</div><div class="studio-layer-controls"><span>ファームウェア定義</span></div><div class="studio-sidebar-content"></div>';
     var sidebarContent = sidebar.querySelector('.studio-sidebar-content');
     var layoutSelector = document.querySelector('.layout-selector');
     var layerPanel = document.getElementById('layer-panel');
@@ -1575,14 +1575,6 @@
     }
     syncState();
 
-    var minus = sidebar.querySelector('[data-studio-layer-minus]');
-    var plus = sidebar.querySelector('[data-studio-layer-plus]');
-    function setLayerCountMessage(message) {
-      var layerDescription = document.querySelector('.layer-description');
-      if (layerDescription && message) layerDescription.dataset.studioMessage = message;
-    }
-    if (minus) minus.addEventListener('click', function () { setLayerCountMessage('レイヤー数はファームウェア定義のため、このUIでは固定です。'); });
-    if (plus) plus.addEventListener('click', function () { setLayerCountMessage('レイヤー数はファームウェア定義のため、このUIでは固定です。'); });
   }
 
   var keyboard = document.getElementById('keyboard');
