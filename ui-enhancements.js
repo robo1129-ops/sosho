@@ -1099,7 +1099,7 @@
     var japaneseKeys = [
       ['かな', 'LANG1'],
       ['英数', 'LANG2'],
-      ['全角/半角', 'LANG5'],
+      ['半角/全角', 'LANG5'],
       ['カナ/かな', 'INT2'],
       ['変換', 'INT4'],
       ['無変換', 'INT5'],
@@ -1302,13 +1302,28 @@
     search.setAttribute('aria-label', 'キーコードを検索');
     search.addEventListener('input', function () {
       var query = search.value.trim().toLowerCase();
+      if (query) {
+        // Search must be global.  Keeping the other category panels hidden
+        // made searches such as 半角 appear empty while the matching JIS
+        // action was present in the DOM.
+        [basicDetail, jisDetail, functionsDetail, layerDetail, specialDetail, asciiDetail, tapDanceDetail, devicePanel].forEach(function (panel) {
+          panel.style.display = '';
+        });
+        tabBar.querySelectorAll('[data-palette-tab]').forEach(function (tab) {
+          tab.setAttribute('aria-pressed', 'false');
+        });
+      } else {
+        showPaletteCategory(palette.dataset.activeCategory || 'basic');
+      }
       palette.querySelectorAll('.chip').forEach(function (chip) {
-        chip.style.display = !query || chip.textContent.toLowerCase().indexOf(query) >= 0 ? '' : 'none';
+        var searchable = (chip.textContent + ' ' + String(chip.title || '')).toLowerCase();
+        chip.style.display = !query || searchable.indexOf(query) >= 0 ? '' : 'none';
       });
     });
     tabBar.appendChild(search);
 
     function showPaletteCategory(category) {
+      palette.dataset.activeCategory = category;
       [basicDetail, jisDetail, functionsDetail, layerDetail, specialDetail, asciiDetail, tapDanceDetail, devicePanel].forEach(function (panel) {
         panel.style.display = panel.dataset.paletteCategory === category ? '' : 'none';
       });
