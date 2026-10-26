@@ -1081,6 +1081,18 @@
     palette.appendChild(additions);
 
     var basicKeys = 'A B C D E F G H I J K L M N O P Q R S T U V W X Y Z 0 1 2 3 4 5 6 7 8 9 Enter Backspace Tab Escape Space Minus Equal Comma Period Slash Semicolon Quote Left Right Up Down'.split(' ');
+    function choosePaletteAction(chip, action) {
+      /* A search result should be useful with a normal click as well as with
+       * drag-and-drop.  When a physical key is selected, assign immediately;
+       * otherwise keep the visual selection for the drag workflow. */
+      var selectedKey = document.querySelector('#keyboard .key.selected');
+      if (selectedKey && typeof window.soshoAssignAction === 'function') {
+        window.soshoAssignAction(action);
+        chip.classList.add('palette-selected');
+        return;
+      }
+      chip.classList.toggle('palette-selected');
+    }
     var basicPalette = additions.querySelector('[data-basic-palette]');
     basicKeys.forEach(function (name) {
       var chip = document.createElement('button');
@@ -1089,7 +1101,7 @@
       chip.draggable = true;
       chip.textContent = name;
       chip.title = name + 'をキーマップへドラッグ';
-      chip.addEventListener('click', function () { chip.classList.toggle('palette-selected'); });
+      chip.addEventListener('click', function () { choosePaletteAction(chip, name); });
       chip.addEventListener('dragstart', function (event) {
         event.dataTransfer.setData('text/plain', 'action:' + name);
       });
@@ -1114,7 +1126,7 @@
       chip.draggable = true;
       chip.textContent = entry[0];
       chip.title = entry[0] + ' (' + entry[1] + ') をキーマップへドラッグ';
-      chip.addEventListener('click', function () { chip.classList.toggle('palette-selected'); });
+      chip.addEventListener('click', function () { choosePaletteAction(chip, entry[1]); });
       chip.addEventListener('dragstart', function (event) {
         event.dataTransfer.setData('text/plain', 'action:' + entry[1]);
       });
@@ -1127,7 +1139,7 @@
       chip.className = 'chip' + (className ? ' ' + className : '');
       chip.textContent = label;
       chip.title = label + 'をキーマップへ割り当て';
-      chip.addEventListener('click', function () { chip.classList.toggle('palette-selected'); });
+      chip.addEventListener('click', function () { choosePaletteAction(chip, action); });
       chip.draggable = true;
       chip.addEventListener('dragstart', function (event) { event.dataTransfer.setData('text/plain', 'action:' + action); });
       container.appendChild(chip);
