@@ -22,4 +22,9 @@ assert.match(enhancements, /\['BOOTLOADER', 'BOOTLOADER'\]/);
 // Layer 3 key is held, so the user can enter UF2 mode without a PC-side RPC.
 assert.match(firmwareKeymap, /&bt BT_CLR &bootloader &trans/);
 
+// The physical left bottom key second from the right is the Japanese
+// half-width/full-width key on tap and Layer 1 on hold.  Keep the firmware
+// default aligned with the editor's LT(1, LANG5) representation.
+assert.match(firmwareKeymap, /&lt 1 LANG5\s+&kp SPACE/);
+
 console.log('Bootloader keymap binding smoke test passed');
