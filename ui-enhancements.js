@@ -398,7 +398,7 @@
   // The runtime-configurable package is committed as a public repository
   // asset so the download remains available even while the release workflow
   // is being repaired. It contains only the six required module profiles.
-  var firmwareZipUrl = 'https://raw.githubusercontent.com/robo1129-ops/sosho-firmware/main/downloads/sosho-firmware-runtime-local.zip';
+  var firmwareZipUrl = 'https://raw.githubusercontent.com/robo1129-ops/sosho-firmware/main/downloads/sosho-firmware-latest-local.zip';
   if (firmwareRepoLink) {
     firmwareRepoLink.href = firmwareZipUrl;
     firmwareRepoLink.textContent = 'カスタムファームウェアZIPを直接ダウンロード';
