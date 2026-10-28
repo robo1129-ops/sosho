@@ -20,7 +20,15 @@ const key = {
   A: 0x04,
   S: 0x16,
   ENTER: 0x28,
-  DELETE: 0x4c
+  DELETE: 0x4c,
+  SLASH: 0x38,
+  PERIOD: 0x37,
+  COMMA: 0x36,
+  SEMICOLON: 0x33,
+  QUOTE: 0x34,
+  BACKSLASH: 0x31,
+  MINUS: 0x2d,
+  EQUAL: 0x2e
 };
 const bit = {
   LCTRL: 0x01,
@@ -48,7 +56,21 @@ const cases = [
   ['半角/全角', [], 0x35, '半角/全角', ['LALT']],
   ['全角/半角', [], 0x35, '半角/全角', ['LALT']],
   ['LANG5', [], 0x94, '半角/全角'],
-  ['LALT+半角/全角', ['LALT'], 0x35, '半角/全角']
+  ['LALT+半角/全角', ['LALT'], 0x35, '半角/全角'],
+  ['/', [], key.SLASH, '/'],
+  ['Slash', [], key.SLASH, '/'],
+  ['ASCII_/', [], key.SLASH, '/'],
+  ['LALT+/', ['LALT'], key.SLASH, 'Alt+/', ['LALT']],
+  ['.', [], key.PERIOD, '.'],
+  ['Comma', [], key.COMMA, ','],
+  [';', [], key.SEMICOLON, ';'],
+  ["'", [], key.QUOTE, "'"],
+  ['\\', [], key.BACKSLASH, '\\'],
+  ['Minus', [], key.MINUS, '-'],
+  ['Equal', [], key.EQUAL, '='],
+  ['!', [], 0x1e, '!', ['LSHIFT']],
+  ['@', [], 0x1f, '@', ['LSHIFT']],
+  ['?', [], key.SLASH, '?', ['LSHIFT']]
 ];
 
 for (const [label, modifiers, code, display, packedModifiers = modifiers] of cases) {
@@ -74,8 +96,8 @@ for (const [label, modifiers, code, display, packedModifiers = modifiers] of cas
 if (diagnostics.parse('LALT+LALT+S').valid) throw new Error('duplicate modifiers must be rejected');
 if (diagnostics.parse('NOT_A_MODIFIER+S').valid) throw new Error('unknown modifiers must be rejected');
 
-if (!/function keyboardUsageForLabel\(value\)[\s\S]*parseModifiedLabel\(value\)/.test(source)) {
-  throw new Error('resolveBinding does not parse modifier combinations');
+if (!/function keyboardUsageForHoldLabel\(value\)[\s\S]*parseModifiedLabel\(rawLabel\)/.test(source) || !/function keyboardUsageForLabel\(value\)\s*\{\s*return keyboardUsageForHoldLabel\(value\);/.test(source)) {
+  throw new Error('normal and hold-tap resolution do not share modifier parsing');
 }
 if (!/return code === undefined \? null : \(\(modified\.valid \? modified\.mask : 0\) << 24\)/.test(source)) {
   throw new Error('resolveBinding does not pack modifier bits');
@@ -83,11 +105,36 @@ if (!/return code === undefined \? null : \(\(modified\.valid \? modified\.mask 
 if (!/function japaneseHalfFullwidthCode\(value\)/.test(source)) {
   throw new Error('Japanese 半角/全角 canonicalization is missing');
 }
-if (!/0x35:\s*'GRAVE'/.test(source)) {
-  throw new Error('HID 0x35 is not displayed as GRAVE');
+if (!/0x35:\s*'`'/.test(source)) {
+  throw new Error('HID 0x35 is not displayed as the literal backtick');
 }
 if (!/\['Shift','LSHIFT'\]/.test(fs.readFileSync('index.html', 'utf8'))) {
   throw new Error('UI does not use the canonical LSHIFT value');
+}
+if (diagnostics.canonicalLabel('Slash') !== '/' || diagnostics.canonicalLabel('ASCII_/') !== '/') {
+  throw new Error('palette slash aliases do not canonicalize to a literal slash');
+}
+if (!/assignments\[id\]=canonicalUiAction\(d\.slice\(7\)\)/.test(fs.readFileSync('index.html', 'utf8'))) {
+  throw new Error('drag/drop does not use the shared canonical action path');
+}
+if (!/action\s*=\s*window\.soshoCanonicalKeyLabel\(action\)/.test(fs.readFileSync('ui-enhancements.js', 'utf8'))) {
+  throw new Error('encoder drag/drop does not use the shared canonical action path');
+}
+if (!/data-key-popover-tap[\s\S]*data-key-popover-hold[\s\S]*data-key-popover-apply-selection/.test(fs.readFileSync('index.html', 'utf8'))) {
+  throw new Error('tap/hold editor does not expose separate tap and hold save paths');
+}
+if (!/tapDanceRequest/.test(source) || !/behaviorById/.test(source)) {
+  throw new Error('tap-dance resolution is not gated by the device behavior list');
+}
+
+for (const [label, expectedCode, expectedDisplay] of [
+  ['/', 0x38, '/'], ['ASCII_/', 0x38, '/'], ['Slash', 0x38, '/'],
+  ['!', 0x1e, '!'], ['@', 0x1f, '@'], ['?', 0x38, '?']
+]) {
+  const usage = diagnostics.keyboardUsage(label);
+  if ((usage & 0xffff) !== expectedCode || diagnostics.label(usage) !== expectedDisplay) {
+    throw new Error(`${label} did not round-trip as ${expectedDisplay}`);
+  }
 }
 
 console.log('Modifier combination RPC smoke test passed');

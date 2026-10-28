@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "syntax-check": "node tests/syntax-check.mjs",
-    "smoke-test": "node tests/editor-ui-smoke.js && node tests/bootloader-keymap-smoke.js && node tests/modifier-combinations-smoke.js && node tests/macro-transport.js && node tests/holdtap-rpc.js && node tests/usb-rpc-transport.js"
+    "smoke-test": "node tests/editor-ui-smoke.js && node tests/bootloader-keymap-smoke.js && node tests/modifier-combinations-smoke.js && node tests/keycode-roundtrip.js && node tests/macro-transport.js && node tests/holdtap-rpc.js && node tests/usb-rpc-transport.js"
   },
   "engines": {
     "node": ">=20"

@@ -73,9 +73,11 @@
 
   var keyIds = {
     BACKSPACE: 0x2a, BSPC: 0x2a, ENTER: 0x28, RET: 0x28, ESCAPE: 0x29, ESC: 0x29, TAB: 0x2b, SPACE: 0x2c,
-    MINUS: 0x2d, EQUAL: 0x2e, LBKT: 0x2f, RBKT: 0x30, BSLH: 0x31, SEMI: 0x33, SQT: 0x34, COMMA: 0x36,
+    MINUS: 0x2d, '-': 0x2d, EQUAL: 0x2e, '=': 0x2e, LBKT: 0x2f, '[': 0x2f, RBKT: 0x30, ']': 0x30,
+    BSLH: 0x31, '\\': 0x31, SEMI: 0x33, ';': 0x33, SQT: 0x34, "'": 0x34, COMMA: 0x36, ',': 0x36,
     LEFT: 0x50, RIGHT: 0x4f, UP: 0x52, DOWN: 0x51,
-    DOT: 0x37, SLASH: 0x38, LCTRL: 0xe0, LSHFT: 0xe1, LALT: 0xe2, LGUI: 0xe3,
+    DOT: 0x37, '.': 0x37, SLASH: 0x38, '/': 0x38, GRAVE: 0x35, '`': 0x35,
+    LCTRL: 0xe0, LSHFT: 0xe1, LALT: 0xe2, LGUI: 0xe3,
     RCTRL: 0xe4, RSHFT: 0xe5, RALT: 0xe6, RGUI: 0xe7
   };
   Object.assign(keyIds, {
@@ -92,10 +94,35 @@
   for (var f = 1; f <= 15; f++) keyIds['F' + f] = 0x3a + f - 1;
   keyIds.CTRL = keyIds.LCTRL; keyIds.SHIFT = keyIds.LSHFT; keyIds.ALT = keyIds.LALT; keyIds.GUI = keyIds.LGUI;
 
+  var macroModifierBits = { LCTRL: 0x01, LSHFT: 0x02, LALT: 0x04, LGUI: 0x08, RCTRL: 0x10, RSHFT: 0x20, RALT: 0x40, RGUI: 0x80 };
+  var macroModifierAliases = { CTRL: 'LCTRL', SHIFT: 'LSHFT', LSHIFT: 'LSHFT', ALT: 'LALT', GUI: 'LGUI', WIN: 'LGUI' };
+  var shiftedKeyIds = {
+    '!': 0x1e, '@': 0x1f, '#': 0x20, '$': 0x21, '%': 0x22, '^': 0x23,
+    '&': 0x24, '*': 0x25, '(': 0x26, ')': 0x27, '_': 0x2d, '+': 0x2e,
+    '{': 0x2f, '}': 0x30, '|': 0x31, ':': 0x33, '"': 0x34, '~': 0x35,
+    '<': 0x36, '>': 0x37, '?': 0x38
+  };
+  var literalKeyNames = { 0x2d: '-', 0x2e: '=', 0x2f: '[', 0x30: ']', 0x31: '\\', 0x33: ';', 0x34: "'", 0x35: '`', 0x36: ',', 0x37: '.', 0x38: '/' };
+
   function keycode(name) {
-    var normalized = String(name || '').trim().toUpperCase();
-    if (keyIds[normalized] == null) throw new Error('未対応のマクロキー: ' + name);
-    return (0x07 << 16) | keyIds[normalized];
+    var raw = String(name || '').trim();
+    var ascii = /^ASCII_(.)$/u.exec(raw);
+    if (ascii) raw = ascii[1];
+    var parts = raw.split('+');
+    var mask = 0;
+    for (var i = 0; i < parts.length - 1; i++) {
+      var modifier = macroModifierAliases[parts[i].trim().toUpperCase()] || parts[i].trim().toUpperCase();
+      if (macroModifierBits[modifier] == null) throw new Error('未対応のマクロ修飾キー: ' + parts[i]);
+      mask |= macroModifierBits[modifier];
+    }
+    var normalized = parts[parts.length - 1].trim().toUpperCase();
+    var usage = keyIds[normalized];
+    if (usage == null && shiftedKeyIds[parts[parts.length - 1].trim()] != null) {
+      usage = shiftedKeyIds[parts[parts.length - 1].trim()];
+      mask |= macroModifierBits.LSHFT;
+    }
+    if (usage == null) throw new Error('未対応のマクロキー: ' + name);
+    return (mask << 24) | (0x07 << 16) | usage;
   }
 
   function modeId(mode) { return mode === 'press' ? 1 : mode === 'release' ? 2 : 0; }
@@ -136,9 +163,14 @@
     var offset = header;
     for (var i = 0; i < stepsCount; i++) {
       var encoded = get32(bytes, offset);
-      var page = (encoded >>> 16) & 0xff;
+      var modifierMask = encoded >>> 24;
       var usage = encoded & 0xffff;
-      var key = Object.keys(keyIds).filter(function (k) { return keyIds[k] === usage; })[0] || ('0x' + usage.toString(16));
+      var shiftedKey = modifierMask === macroModifierBits.LSHFT && Object.keys(shiftedKeyIds).find(function (key) { return shiftedKeyIds[key] === usage; });
+      var key = shiftedKey || literalKeyNames[usage] || Object.keys(keyIds).filter(function (k) { return keyIds[k] === usage; })[0] || ('0x' + usage.toString(16));
+      if (!shiftedKey && modifierMask) {
+        var modifiers = Object.keys(macroModifierBits).filter(function (name) { return (modifierMask & macroModifierBits[name]) !== 0; });
+        key = modifiers.join('+') + '+' + key;
+      }
       steps.push(key + '|' + modeName(bytes[offset + 4]) + '|' + get16(bytes, offset + 5));
       offset += 7;
     }

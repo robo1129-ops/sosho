@@ -153,12 +153,15 @@
     });
     var names = {
       0x28: 'ENTER', 0x29: 'ESC', 0x2a: 'BACKSPACE', 0x2b: 'TAB', 0x2c: 'SPACE',
-      0x2d: '-', 0x2e: '=', 0x2f: '[', 0x30: ']', 0x31: '\\', 0x33: ';', 0x34: "'", 0x35: 'GRAVE',
+      0x2d: '-', 0x2e: '=', 0x2f: '[', 0x30: ']', 0x31: '\\', 0x33: ';', 0x34: "'", 0x35: '`',
       0x36: ',', 0x37: '.', 0x38: '/', 0x39: 'CAPS LOCK', 0x46: 'PRINT SCREEN',
       0x47: 'SCROLL LOCK', 0x48: 'PAUSE', 0x49: 'INSERT', 0x4a: 'HOME', 0x4b: 'PAGE UP',
       0x4c: 'DELETE', 0x4d: 'END', 0x4e: 'PAGE DOWN', 0x4f: 'RIGHT', 0x50: 'LEFT',
-      0x51: 'DOWN', 0x52: 'UP', 0x53: 'NUM LOCK', 0xe0: 'LCTRL', 0xe1: 'LSHIFT',
-      0x94: '半角/全角', 0xe2: 'LALT', 0xe3: 'LGUI', 0xe4: 'RCTRL', 0xe5: 'RSHIFT', 0xe6: 'RALT', 0xe7: 'RGUI'
+      0x51: 'DOWN', 0x52: 'UP', 0x53: 'NUM LOCK', 0x87: 'INT1', 0x88: 'INT2',
+      0x89: 'INT3', 0x8a: 'INT4', 0x8b: 'INT5', 0x90: 'LANG1', 0x91: 'LANG2',
+      0x92: 'LANG3', 0x93: 'LANG4', 0x94: '半角/全角', 0x95: 'LANG6', 0x96: 'LANG7',
+      0x97: 'LANG8', 0x98: 'LANG9', 0xe0: 'LCTRL', 0xe1: 'LSHIFT',
+      0xe2: 'LALT', 0xe3: 'LGUI', 0xe4: 'RCTRL', 0xe5: 'RSHIFT', 0xe6: 'RALT', 0xe7: 'RGUI'
     };
     var base = code >= 0x04 && code <= 0x1d
       ? String.fromCharCode(65 + code - 0x04)
@@ -168,6 +171,19 @@
           ? 'F' + String(code - 0x39)
           : (names[code] || 'HID 0x' + code.toString(16).toUpperCase());
     if (code === 0x35 && modifierMask === modifierBits.LALT) return '半角/全角';
+    // Render shifted punctuation as the character the user selected.  This
+    // keeps read-back labels such as `!`, `@`, and `?` identical to the
+    // palette labels instead of showing an implementation-only Shift+digit
+    // form.
+    if (modifierMask === modifierBits.LSHIFT) {
+      var shiftedNames = {
+        0x1e: '!', 0x1f: '@', 0x20: '#', 0x21: '$', 0x22: '%',
+        0x23: '^', 0x24: '&', 0x25: '*', 0x26: '(', 0x27: ')',
+        0x2d: '_', 0x2e: '+', 0x2f: '{', 0x30: '}', 0x31: '|',
+        0x33: ':', 0x34: '"', 0x35: '~', 0x36: '<', 0x37: '>', 0x38: '?'
+      };
+      if (shiftedNames[code]) return shiftedNames[code];
+    }
     return modifierText.length ? modifierText.map(function (name) { return modifierLabels[name] || name; }).join('+') + '+' + base : base;
   }
 
@@ -254,13 +270,36 @@
   }
 
   function keyboardUsageForHoldLabel(value) {
-    var modified = parseModifiedLabel(value);
-    var normalized = String(modified.valid ? modified.base : value || '').toUpperCase().replace(/[\s_\-\/]+/g, '');
+    // Keep this as the single source of truth for normal keys, drag-and-drop,
+    // hold-tap parameters, tap-dance parameters, and modifier combinations.
+    // The old implementation had two slightly different tables and removed
+    // punctuation during normalization.  In particular, `/` became an empty
+    // name and the constant fallback could then select the `1` key.
+    var rawLabel = String(value || '').trim();
+    var modified = parseModifiedLabel(rawLabel);
+    var baseLabel = modified.valid ? modified.base : rawLabel;
+    var asciiLabel = /^ASCII_(.)$/u.exec(baseLabel);
+    if (asciiLabel) {
+      baseLabel = asciiLabel[1];
+      if (modified.valid) modified.base = baseLabel;
+      else rawLabel = baseLabel;
+    }
+    var normalized = String(baseLabel).toUpperCase();
+    if (normalized.length > 1) normalized = normalized.replace(/[\s_\-\/]+/g, '');
+    var shifted = function (code) { return (0x02 << 24) | (0x07 << 16) | code; };
     var named = {
       BACKSPACE: 0x2a, BSPC: 0x2a, ENTER: 0x28, RET: 0x28, RETURN: 0x28,
       ESCAPE: 0x29, ESC: 0x29, TAB: 0x2b, SPACE: 0x2c, SPC: 0x2c,
       INSERT: 0x49, INS: 0x49, DELETE: 0x4c, DEL: 0x4c, HOME: 0x4a,
       END: 0x4d, PAGEUP: 0x4b, PGUP: 0x4b, PAGEDOWN: 0x4e, PGDN: 0x4e,
+      CAPSLOCK: 0x39, KCCAPSLOCK: 0x39, NUMLOCK: 0x53, KCNUMLOCK: 0x53, SCROLLLOCK: 0x47,
+      KCSCROLLLOCK: 0x47, PRINTSCREEN: 0x46, PRTSC: 0x46, PSCRN: 0x46,
+      KCPRINTSCREEN: 0x46, MENU: 0x65, APPLICATION: 0x65, COMPOSE: 0x65,
+      INTERNATIONAL1: 0x87, INT1: 0x87, INTERNATIONAL2: 0x88, INT2: 0x88,
+      INTERNATIONAL3: 0x89, INT3: 0x89, INTERNATIONAL4: 0x8a, INT4: 0x8a,
+      INTERNATIONAL5: 0x8b, INT5: 0x8b, LANG1: 0x90, LANG2: 0x91,
+      LANG3: 0x92, LANG4: 0x93, LANG6: 0x95, LANG7: 0x96, LANG8: 0x97, LANG9: 0x98,
+      KANA: 0x88,
       RIGHT: 0x4f, LEFT: 0x50, DOWN: 0x51, UP: 0x52,
       CTRL: 0xe0, LCTRL: 0xe0, SHIFT: 0xe1, LSHIFT: 0xe1,
       ALT: 0xe2, LALT: 0xe2, GUI: 0xe3, WIN: 0xe3,
@@ -269,30 +308,26 @@
       // which is the Windows-US/IME composition path. LANG5 (0x94) remains
       // available as an explicit low-level usage.
       '半角全角': 0x35, '全角半角': 0x35, LANG5: 0x94, HANKAKUZENKAKU: 0x94,
-      '"': (0x02 << 24) | (0x07 << 16) | 0x34,
-      '@': (0x02 << 24) | (0x07 << 16) | 0x1f,
-      ':': (0x02 << 24) | (0x07 << 16) | 0x33,
-      '+': (0x02 << 24) | (0x07 << 16) | 0x2e,
-      '_': (0x02 << 24) | (0x07 << 16) | 0x2d,
-      '<': (0x02 << 24) | (0x07 << 16) | 0x36,
-      '>': (0x02 << 24) | (0x07 << 16) | 0x37,
-      '?': (0x02 << 24) | (0x07 << 16) | 0x38,
-      '~': (0x02 << 24) | (0x07 << 16) | 0x35,
-      '{': (0x02 << 24) | (0x07 << 16) | 0x2f,
-      '}': (0x02 << 24) | (0x07 << 16) | 0x30,
-      '|': (0x02 << 24) | (0x07 << 16) | 0x31,
-      '「': 0x2f, '」': 0x30, '＠': (0x02 << 24) | (0x07 << 16) | 0x1f,
-      '：': (0x02 << 24) | (0x07 << 16) | 0x33, '；': 0x33,
-      '＋': (0x02 << 24) | (0x07 << 16) | 0x2e, '－': (0x02 << 24) | (0x07 << 16) | 0x2d,
-      '＿': (0x02 << 24) | (0x07 << 16) | 0x2d, '＜': (0x02 << 24) | (0x07 << 16) | 0x36,
-      '＞': (0x02 << 24) | (0x07 << 16) | 0x37, '？': (0x02 << 24) | (0x07 << 16) | 0x38,
-      '／': (0x02 << 24) | (0x07 << 16) | 0x38, '＼': (0x02 << 24) | (0x07 << 16) | 0x31,
-      '＾': (0x02 << 24) | (0x07 << 16) | 0x23, '＆': (0x02 << 24) | (0x07 << 16) | 0x24,
-      '＊': (0x02 << 24) | (0x07 << 16) | 0x25, '（': (0x02 << 24) | (0x07 << 16) | 0x26,
-      '）': (0x02 << 24) | (0x07 << 16) | 0x27, '＃': (0x02 << 24) | (0x07 << 16) | 0x20,
-      '＄': (0x02 << 24) | (0x07 << 16) | 0x21, '％': (0x02 << 24) | (0x07 << 16) | 0x22
+      // USB HID punctuation: these entries intentionally keep the literal
+      // character.  Word aliases are included for the enhanced palette.
+      '`': 0x35, GRAVE: 0x35, '-': 0x2d, MINUS: 0x2d, '=': 0x2e, EQUAL: 0x2e, PLUS: shifted(0x2e),
+      '[': 0x2f, LEFTBRACKET: 0x2f, ']': 0x30, RIGHTBRACKET: 0x30,
+      '\\': 0x31, BACKSLASH: 0x31, ';': 0x33, SEMICOLON: 0x33,
+      "'": 0x34, QUOTE: 0x34, ',': 0x36, COMMA: 0x36, '.': 0x37, PERIOD: 0x37,
+      '/': 0x38, SLASH: 0x38,
+      '!': shifted(0x1e), '@': shifted(0x1f), '#': shifted(0x20), '$': shifted(0x21),
+      '%': shifted(0x22), '^': shifted(0x23), '&': shifted(0x24), '*': shifted(0x25),
+      '(': shifted(0x26), ')': shifted(0x27), '"': shifted(0x34), ':': shifted(0x33), '+': shifted(0x2e),
+      '_': shifted(0x2d), '<': shifted(0x36), '>': shifted(0x37), '?': shifted(0x38),
+      '~': shifted(0x35), '{': shifted(0x2f), '}': shifted(0x30), '|': shifted(0x31),
+      '「': 0x2f, '」': 0x30, '＠': shifted(0x1f),
+      '：': shifted(0x33), '；': 0x33, '＋': shifted(0x2e), '－': shifted(0x2d),
+      '＿': shifted(0x2d), '＜': shifted(0x36), '＞': shifted(0x37), '？': shifted(0x38),
+      '／': shifted(0x38), '＼': shifted(0x31), '＾': shifted(0x23), '＆': shifted(0x24),
+      '＊': shifted(0x25), '（': shifted(0x26), '）': shifted(0x27), '＃': shifted(0x20),
+      '＄': shifted(0x21), '％': shifted(0x22)
     };
-    var japaneseCode = japaneseHalfFullwidthCode(modified.valid ? modified.base : value);
+    var japaneseCode = japaneseHalfFullwidthCode(baseLabel);
     if (japaneseCode !== null && !modified.valid) {
       modified = { base: modified.base, modifiers: ['LALT'], mask: modifierBits.LALT, valid: true };
     }
@@ -305,14 +340,32 @@
     return code === undefined ? null : ((modified.valid ? modified.mask : 0) << 24) | (0x07 << 16) | code;
   }
 
+  // Keep every editor path on one canonical label. Friendly palette aliases
+  // such as "Slash" and "ASCII_/" remain searchable, but the saved model
+  // stores the literal key so drag/drop and dropdown selection cannot diverge.
+  function canonicalKeyLabel(value) {
+    var raw = String(value || '').trim();
+    var ascii = /^ASCII_(.)$/u.exec(raw);
+    if (ascii) return ascii[1];
+    var aliases = {
+      GRAVE: '`', MINUS: '-', EQUAL: '=', PLUS: '+',
+      LEFTBRACKET: '[', RIGHTBRACKET: ']', BACKSLASH: '\\',
+      SEMICOLON: ';', QUOTE: "'", COMMA: ',', PERIOD: '.', SLASH: '/'
+    };
+    var key = raw.toUpperCase().replace(/[\s_-]+/g, '');
+    return Object.prototype.hasOwnProperty.call(aliases, key) ? aliases[key] : raw;
+  }
+
   // Expose the pure conversion path for the local smoke test.  This does not
   // expose transport handles or device state; it only makes modifier parsing
   // and HID packing testable without a connected keyboard.
   global.soshoModifierDiagnostics = {
     parse: parseModifiedLabel,
     label: hidUsageLabel,
-    keyboardUsage: keyboardUsageForHoldLabel
+    keyboardUsage: keyboardUsageForHoldLabel,
+    canonicalLabel: canonicalKeyLabel
   };
+  global.soshoCanonicalKeyLabel = canonicalKeyLabel;
 
   if (!editor || !readButton || !writeButton || typeof global.ZmkStudioRpc !== 'function') return;
 
@@ -487,6 +540,27 @@
       if (resetDetail && Number.isFinite(Number(resetDetail.id))) {
         return { behaviorId: Number(resetDetail.id), param1: 0, param2: 0 };
       }
+    }
+    // Tap-dance definitions are firmware behaviors, not plain HID usages.
+    // Resolve a named definition only when the connected firmware advertises
+    // that behavior.  Local browser-only definitions must never fall through
+    // to the keyboard constant matcher (which was another way punctuation
+    // could become an unrelated key).
+    var tapDanceRequest = /^TAPDANCE\[(.+)\]$/i.exec(String(label || '').trim());
+    if (tapDanceRequest) {
+      var tapDanceName = tapDanceRequest[1].trim().toUpperCase().replace(/[\s_\-]+/g, '');
+      var tapDanceMatch = null;
+      Object.keys(behaviorById).some(function (id) {
+        var detail = behaviorById[id] || {};
+        var name = String(detail.displayName || detail.name || '').trim();
+        if (!/tap.?dance/i.test(name)) return false;
+        var compact = name.toUpperCase().replace(/[\s_\-]+/g, '');
+        if (compact.indexOf(tapDanceName) < 0 && tapDanceName.indexOf(compact) < 0) return false;
+        tapDanceMatch = { behaviorId: Number(detail.id), param1: 0, param2: 0 };
+        return true;
+      });
+      if (tapDanceMatch) return tapDanceMatch;
+      return null;
     }
     // The palette uses descriptive Japanese labels for the reserved scroll
     // layer. Resolve them to the same official layer behaviors as MO(4) and
@@ -743,78 +817,14 @@
       if (mouseBinding) return mouseBinding;
     }
     function normalizeKeyName(value) {
-      return String(value || '').toUpperCase().replace(/[\s_\-\/]+/g, '');
+      var raw = String(value || '').trim().toUpperCase();
+      // Preserve literal punctuation.  Removing `/` (or `-`) here turns a
+      // punctuation key into an empty name and makes constant matching
+      // ambiguous.  Multi-word semantic names still use the compact form.
+      return raw.length === 1 ? raw : raw.replace(/[\s_\-\/]+/g, '');
     }
     function keyboardUsageForLabel(value) {
-      var modified = parseModifiedLabel(value);
-      var normalized = normalizeKeyName(modified.valid ? modified.base : value);
-      var named = {
-        BACKSPACE: 0x2a, BSPC: 0x2a, KCBSPC: 0x2a,
-        ENTER: 0x28, RET: 0x28, RETURN: 0x28, KCENTER: 0x28, KCRET: 0x28,
-        ESCAPE: 0x29, ESC: 0x29, KCESC: 0x29,
-        TAB: 0x2b, KCTAB: 0x2b,
-        SPACE: 0x2c, SPC: 0x2c, KCSPACE: 0x2c,
-        INSERT: 0x49, INS: 0x49, KCINSERT: 0x49,
-        DELETE: 0x4c, DEL: 0x4c, KCDELETE: 0x4c,
-        HOME: 0x4a, KCHOME: 0x4a,
-        END: 0x4d, KCEND: 0x4d,
-        PAGEUP: 0x4b, PGUP: 0x4b, KCPGUP: 0x4b,
-        PAGEDOWN: 0x4e, PGDN: 0x4e, PGDOWN: 0x4e, KCPGDN: 0x4e,
-        CAPSLOCK: 0x39, KCCAPSLOCK: 0x39,
-        NUMLOCK: 0x53, KCNUMLOCK: 0x53,
-        SCROLLLOCK: 0x47, KCSCROLLLOCK: 0x47,
-        PRINTSCREEN: 0x46, KCPRINTSCREEN: 0x46, PRTSC: 0x46,
-        MENU: 0x65, APPLICATION: 0x65, KCAPPLICATION: 0x65,
-        COMPOSE: 0x65, KCCOMPOSE: 0x65,
-        INTERNATIONAL1: 0x87, KCINTERNATIONAL1: 0x87,
-        INTERNATIONAL2: 0x88, KCINTERNATIONAL2: 0x88,
-        'かな': 0x88, KANA: 0x88, KCKANA: 0x88,
-        // Accept both Japanese display orders and the explicit LANG5 alias.
-        // The human-facing Japanese action uses Windows-compatible Alt+GRAVE;
-        // LANG5 remains available when selected by its raw name.
-        '半角全角': 0x35, '全角半角': 0x35, LANG5: 0x94, HANKAKUZENKAKU: 0x94,
-        RIGHT: 0x4f, RIGHTARROW: 0x4f, KCRIGHT: 0x4f,
-        LEFT: 0x50, LEFTARROW: 0x50, KCLEFT: 0x50,
-        DOWN: 0x51, DOWNARROW: 0x51, KCDOWN: 0x51,
-        UP: 0x52, UPARROW: 0x52, KCUP: 0x52,
-        CTRL: 0xe0, LCTRL: 0xe0, RCTRL: 0xe4,
-        SHIFT: 0xe1, LSHIFT: 0xe1, RSHIFT: 0xe5,
-        ALT: 0xe2, LALT: 0xe2, RALT: 0xe6,
-        GUI: 0xe3, WIN: 0xe3, LGUI: 0xe3, RGUI: 0xe7,
-        '"': (0x02 << 24) | (0x07 << 16) | 0x34,
-        '@': (0x02 << 24) | (0x07 << 16) | 0x1f,
-        ':': (0x02 << 24) | (0x07 << 16) | 0x33,
-        '+': (0x02 << 24) | (0x07 << 16) | 0x2e,
-        '_': (0x02 << 24) | (0x07 << 16) | 0x2d,
-        '<': (0x02 << 24) | (0x07 << 16) | 0x36,
-        '>': (0x02 << 24) | (0x07 << 16) | 0x37,
-        '?': (0x02 << 24) | (0x07 << 16) | 0x38,
-        '~': (0x02 << 24) | (0x07 << 16) | 0x35,
-        '{': (0x02 << 24) | (0x07 << 16) | 0x2f,
-        '}': (0x02 << 24) | (0x07 << 16) | 0x30,
-        '|': (0x02 << 24) | (0x07 << 16) | 0x31,
-        '「': 0x2f, '」': 0x30, '＠': (0x02 << 24) | (0x07 << 16) | 0x1f,
-        '：': (0x02 << 24) | (0x07 << 16) | 0x33, '；': 0x33,
-        '＋': (0x02 << 24) | (0x07 << 16) | 0x2e, '－': (0x02 << 24) | (0x07 << 16) | 0x2d,
-        '＿': (0x02 << 24) | (0x07 << 16) | 0x2d, '＜': (0x02 << 24) | (0x07 << 16) | 0x36,
-        '＞': (0x02 << 24) | (0x07 << 16) | 0x37, '？': (0x02 << 24) | (0x07 << 16) | 0x38,
-        '／': (0x02 << 24) | (0x07 << 16) | 0x38, '＼': (0x02 << 24) | (0x07 << 16) | 0x31,
-        '＾': (0x02 << 24) | (0x07 << 16) | 0x23, '＆': (0x02 << 24) | (0x07 << 16) | 0x24,
-        '＊': (0x02 << 24) | (0x07 << 16) | 0x25, '（': (0x02 << 24) | (0x07 << 16) | 0x26,
-        '）': (0x02 << 24) | (0x07 << 16) | 0x27, '＃': (0x02 << 24) | (0x07 << 16) | 0x20,
-        '＄': (0x02 << 24) | (0x07 << 16) | 0x21, '％': (0x02 << 24) | (0x07 << 16) | 0x22
-      };
-      var japaneseCode = japaneseHalfFullwidthCode(modified.valid ? modified.base : value);
-      if (japaneseCode !== null && !modified.valid) {
-        modified = { base: modified.base, modifiers: ['LALT'], mask: modifierBits.LALT, valid: true };
-      }
-      var code = japaneseCode;
-      if (code === null) code = named[normalized];
-      if (code === undefined && /^[A-Z]$/.test(normalized)) code = 0x04 + normalized.charCodeAt(0) - 65;
-      if (code === undefined && /^[0-9]$/.test(normalized)) code = normalized === '0' ? 0x27 : 0x1d + Number(normalized);
-      var functionKey = /^F([1-9]|1[0-9]|2[0-4])$/.exec(normalized);
-      if (code === undefined && functionKey) code = 0x39 + Number(functionKey[1]);
-      return code === undefined ? null : ((modified.valid ? modified.mask : 0) << 24) | (0x07 << 16) | code;
+      return keyboardUsageForHoldLabel(value);
     }
     function keyNameAliases(value) {
       var normalized = normalizeKeyName(value);
@@ -831,6 +841,30 @@
         RIGHT: ['RIGHT', 'RIGHTARROW', 'KCRIGHT'],
         UP: ['UP', 'UPARROW', 'KCUP'],
         DOWN: ['DOWN', 'DOWNARROW', 'KCDOWN'],
+        MINUS: ['MINUS', '-'],
+        '-': ['MINUS', '-'],
+        EQUAL: ['EQUAL', '='],
+        '=': ['EQUAL', '='],
+        PLUS: ['PLUS', '+'],
+        '+': ['PLUS', '+'],
+        LEFTBRACKET: ['LEFTBRACKET', '['],
+        '[': ['LEFTBRACKET', '['],
+        RIGHTBRACKET: ['RIGHTBRACKET', ']'],
+        ']': ['RIGHTBRACKET', ']'],
+        BACKSLASH: ['BACKSLASH', '\\'],
+        '\\': ['BACKSLASH', '\\'],
+        SEMICOLON: ['SEMICOLON', ';'],
+        ';': ['SEMICOLON', ';'],
+        QUOTE: ['QUOTE', "'"],
+        "'": ['QUOTE', "'"],
+        COMMA: ['COMMA', ','],
+        ',': ['COMMA', ','],
+        PERIOD: ['PERIOD', '.'],
+        '.': ['PERIOD', '.'],
+        SLASH: ['SLASH', '/'],
+        '/': ['SLASH', '/'],
+        GRAVE: ['GRAVE', '`'],
+        '`': ['GRAVE', '`'],
         INSERT: ['INSERT', 'INS', 'KCINSERT'],
         HOME: ['HOME', 'KCHOME'],
         END: ['END', 'KCEND'],
@@ -839,7 +873,10 @@
         LANG5: ['半角全角', '全角半角', 'LANG5', 'HANKAKUZENKAKU'],
         HANKAKUZENKAKU: ['半角全角', '全角半角', 'LANG5', 'HANKAKUZENKAKU']
       };
-      return [normalized].concat(aliases[normalized] || []);
+      var canonical = normalizeKeyName(canonicalKeyLabel(value));
+      return [normalized, canonical].concat(aliases[normalized] || aliases[canonical] || []).filter(function (name, index, all) {
+        return name !== '' && all.indexOf(name) === index;
+      });
     }
     var wantedNames = keyNameAliases(label);
     var desiredUsage = keyboardUsageForLabel(label);
@@ -847,7 +884,7 @@
       var name = normalizeKeyName(value && value.name);
       if (wantedNames.indexOf(name) >= 0) return true;
       var hidName = normalizeKeyName(hidUsageLabel(value && value.constant));
-      return wantedNames.indexOf(hidName) >= 0;
+      return hidName !== '' && wantedNames.indexOf(hidName) >= 0;
     }
     var match = null;
     // ZMK Studio exposes the key-press parameter as `hid_usage` rather than
@@ -865,7 +902,7 @@
       var detail = behaviorById[id];
       (detail.metadata || []).some(function (set) {
         return (set.param1 || []).some(function (value) {
-          if (value.type === 'constant' && desiredUsage !== null && Number(value.constant) === (desiredUsage & 0xffff)) { match = { behaviorId: detail.id, param1: value.constant, param2: 0 }; return true; }
+          if (value.type === 'constant' && desiredUsage !== null && (desiredUsage >>> 24) === 0 && Number(value.constant) === (desiredUsage & 0xffff)) { match = { behaviorId: detail.id, param1: value.constant, param2: 0 }; return true; }
           if (value.type === 'constant' && isWantedConstant(value)) { match = { behaviorId: detail.id, param1: value.constant, param2: 0 }; return true; }
           if (value.type === 'hid_usage' && desiredUsage !== null) { match = { behaviorId: detail.id, param1: desiredUsage, param2: 0 }; return true; }
           return false;

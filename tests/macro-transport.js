@@ -95,6 +95,14 @@ vm.runInNewContext(source, context);
   assert.match(readBack[0].steps, /S\|tap\|1/);
   assert.match(readBack[0].steps, /LSHFT\|release\|1/);
 
+  await protocol.writeAll([{
+    name: 'punctuation',
+    target: 'l0-left-0',
+    steps: '/|tap|1\n!|tap|1\nLALT+/|tap|1',
+  }]);
+  const punctuationReadBack = await protocol.readAll();
+  assert.equal(punctuationReadBack[0].steps, '/|tap|1\n!|tap|1\nLALT+/|tap|1');
+
   const longSteps = Array.from({ length: 64 }, (_, index) => `A|tap|${index + 1}`).join('\n');
   await protocol.writeAll([{
     name: '64-step macro',

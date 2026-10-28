@@ -787,7 +787,9 @@
     [['Shift','LSHFT'],['Ctrl','LCTRL'],['Alt','LALT'],['GUI','LGUI'],['Enter','RET'],['Backspace','BSPC'],['Tab','TAB'],['Escape','ESC']].forEach(function (entry) { appendMacroKeyChip(palette.querySelector('[data-macro-functions]'), entry); });
     [['Mouse Left','LCLK'],['Mouse Right','RCLK'],['Mouse Middle','MCLK'],['Wheel Up','WH_U'],['Wheel Down','WH_D'],['Wheel Left','WH_L'],['Wheel Right','WH_R']].forEach(function (entry) { appendMacroKeyChip(palette.querySelector('[data-macro-device]'), entry); });
     [['RESET','RESET'],['BOOTLOADER','BOOT'],['Scroll Hold','SCROLL_HOLD'],['CPI −','CPI_DOWN'],['CPI ＋','CPI_UP']].forEach(function (entry) { appendMacroKeyChip(palette.querySelector('[data-macro-special]'), entry); });
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.split('').forEach(function (character) { appendMacroKeyChip(palette.querySelector('[data-macro-ascii]'), [character, 'ASCII_' + character]); });
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-=[]\\;\',./+"~_{}|:?<>`'.split('').forEach(function (character) {
+      appendMacroKeyChip(palette.querySelector('[data-macro-ascii]'), [character, character]);
+    });
     palette.querySelectorAll('[data-macro-palette-tab]').forEach(function (tab) {
       tab.addEventListener('click', function () {
         var category = tab.dataset.macroPaletteTab;
@@ -1170,7 +1172,12 @@
     [['押下中スクロール', 'SCROLL_HOLD'], ['スクロール切替', 'SCROLL_TOGGLE'], ['CPI −', 'CPI_DOWN'], ['CPI ＋', 'CPI_UP'], ['パッド倍率 −', 'TP_SCALE_DOWN'], ['パッド倍率 ＋', 'TP_SCALE_UP'], ['スクロール量 −', 'SCROLL_DOWN'], ['スクロール量 ＋', 'SCROLL_UP'], ['RESET', 'RESET'], ['BOOTLOADER', 'BOOTLOADER'], ['CapsLock', 'CAPSLOCK'], ['PrintScreen', 'PSCRN']].forEach(function (entry) { appendActionChip(specialPalette, entry[0], entry[1], 'special-chip'); });
 
     var asciiPalette = additions.querySelector('[data-ascii-palette]');
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.split('').forEach(function (character) { appendActionChip(asciiPalette, character, 'ASCII_' + character, 'ascii-chip'); });
+    // Use the visible character itself as the action value.  The previous
+    // ASCII_<character> wrapper was not understood by every save path, and
+    // punctuation such as `/` could fall through to an unrelated keycode.
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-=[]\\;\',./+"~_{}|:?<>`'.split('').forEach(function (character) {
+      appendActionChip(asciiPalette, character, character, 'ascii-chip');
+    });
 
     var optionKeys = ['未設定'].concat(basicKeys).concat(['Ctrl', 'Shift', 'Alt', 'GUI', 'MO 1', 'MO 2', 'BT0', 'BT1', 'BT2', 'BT3', 'BT4']);
     var tapDanceState = [];
@@ -1447,6 +1454,7 @@
           var data = event.dataTransfer.getData('text/plain');
           var assignments = readAssignments();
           var action = data.indexOf('action:') === 0 ? data.slice(7) : data.indexOf('macro:') === 0 ? 'Macro ' + data.slice(6) : '';
+          if (action && action.indexOf('Macro ') !== 0 && action.indexOf('TapDance[') !== 0 && typeof window.soshoCanonicalKeyLabel === 'function') action = window.soshoCanonicalKeyLabel(action);
           if (action) {
             assignments[target] = action;
             writeAssignments(assignments);
