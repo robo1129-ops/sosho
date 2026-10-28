@@ -12,9 +12,11 @@ assert.match(rpcUi, /builtinReset === 'RESET' \|\| builtinReset === 'BOOTLOADER'
 assert.match(rpcUi, /BOOT\\s\*LOADER/);
 assert.match(rpcUi, /behaviorId: Number\(resetDetail\.id\), param1: 0, param2: 0/);
 assert.match(rpcUi, /UF2のブートローダー書き込みはキーマップ割り当てとは別経路です/);
-assert.match(rpcUi, /reservedBootloaderPosition = 43/);
-assert.match(rpcUi, /右下のブートローダーキーはWebアプリから変更できません/);
-assert.match(fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8'), /reservedBootloader/);
+assert.ok(!rpcUi.includes('reservedBootloaderPosition'), 'RPC must not reserve a physical position');
+assert.ok(!rpcUi.includes('右下のブートローダーキーはWebアプリから変更できません'), 'RPC must not reject the former reserved position');
+const editor = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+assert.ok(!editor.includes('reservedBootloader'), 'renderer must not mark a physical key as reserved');
+assert.ok(editor.includes('setDropTarget(key,id)'), 'the former reserved key must use the normal drop path');
 
 // Keep the action visible in the enhanced palette; it is now safe to save
 // when the connected firmware advertises the built-in behavior.
@@ -27,7 +29,8 @@ assert.match(firmwareKeymap, /&bt BT_CLR &bootloader &trans/);
 
 // The physical left bottom key second from the right is the Japanese
 // half-width/full-width key on tap and Layer 1 on hold.  Keep the firmware
-// default aligned with the editor's LT(1, LANG5) representation.
-assert.match(firmwareKeymap, /&lt 1 LANG5\s+&kp SPACE/);
+// default uses the Windows-JIS-compatible GRAVE usage for the human-facing
+// half/full-width action. LANG5 remains available explicitly.
+assert.match(firmwareKeymap, /&lt 1 GRAVE\s+&kp SPACE/);
 
 console.log('Bootloader keymap binding smoke test passed');

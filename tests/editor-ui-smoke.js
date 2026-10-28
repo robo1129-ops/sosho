@@ -118,10 +118,10 @@ assert.match(enhancements, /workspace\.insertAdjacentElement\('beforebegin', dow
 assert.doesNotMatch(enhancements, /package-firmware\.yml/);
 assert.match(enhancements, /actionPanel\.hidden = true/);
 assert.match(enhancements, /actionPanel\.replaceChildren\(\)/);
-assert.match(enhancements, /\['半角\/全角', 'LANG5'\]/);
+assert.match(enhancements, /\['半角\/全角', 'GRAVE'\]/);
 assert.match(enhancements, /function choosePaletteAction\(chip, action\)/);
 assert.match(enhancements, /window\.soshoAssignAction\(action\)/);
 assert.match(fs.readFileSync('sosho-rpc-ui.js', 'utf8'), /japaneseHalfFullwidthCode/);
-assert.match(fs.readFileSync('sosho-rpc-ui.js', 'utf8'), /'半角全角': 0x94/);
+assert.match(fs.readFileSync('sosho-rpc-ui.js', 'utf8'), /return 0x35/);
 
 console.log('SO-SHO Remap-like editor UI smoke test passed');

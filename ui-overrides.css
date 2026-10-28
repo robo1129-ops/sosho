@@ -59,7 +59,6 @@
 .keyboard-frame .bottom-row .key:nth-child(2) { grid-column: 2; }
 .keyboard-frame .bottom-row .key:nth-child(3) { grid-column: 5; }
 .keyboard-frame .bottom-row .key:nth-child(4) { grid-column: 6; }
-.keyboard-frame .key.reserved-bootloader { border-color: #d29922; background: #3b2f0f; color: #f0c75e; cursor: not-allowed; }
 
 .transport-note {
   display: block;

@@ -45,10 +45,10 @@ const cases = [
   ['RCTRL+RALT+DELETE', ['RCTRL', 'RALT'], key.DELETE, 'Right Ctrl+Right Alt+DELETE'],
   ['LSHFT+S', ['LSHIFT'], key.S, 'Shift+S'],
   ['RSHFT+S', ['RSHIFT'], key.S, 'Right Shift+S'],
-  ['半角/全角', [], 0x94, '半角/全角'],
-  ['全角/半角', [], 0x94, '半角/全角'],
+  ['半角/全角', [], 0x35, 'GRAVE'],
+  ['全角/半角', [], 0x35, 'GRAVE'],
   ['LANG5', [], 0x94, '半角/全角'],
-  ['LALT+半角/全角', ['LALT'], 0x94, 'Alt+半角/全角']
+  ['LALT+半角/全角', ['LALT'], 0x35, 'Alt+GRAVE']
 ];
 
 for (const [label, modifiers, code, display] of cases) {
@@ -83,8 +83,8 @@ if (!/return code === undefined \? null : \(\(modified\.valid \? modified\.mask 
 if (!/function japaneseHalfFullwidthCode\(value\)/.test(source)) {
   throw new Error('Japanese 半角/全角 canonicalization is missing');
 }
-if (!/0x94:\s*'半角\/全角'/.test(source)) {
-  throw new Error('HID 0x94 is not displayed as 半角/全角');
+if (!/0x35:\s*'GRAVE'/.test(source)) {
+  throw new Error('HID 0x35 is not displayed as GRAVE');
 }
 if (!/\['Shift','LSHIFT'\]/.test(fs.readFileSync('index.html', 'utf8'))) {
   throw new Error('UI does not use the canonical LSHIFT value');

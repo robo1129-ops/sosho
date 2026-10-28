@@ -7,7 +7,6 @@
   var status = document.getElementById('rpc-status');
   var footer = document.querySelector('.inspector .footer-note');
   var deviceState = null;
-  var reservedBootloaderPosition = 43;
   var rawById = Object.create(null);
   var labelById = Object.create(null);
   var behaviorById = Object.create(null);
@@ -154,7 +153,7 @@
     });
     var names = {
       0x28: 'ENTER', 0x29: 'ESC', 0x2a: 'BACKSPACE', 0x2b: 'TAB', 0x2c: 'SPACE',
-      0x2d: '-', 0x2e: '=', 0x2f: '[', 0x30: ']', 0x31: '\\', 0x33: ';', 0x34: "'", 0x35: '`',
+      0x2d: '-', 0x2e: '=', 0x2f: '[', 0x30: ']', 0x31: '\\', 0x33: ';', 0x34: "'", 0x35: 'GRAVE',
       0x36: ',', 0x37: '.', 0x38: '/', 0x39: 'CAPS LOCK', 0x46: 'PRINT SCREEN',
       0x47: 'SCROLL LOCK', 0x48: 'PAUSE', 0x49: 'INSERT', 0x4a: 'HOME', 0x4b: 'PAGE UP',
       0x4c: 'DELETE', 0x4d: 'END', 0x4e: 'PAGE DOWN', 0x4f: 'RIGHT', 0x50: 'LEFT',
@@ -235,15 +234,21 @@
     return !!a && !!b && a.behaviorId === b.behaviorId && a.param1 === b.param1 && a.param2 === b.param2;
   }
 
-  // USB HID usage 0x94 is the Japanese 半角/全角 key (ZMK names it LANG5).
-  // Keep this conversion explicit because the Japanese display label can be
-  // written with either slash direction and Chromium may preserve full-width
-  // punctuation from the action palette.
+  // The Web editor's human-facing 半角/全角 action uses the Windows-JIS
+  // compatible grave usage (0x35). LANG5 (0x94) remains an explicit low-level
+  // option. Keep this conversion explicit because the Japanese display label
+  // can be written with either slash direction and Chromium may preserve
+  // full-width punctuation from the action palette.
   function japaneseHalfFullwidthCode(value) {
     var text = String(value || '').trim().toUpperCase();
-    if (/^(?:半角\s*[\/／]\s*全角|全角\s*[\/／]\s*半角)$/.test(text)) return 0x94;
+    /* On Windows Japanese layouts the physical JIS IME key is the grave
+     * usage (0x35). LANG5 (0x94) is kept as an explicit low-level option,
+     * but the human-facing 半角/全角 action resolves to GRAVE so the host
+     * receives the same usage as a JIS keyboard. */
+    if (/^(?:半角\s*[\/／]\s*全角|全角\s*[\/／]\s*半角)$/.test(text)) return 0x35;
     var compact = text.replace(/[\s_\-\/／（）()]+/g, '');
-    return compact === '半角全角' || compact === '全角半角' || compact === 'LANG5' || compact === 'HANKAKUZENKAKU' ? 0x94 : null;
+    if (compact === '半角全角' || compact === '全角半角') return 0x35;
+    return compact === 'LANG5' || compact === 'HANKAKUZENKAKU' ? 0x94 : null;
   }
 
   function keyboardUsageForHoldLabel(value) {
@@ -258,8 +263,10 @@
       CTRL: 0xe0, LCTRL: 0xe0, SHIFT: 0xe1, LSHIFT: 0xe1,
       ALT: 0xe2, LALT: 0xe2, GUI: 0xe3, WIN: 0xe3,
       RCTRL: 0xe4, RSHIFT: 0xe5, RALT: 0xe6, RGUI: 0xe7,
-      // LANG5 is the USB/ZMK alias for the Japanese 半角/全角 key.
-      '半角全角': 0x94, '全角半角': 0x94, LANG5: 0x94, HANKAKUZENKAKU: 0x94,
+      // The human-facing Japanese 半角/全角 action is sent as GRAVE (0x35),
+      // which is the Windows-US/IME composition path. LANG5 (0x94) remains
+      // available as an explicit low-level usage.
+      '半角全角': 0x35, '全角半角': 0x35, LANG5: 0x94, HANKAKUZENKAKU: 0x94,
       '"': (0x02 << 24) | (0x07 << 16) | 0x34,
       '@': (0x02 << 24) | (0x07 << 16) | 0x1f,
       ':': (0x02 << 24) | (0x07 << 16) | 0x33,
@@ -756,8 +763,10 @@
         INTERNATIONAL1: 0x87, KCINTERNATIONAL1: 0x87,
         INTERNATIONAL2: 0x88, KCINTERNATIONAL2: 0x88,
         'かな': 0x88, KANA: 0x88, KCKANA: 0x88,
-        // Accept both Japanese display orders and the LANG5 alias.
-        '半角全角': 0x94, '全角半角': 0x94, LANG5: 0x94, HANKAKUZENKAKU: 0x94,
+        // Accept both Japanese display orders and the explicit LANG5 alias.
+        // The human-facing Japanese action uses the Windows-compatible GRAVE
+        // usage; LANG5 remains available when selected by its raw name.
+        '半角全角': 0x35, '全角半角': 0x35, LANG5: 0x94, HANKAKUZENKAKU: 0x94,
         RIGHT: 0x4f, RIGHTARROW: 0x4f, KCRIGHT: 0x4f,
         LEFT: 0x50, LEFTARROW: 0x50, KCLEFT: 0x50,
         DOWN: 0x51, DOWNARROW: 0x51, KCDOWN: 0x51,
@@ -914,12 +923,6 @@
           original._id = id;
           var desiredLabel = editedAssignments[id] || labelById[id];
           var holdLabel = editor.getHoldAssignments && editor.getHoldAssignments()[id];
-          if (position === reservedBootloaderPosition) {
-            if ((editedAssignments[id] && editedAssignments[id] !== labelById[id]) || holdLabel) {
-              throw new Error('右下のブートローダーキーはWebアプリから変更できません');
-            }
-            return;
-          }
           // Preserve bindings that came from the device verbatim. This is
           // essential for behavior bindings whose metadata is not editable
           // through the generic key picker (for example Mod-Tap/Layer-Tap).
