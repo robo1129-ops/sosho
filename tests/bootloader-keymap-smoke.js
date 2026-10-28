@@ -29,8 +29,8 @@ assert.match(firmwareKeymap, /&bt BT_CLR &bootloader &trans/);
 
 // The physical left bottom key second from the right is the Japanese
 // half-width/full-width key on tap and Layer 1 on hold.  Keep the firmware
-// default uses the Windows-JIS-compatible GRAVE usage for the human-facing
-// half/full-width action. LANG5 remains available explicitly.
-assert.match(firmwareKeymap, /&lt 1 GRAVE\s+&kp SPACE/);
+// default uses the Windows-US/IME-compatible Alt+GRAVE usage for the
+// human-facing half/full-width action. LANG5 remains available explicitly.
+assert.match(firmwareKeymap, /&lt 1 SOSHO_HALF_FULL\s+&kp SPACE/);
 
 console.log('Bootloader keymap binding smoke test passed');

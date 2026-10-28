@@ -45,13 +45,13 @@ const cases = [
   ['RCTRL+RALT+DELETE', ['RCTRL', 'RALT'], key.DELETE, 'Right Ctrl+Right Alt+DELETE'],
   ['LSHFT+S', ['LSHIFT'], key.S, 'Shift+S'],
   ['RSHFT+S', ['RSHIFT'], key.S, 'Right Shift+S'],
-  ['半角/全角', [], 0x35, 'GRAVE'],
-  ['全角/半角', [], 0x35, 'GRAVE'],
+  ['半角/全角', [], 0x35, '半角/全角', ['LALT']],
+  ['全角/半角', [], 0x35, '半角/全角', ['LALT']],
   ['LANG5', [], 0x94, '半角/全角'],
-  ['LALT+半角/全角', ['LALT'], 0x35, 'Alt+GRAVE']
+  ['LALT+半角/全角', ['LALT'], 0x35, '半角/全角']
 ];
 
-for (const [label, modifiers, code, display] of cases) {
+for (const [label, modifiers, code, display, packedModifiers = modifiers] of cases) {
   const parsed = diagnostics.parse(label);
   const expectedMask = modifiers.reduce((value, name) => value | bit[name], 0);
   if (modifiers.length) {
@@ -63,8 +63,8 @@ for (const [label, modifiers, code, display] of cases) {
     throw new Error(`${label} unexpectedly parsed as a modified key`);
   }
   const usage = diagnostics.keyboardUsage(label);
-  if (usage !== expected(modifiers, code)) {
-    throw new Error(`${label} produced 0x${(usage >>> 0).toString(16)} instead of 0x${expected(modifiers, code).toString(16)}`);
+  if (usage !== expected(packedModifiers, code)) {
+    throw new Error(`${label} produced 0x${(usage >>> 0).toString(16)} instead of 0x${expected(packedModifiers, code).toString(16)}`);
   }
   if (diagnostics.label(usage) !== display) {
     throw new Error(`${label} displayed as ${diagnostics.label(usage)}`);

@@ -167,6 +167,7 @@
         : code >= 0x3a && code <= 0x45
           ? 'F' + String(code - 0x39)
           : (names[code] || 'HID 0x' + code.toString(16).toUpperCase());
+    if (code === 0x35 && modifierMask === modifierBits.LALT) return '半角/全角';
     return modifierText.length ? modifierText.map(function (name) { return modifierLabels[name] || name; }).join('+') + '+' + base : base;
   }
 
@@ -234,21 +235,22 @@
     return !!a && !!b && a.behaviorId === b.behaviorId && a.param1 === b.param1 && a.param2 === b.param2;
   }
 
-  // The Web editor's human-facing 半角/全角 action uses the Windows-JIS
-  // compatible grave usage (0x35). LANG5 (0x94) remains an explicit low-level
-  // option. Keep this conversion explicit because the Japanese display label
-  // can be written with either slash direction and Chromium may preserve
-  // full-width punctuation from the action palette.
+  // The Web editor's human-facing 半角/全角 action uses the Windows
+  // US/IME-compatible Alt+Grave combination. LANG5 (0x94) remains an
+  // explicit low-level option for hosts that implement that usage directly.
+  // Keep this conversion explicit because the Japanese display label can be
+  // written with either slash direction and Chromium may preserve full-width
+  // punctuation from the action palette.
   function japaneseHalfFullwidthCode(value) {
     var text = String(value || '').trim().toUpperCase();
-    /* On Windows Japanese layouts the physical JIS IME key is the grave
-     * usage (0x35). LANG5 (0x94) is kept as an explicit low-level option,
-     * but the human-facing 半角/全角 action resolves to GRAVE so the host
-     * receives the same usage as a JIS keyboard. */
+    /* On Windows with a US keyboard layout, Alt+Grave is the IME toggle
+     * equivalent of the Japanese 半角/全角 key. */
     if (/^(?:半角\s*[\/／]\s*全角|全角\s*[\/／]\s*半角)$/.test(text)) return 0x35;
     var compact = text.replace(/[\s_\-\/／（）()]+/g, '');
     if (compact === '半角全角' || compact === '全角半角') return 0x35;
-    return compact === 'LANG5' || compact === 'HANKAKUZENKAKU' ? 0x94 : null;
+    // LANG5/HANKAKUZENKAKU are explicit raw usages and are resolved by the
+    // named-key tables below; do not apply the human-facing Alt modifier.
+    return null;
   }
 
   function keyboardUsageForHoldLabel(value) {
@@ -263,7 +265,7 @@
       CTRL: 0xe0, LCTRL: 0xe0, SHIFT: 0xe1, LSHIFT: 0xe1,
       ALT: 0xe2, LALT: 0xe2, GUI: 0xe3, WIN: 0xe3,
       RCTRL: 0xe4, RSHIFT: 0xe5, RALT: 0xe6, RGUI: 0xe7,
-      // The human-facing Japanese 半角/全角 action is sent as GRAVE (0x35),
+      // The human-facing Japanese 半角/全角 action is sent as Alt+GRAVE,
       // which is the Windows-US/IME composition path. LANG5 (0x94) remains
       // available as an explicit low-level usage.
       '半角全角': 0x35, '全角半角': 0x35, LANG5: 0x94, HANKAKUZENKAKU: 0x94,
@@ -290,7 +292,11 @@
       '）': (0x02 << 24) | (0x07 << 16) | 0x27, '＃': (0x02 << 24) | (0x07 << 16) | 0x20,
       '＄': (0x02 << 24) | (0x07 << 16) | 0x21, '％': (0x02 << 24) | (0x07 << 16) | 0x22
     };
-    var code = japaneseHalfFullwidthCode(modified.valid ? modified.base : value);
+    var japaneseCode = japaneseHalfFullwidthCode(modified.valid ? modified.base : value);
+    if (japaneseCode !== null && !modified.valid) {
+      modified = { base: modified.base, modifiers: ['LALT'], mask: modifierBits.LALT, valid: true };
+    }
+    var code = japaneseCode;
     if (code === null) code = named[normalized];
     if (code === undefined && /^[A-Z]$/.test(normalized)) code = 0x04 + normalized.charCodeAt(0) - 65;
     if (code === undefined && /^[0-9]$/.test(normalized)) code = normalized === '0' ? 0x27 : 0x1d + Number(normalized);
@@ -764,8 +770,8 @@
         INTERNATIONAL2: 0x88, KCINTERNATIONAL2: 0x88,
         'かな': 0x88, KANA: 0x88, KCKANA: 0x88,
         // Accept both Japanese display orders and the explicit LANG5 alias.
-        // The human-facing Japanese action uses the Windows-compatible GRAVE
-        // usage; LANG5 remains available when selected by its raw name.
+        // The human-facing Japanese action uses Windows-compatible Alt+GRAVE;
+        // LANG5 remains available when selected by its raw name.
         '半角全角': 0x35, '全角半角': 0x35, LANG5: 0x94, HANKAKUZENKAKU: 0x94,
         RIGHT: 0x4f, RIGHTARROW: 0x4f, KCRIGHT: 0x4f,
         LEFT: 0x50, LEFTARROW: 0x50, KCLEFT: 0x50,
@@ -798,7 +804,11 @@
         '）': (0x02 << 24) | (0x07 << 16) | 0x27, '＃': (0x02 << 24) | (0x07 << 16) | 0x20,
         '＄': (0x02 << 24) | (0x07 << 16) | 0x21, '％': (0x02 << 24) | (0x07 << 16) | 0x22
       };
-      var code = japaneseHalfFullwidthCode(modified.valid ? modified.base : value);
+      var japaneseCode = japaneseHalfFullwidthCode(modified.valid ? modified.base : value);
+      if (japaneseCode !== null && !modified.valid) {
+        modified = { base: modified.base, modifiers: ['LALT'], mask: modifierBits.LALT, valid: true };
+      }
+      var code = japaneseCode;
       if (code === null) code = named[normalized];
       if (code === undefined && /^[A-Z]$/.test(normalized)) code = 0x04 + normalized.charCodeAt(0) - 65;
       if (code === undefined && /^[0-9]$/.test(normalized)) code = normalized === '0' ? 0x27 : 0x1d + Number(normalized);
