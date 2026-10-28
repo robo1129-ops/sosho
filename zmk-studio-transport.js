@@ -21,6 +21,14 @@
     return String((navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent || '');
   }
 
+  function serialOpenFailureMessage(error) {
+    var detail = error && error.message ? String(error.message) : String(error || 'unknown error');
+    if (/Failed to open serial port|already open|NetworkError|InvalidStateError|Access is denied|別のSO-SHOページ/i.test(detail)) {
+      return 'USBシリアルポートを開けませんでした。別のSO-SHOタブ、ZMK Studio、シリアルモニターがCOMポートを使用中の可能性があります。先に切断してから「許可済みUSBに再接続」を押してください。';
+    }
+    return 'USB接続失敗: ' + detail;
+  }
+
   function blePickerUnavailableMessage() {
     var platform = browserPlatform();
     if (/Windows/i.test(platform)) {
@@ -487,10 +495,33 @@
   };
   Object.defineProperty(FramedTransport.prototype, 'canWriteKeymap', { get: function () { return RPC_SCHEMA_SUPPORTED; } });
 
-  function ZmkSerialTransport(options) { FramedTransport.call(this, options); this.kind = 'usb'; this.requiredSide = 'central'; this.roleState = 'unknown'; this.port = null; this.portInfo = null; this.reader = null; this.writer = null; this.reading = false; this._disconnecting = false; this._connecting = false; this.baudRate = 9600; this._rpcBaudRetried = false; }
+  function ZmkSerialTransport(options) { FramedTransport.call(this, options); this.kind = 'usb'; this.requiredSide = 'central'; this.roleState = 'unknown'; this.port = null; this.portInfo = null; this.reader = null; this.writer = null; this.reading = false; this._disconnecting = false; this._connecting = false; this._lockReady = null; this._lockRelease = null; this._lockHeld = false; this.baudRate = 9600; this._rpcBaudRetried = false; }
   ZmkSerialTransport.prototype = Object.create(FramedTransport.prototype); ZmkSerialTransport.prototype.constructor = ZmkSerialTransport;
   Object.defineProperty(ZmkSerialTransport.prototype, 'isConnected', { get: function () { return !!this.port && this.reading; } });
   Object.defineProperty(ZmkSerialTransport.prototype, 'isSupported', { get: function () { return typeof navigator !== 'undefined' && !!navigator.serial && typeof navigator.serial.requestPort === 'function'; } });
+  ZmkSerialTransport.prototype._acquireConnectionLock = function () {
+    var self = this;
+    if (self._lockHeld) return Promise.resolve(true);
+    if (typeof navigator === 'undefined' || !navigator.locks || typeof navigator.locks.request !== 'function') return Promise.resolve(true);
+    if (self._lockReady) return self._lockReady;
+    self._lockReady = new Promise(function (resolve) {
+      navigator.locks.request('sosho-usb-serial', { ifAvailable: true }, function (lock) {
+        if (!lock) { resolve(false); return undefined; }
+        self._lockHeld = true;
+        resolve(true);
+        return new Promise(function (release) { self._lockRelease = release; });
+      }).catch(function () { resolve(false); });
+    }).finally(function () { self._lockReady = null; });
+    return self._lockReady;
+  };
+  ZmkSerialTransport.prototype._releaseConnectionLock = function () {
+    if (this._lockRelease) {
+      var release = this._lockRelease;
+      this._lockRelease = null;
+      release();
+    }
+    this._lockHeld = false;
+  };
   ZmkSerialTransport.prototype.getDiagnostics = async function () {
     var supported = this.isSupported;
     var authorizedPortCount = null;
@@ -518,7 +549,25 @@
     // Match the official ZMK Studio serial transport first.  Its reference
     // implementation opens the CDC/ACM port at 9600 baud; 12500 is retained
     // only as a compatibility fallback for earlier SO-SHO test images.
-    await this.port.open({ baudRate: this.baudRate, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
+    try {
+      await this.port.open({ baudRate: this.baudRate, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
+    } catch (error) {
+      // Web Serial keeps the selected SerialPort object alive after a failed
+      // open.  Release every local lock before allowing a retry; otherwise
+      // the next click can fail with the same "Failed to open serial port"
+      // error even after the other endpoint has disappeared.
+      this.reading = false;
+      try { if (this.reader) await this.reader.cancel(); } catch (cancelError) {}
+      try { if (this.reader) this.reader.releaseLock(); } catch (releaseError) {}
+      try { if (this.writer) this.writer.releaseLock(); } catch (writerError) {}
+      try { if (port && typeof port.close === 'function') await port.close(); } catch (closeError) {}
+      this.reader = null;
+      this.writer = null;
+      if (this.port === port) this.port = null;
+      this.portInfo = null;
+      this._releaseConnectionLock();
+      throw error;
+    }
     this.reading = true;
     this._setDevice('USBデバイス（左右はRPC確認前）');
     this._setStatus('USB接続済み（左右確認前 / ZMK Studio RPC / ' + this.baudRate + ' baud）');
@@ -564,9 +613,10 @@
       // filter lets the user select the right Central explicitly.
       var port = await navigator.serial.requestPort();
       this._setLog('USBポート選択完了（VID=0x' + ((port.getInfo && port.getInfo().usbVendorId || 0).toString(16)) + ' PID=0x' + ((port.getInfo && port.getInfo().usbProductId || 0).toString(16)) + '）');
+      if (!await this._acquireConnectionLock()) throw new Error('別のSO-SHOページがUSBシリアルポートを使用中です。別タブの接続を切断してください。');
       return await this._open(port);
     }
-    catch (error) { this.port = null; this.reader = null; this.reading = false; this._setDevice('—'); this._setLog('USB接続失敗 [' + (error && error.name ? error.name : 'Error') + ']: ' + (error && error.message ? error.message : 'unknown error')); this._setStatus(error && error.name === 'NotFoundError' ? 'USBシリアルポートが選択されませんでした。ブートローダー中はUF2書き込みを使用してください。' : 'USB接続失敗: ' + (error && error.message ? error.message : 'unknown error')); return false; }
+    catch (error) { this.port = null; this.reader = null; this.reading = false; this._setDevice('—'); this._setLog('USB接続失敗 [' + (error && error.name ? error.name : 'Error') + ']: ' + (error && error.message ? error.message : 'unknown error')); this._setStatus(error && error.name === 'NotFoundError' ? 'USBシリアルポートが選択されませんでした。ブートローダー中はUF2書き込みを使用してください。' : serialOpenFailureMessage(error)); return false; }
     finally { this._connecting = false; }
   };
   ZmkSerialTransport.prototype.getAuthorizedPorts = async function () {
@@ -587,16 +637,17 @@
       var port = ports[0];
       var info = typeof port.getInfo === 'function' ? port.getInfo() : null;
       this._setLog('許可済みUSBポートを試行（VID=0x' + ((info && info.usbVendorId || 0).toString(16)) + ' PID=0x' + ((info && info.usbProductId || 0).toString(16)) + '）');
+      if (!await this._acquireConnectionLock()) throw new Error('別のSO-SHOページがUSBシリアルポートを使用中です。別タブの接続を切断してください。');
       return await this._open(port);
     } catch (error) {
       this.port = null; this.reader = null; this.reading = false; this._setDevice('—');
       this._setLog('許可済みUSB再接続失敗 [' + (error && error.name ? error.name : 'Error') + ']: ' + (error && error.message ? error.message : 'unknown error'));
-      this._setStatus('許可済みUSB再接続失敗: ' + (error && error.message ? error.message : 'unknown error'));
+      this._setStatus(serialOpenFailureMessage(error));
       return false;
     } finally { this._connecting = false; }
   };
-  ZmkSerialTransport.prototype.disconnect = async function (silent) { var had = !!this.port || !!this.reader; this._disconnecting = true; try { if (this.reader) await this.reader.cancel(); } catch (error) {} try { if (this.writer) this.writer.releaseLock(); } catch (error) {} try { if (this.port) await this.port.close(); } catch (error) {} this.reader = null; this.writer = null; this.port = null; this.portInfo = null; this.reading = false; this.roleState = 'unknown'; this._disconnecting = false; this._rpcBaudRetried = false; this.baudRate = 9600; this._rejectPending(new Error('USB disconnected')); this._setDevice('—'); if (had && !silent) this._setStatus('USB切断済み'); };
-  ZmkSerialTransport.prototype._readLoop = async function () { while (this.port && this.reading && !this._disconnecting) { try { this.reader = this.port.readable.getReader(); while (this.reading && !this._disconnecting) { var result = await this.reader.read(); if (result.done) break; if (result.value) this._consume(result.value); } this.reader.releaseLock(); this.reader = null; } catch (error) { if (this.reader) try { this.reader.releaseLock(); } catch (releaseError) {} this.reader = null; if (!this._disconnecting) { this.reading = false; this._setStatus('USB受信失敗: ' + (error.message || 'unknown error')); } } } };
+  ZmkSerialTransport.prototype.disconnect = async function (silent) { var had = !!this.port || !!this.reader; this._disconnecting = true; try { if (this.reader) await this.reader.cancel(); } catch (error) {} try { if (this.writer) this.writer.releaseLock(); } catch (error) {} try { if (this.port) await this.port.close(); } catch (error) {} this.reader = null; this.writer = null; this.port = null; this.portInfo = null; this.reading = false; this.roleState = 'unknown'; this._disconnecting = false; this._rpcBaudRetried = false; this.baudRate = 9600; this._releaseConnectionLock(); this._rejectPending(new Error('USB disconnected')); this._setDevice('—'); if (had && !silent) this._setStatus('USB切断済み'); };
+  ZmkSerialTransport.prototype._readLoop = async function () { while (this.port && this.reading && !this._disconnecting) { try { this.reader = this.port.readable.getReader(); while (this.reading && !this._disconnecting) { var result = await this.reader.read(); if (result.done) break; if (result.value) this._consume(result.value); } this.reader.releaseLock(); this.reader = null; } catch (error) { if (this.reader) try { this.reader.releaseLock(); } catch (releaseError) {} this.reader = null; if (!this._disconnecting) { this.reading = false; this._setStatus('USB受信失敗: ' + (error.message || 'unknown error')); try { await this.disconnect(true); } catch (disconnectError) {} } } } };
   ZmkSerialTransport.prototype.sendFramedPayload = async function (payload) { if (!this.isConnected) throw new Error('USB未接続です'); if (!this.port || !this.port.writable) throw new Error('USB writer unavailable'); var writer = this.writer || this.port.writable.getWriter(); this.writer = writer; await writer.write(encodeFrame(payload)); return true; };
 
   var BLE_NAME_PREFIXES = ['sosho', 'soho', 'SO-SHO', 'SOHO', 'ZMK'];

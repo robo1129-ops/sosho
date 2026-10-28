@@ -30,6 +30,37 @@ const port = {
   async close() { this.opened = false; },
 };
 
+let retryOpenAttempts = 0;
+let retryCloseCalls = 0;
+const retryReader = {
+  async read() { return { done: true, value: undefined }; },
+  async cancel() {},
+  releaseLock() {},
+};
+const retryPort = {
+  readable: { getReader() { return retryReader; } },
+  writable: {
+    getWriter() {
+      return { async write() {}, releaseLock() {} };
+    },
+  },
+  opened: false,
+  getInfo() { return { usbVendorId: 0x1d50, usbProductId: 0x615e }; },
+  async open() {
+    retryOpenAttempts += 1;
+    if (retryOpenAttempts === 1) {
+      const error = new Error('Failed to open serial port.');
+      error.name = 'NetworkError';
+      throw error;
+    }
+    this.opened = true;
+  },
+  async close() {
+    retryCloseCalls += 1;
+    this.opened = false;
+  },
+};
+
 const context = {
   window: {},
   navigator: {
@@ -63,6 +94,41 @@ vm.runInNewContext(source, context);
   assert.equal(transport.isConnected, false);
   assert.equal(readerCancelled, true);
   assert.ok(statuses.some((value) => value.includes('USB接続済み')));
+
+  const firstRetry = await transport.connectAuthorized(retryPort);
+  assert.equal(firstRetry, false);
+  assert.equal(retryPort.opened, false);
+  assert.equal(retryCloseCalls, 1);
+  assert.ok(statuses.some((value) => value.includes('USBシリアルポートを開けませんでした')));
+
+  const secondRetry = await transport.connectAuthorized(retryPort);
+  assert.equal(secondRetry, true);
+  assert.equal(transport.isConnected, true);
+  assert.equal(retryPort.opened, true);
+  await transport.disconnect();
+
+  let lockHeld = false;
+  context.navigator.locks = {
+    request(name, options, callback) {
+      if (lockHeld) return Promise.resolve(callback(null));
+      lockHeld = true;
+      let result;
+      try {
+        result = callback({ name });
+      } catch (error) {
+        lockHeld = false;
+        throw error;
+      }
+      return Promise.resolve(result).finally(() => { lockHeld = false; });
+    },
+  };
+  const firstTab = new context.window.ZmkSerialTransport();
+  const secondTab = new context.window.ZmkSerialTransport();
+  assert.equal(await firstTab.connectAuthorized(port), true);
+  assert.equal(await secondTab.connectAuthorized(port), false);
+  await firstTab.disconnect();
+  assert.equal(await secondTab.connectAuthorized(port), true);
+  await secondTab.disconnect();
 
   await transport.connect();
   assert.deepEqual(requestOptions, undefined);
