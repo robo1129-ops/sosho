@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "syntax-check": "node tests/syntax-check.mjs"
+    "syntax-check": "node tests/syntax-check.mjs",
+    "smoke-test": "node tests/editor-ui-smoke.js && node tests/bootloader-keymap-smoke.js && node tests/modifier-combinations-smoke.js && node tests/macro-transport.js && node tests/holdtap-rpc.js"
   },
   "engines": {
     "node": ">=20"

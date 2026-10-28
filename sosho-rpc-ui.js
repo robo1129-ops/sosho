@@ -7,6 +7,7 @@
   var status = document.getElementById('rpc-status');
   var footer = document.querySelector('.inspector .footer-note');
   var deviceState = null;
+  var reservedBootloaderPosition = 43;
   var rawById = Object.create(null);
   var labelById = Object.create(null);
   var behaviorById = Object.create(null);
@@ -913,6 +914,12 @@
           original._id = id;
           var desiredLabel = editedAssignments[id] || labelById[id];
           var holdLabel = editor.getHoldAssignments && editor.getHoldAssignments()[id];
+          if (position === reservedBootloaderPosition) {
+            if ((editedAssignments[id] && editedAssignments[id] !== labelById[id]) || holdLabel) {
+              throw new Error('右下のブートローダーキーはWebアプリから変更できません');
+            }
+            return;
+          }
           // Preserve bindings that came from the device verbatim. This is
           // essential for behavior bindings whose metadata is not editable
           // through the generic key picker (for example Mod-Tap/Layer-Tap).

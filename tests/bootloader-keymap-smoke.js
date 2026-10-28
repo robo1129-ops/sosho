@@ -12,6 +12,9 @@ assert.match(rpcUi, /builtinReset === 'RESET' \|\| builtinReset === 'BOOTLOADER'
 assert.match(rpcUi, /BOOT\\s\*LOADER/);
 assert.match(rpcUi, /behaviorId: Number\(resetDetail\.id\), param1: 0, param2: 0/);
 assert.match(rpcUi, /UF2のブートローダー書き込みはキーマップ割り当てとは別経路です/);
+assert.match(rpcUi, /reservedBootloaderPosition = 43/);
+assert.match(rpcUi, /右下のブートローダーキーはWebアプリから変更できません/);
+assert.match(fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8'), /reservedBootloader/);
 
 // Keep the action visible in the enhanced palette; it is now safe to save
 // when the connected firmware advertises the built-in behavior.
