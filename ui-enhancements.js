@@ -1413,11 +1413,8 @@
   }
 
   function createEncoderTargets() {
-    /* Encoder sensor bindings are build-time device-tree bindings, not part
-     * of the official ZMK Studio keymap RPC. Do not render controls that only
-     * change browser storage and can never reach the connected device. */
-    return;
     var layer = activeLayerIndex();
+    var copy = window.soshoCurrentCopy || {};
     var changed = false;
     document.querySelectorAll('#keyboard .half').forEach(function (half) {
       var existing = half.querySelector('.encoder-cluster');
@@ -1429,15 +1426,20 @@
       var side = half.classList.contains('left') ? 'left' : 'right';
       var cluster = document.createElement('div');
       cluster.className = 'encoder-cluster';
+      cluster.dataset.encoderPanel = side;
       cluster.dataset.layer = String(layer);
-      cluster.innerHTML = '<span class="encoder-title">ロータリーエンコーダー</span>';
-      [['ccw', '↺ 左回転'], ['cw', '↻ 右回転']].forEach(function (entry) {
+      var sideLabel = side === 'left' ? (copy.leftModule || '左側') : (copy.rightModule || '右側');
+      var encoderTitle = copy.encoderTitle || 'ロータリーエンコーダー';
+      var assignmentLabel = copy.encoderAssignment || '割り当て';
+      cluster.innerHTML = '<div class="encoder-cluster-heading"><strong>' + sideLabel + ' · ' + encoderTitle + '</strong><span>' + assignmentLabel + '（回転方向を選択）</span></div>';
+      [['ccw', copy.encoderLeft || '↺ 左回転'], ['cw', copy.encoderRight || '↻ 右回転']].forEach(function (entry) {
         var target = 'l' + layer + '-' + side + '-encoder-' + entry[0];
         var button = document.createElement('button');
         button.type = 'button';
         button.className = 'encoder-target';
         button.dataset.target = target;
         button.innerHTML = entry[1] + '<span class="encoder-assignment"></span>';
+        button.setAttribute('aria-label', sideLabel + ' ' + entry[1] + ' ' + assignmentLabel);
         button.addEventListener('click', function () {
           var assignments = readAssignments();
           updateInspector(target, assignments[target] || encoderSetting(side, entry[0]));
