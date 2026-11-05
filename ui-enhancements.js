@@ -117,6 +117,16 @@
     de: { title: 'Schreibprüfung des Geräts', description: 'Nach dem Speichern wird das Gerät erneut gelesen. Erfolg wird nur bei übereinstimmenden Werten angezeigt.', prepare: 'Änderungen vorbereiten', write: 'Schreiben senden', save: 'Speicherantwort', verify: 'Gerät erneut lesen', idle: 'Wartend', running: 'Läuft', success: 'Erfolgreich', failure: 'Fehlgeschlagen', resultIdle: 'Nicht ausgeführt', resultRunning: 'Prüfung läuft', resultSuccess: 'Gerät aktualisiert', resultFailure: 'Geräteänderung nicht bestätigt' }
   };
 
+  var leftBootloaderLabels = {
+    ja: '左側ブートローダー',
+    en: 'Left bootloader',
+    'zh-CN': '左侧引导模式',
+    ko: '왼쪽 부트로더',
+    th: 'บูตโหลดเดอร์ด้านซ้าย',
+    es: 'Bootloader izquierdo',
+    de: 'Linker Bootloader'
+  };
+
   var sleepCopy = {
     ja: { heading: '自動スリープ', description: 'SO-SHO拡張RPC対応ファームウェアへ保存します。オフ、または1〜1440分を設定できます。', preset: 'プリセット', off: 'オフ', five: '5分', fifteen: '15分', thirty: '30分', hour: '1時間', custom: '分単位で指定', minutes: '分単位（1〜1440）', read: '現在値を読み込む', save: 'スリープ設定を保存' },
     en: { heading: 'Auto sleep', description: 'Save this setting to firmware with the SO-SHO RPC extension. Choose off or 1–1440 minutes.', preset: 'Preset', off: 'Off', five: '5 minutes', fifteen: '15 minutes', thirty: '30 minutes', hour: '1 hour', custom: 'Specify minutes', minutes: 'Minutes (1–1440)', read: 'Read current value', save: 'Save sleep setting' },
@@ -1172,7 +1182,7 @@
     [['押下中スクロール', 'SCROLL_HOLD'], ['スクロール切替', 'SCROLL_TOGGLE'], ['CPI −', 'CPI_DOWN'], ['CPI ＋', 'CPI_UP'], ['パッド倍率 −', 'TP_SCALE_DOWN'], ['パッド倍率 ＋', 'TP_SCALE_UP'], ['スクロール量 −', 'SCROLL_DOWN'], ['スクロール量 ＋', 'SCROLL_UP'], ['RESET', 'RESET'], ['BOOTLOADER', 'BOOTLOADER'], ['CapsLock', 'CAPSLOCK'], ['PrintScreen', 'PSCRN']].forEach(function (entry) { appendActionChip(specialPalette, entry[0], entry[1], 'special-chip'); });
 
     var asciiPalette = additions.querySelector('[data-ascii-palette]');
-    appendActionChip(specialPalette, localized({ ja: '左側ブートローダー', en: 'Left bootloader', 'zh-CN': '左侧引导模式', ko: '왼쪽 부트로더', th: 'บูตโหลดเดอร์ด้านซ้าย', es: 'Bootloader izquierdo', de: 'Linker Bootloader' }, 'Left bootloader'), 'BOOTLOADER_LEFT', 'special-chip');
+    appendActionChip(specialPalette, leftBootloaderLabels[storedLanguage()] || leftBootloaderLabels.en, 'BOOTLOADER_LEFT', 'special-chip');
     // Use the visible character itself as the action value.  The previous
     // ASCII_<character> wrapper was not understood by every save path, and
     // punctuation such as `/` could fall through to an unrelated keycode.
