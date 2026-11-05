@@ -400,6 +400,11 @@
       });
       if (hasLayer && pattern.test(name)) return detail;
     }
+    // ZMK does not expose QMK's TT behavior on every build. When the
+    // connected firmware has no tap-toggle behavior, use its official TG
+    // layer behavior as the closest writable equivalent instead of letting a
+    // palette selection fail before the RPC request is sent.
+    if (kind === 'TT') return layerBehaviorFor('TG');
     return null;
   }
 
@@ -566,10 +571,10 @@
     // layer. Resolve them to the same official layer behaviors as MO(4) and
     // TG(4), so the user-facing label is not required to be a ZMK token.
     var descriptiveLayer = String(label || '').trim();
-    if (descriptiveLayer === '押している間だけスクロール') {
+    if (descriptiveLayer === '押している間だけスクロール' || descriptiveLayer === 'SCROLL_HOLD' || descriptiveLayer === 'Scroll Hold') {
       return resolveBinding('MO 4', raw);
     }
-    if (descriptiveLayer === 'スクロール切替') {
+    if (descriptiveLayer === 'スクロール切替' || descriptiveLayer === 'SCROLL_TOGGLE' || descriptiveLayer === 'Scroll Toggle') {
       return resolveBinding('TG 4', raw);
     }
     var requestedLayer = layerActionKind(label);
@@ -715,10 +720,21 @@
      * from the metadata advertised by the connected firmware instead of
      * sending a made-up HID keycode.  This keeps the editor compatible with
      * the firmware's actual behavior IDs after a build. */
-    var customAction = String(label || '').trim()
+    var customActionInput = String(label || '').trim()
       .replace(/[−–—－]/g, '-')
       .replace(/[＋]/g, '+')
       .replace(/\s+/g, ' ');
+    var customActionAliases = {
+      CPI_DOWN: 'CPI -',
+      CPI_UP: 'CPI +',
+      TP_SCALE_DOWN: 'Trackpad -',
+      TP_SCALE_UP: 'Trackpad +',
+      SCROLL_DOWN: 'Scroll -',
+      SCROLL_UP: 'Scroll +',
+      SCROLL_HOLD: 'Scroll Hold',
+      SCROLL_TOGGLE: 'Scroll Toggle'
+    };
+    var customAction = customActionAliases[customActionInput] || customActionInput;
     var customActionMatchers = {
       'BOOTLOADER_LEFT': /^Left\s+Bootloader$/i,
       'Left Bootloader': /^Left\s+Bootloader$/i,
