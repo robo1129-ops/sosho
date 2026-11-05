@@ -398,7 +398,7 @@
   // The runtime-configurable package is committed as a public repository
   // asset so the download remains available even while the release workflow
   // is being repaired. It contains only the six required module profiles.
-  var firmwareZipUrl = 'https://raw.githubusercontent.com/robo1129-ops/sosho-firmware/main/downloads/sosho-firmware-latest-local.zip';
+  var firmwareZipUrl = 'https://raw.githubusercontent.com/robo1129-ops/sosho-firmware/main/downloads/sosho-firmware-latest-local.zip?v=20261105';
   if (firmwareRepoLink) {
     firmwareRepoLink.href = firmwareZipUrl;
     firmwareRepoLink.textContent = 'カスタムファームウェアZIPを直接ダウンロード';
@@ -1172,6 +1172,7 @@
     [['押下中スクロール', 'SCROLL_HOLD'], ['スクロール切替', 'SCROLL_TOGGLE'], ['CPI −', 'CPI_DOWN'], ['CPI ＋', 'CPI_UP'], ['パッド倍率 −', 'TP_SCALE_DOWN'], ['パッド倍率 ＋', 'TP_SCALE_UP'], ['スクロール量 −', 'SCROLL_DOWN'], ['スクロール量 ＋', 'SCROLL_UP'], ['RESET', 'RESET'], ['BOOTLOADER', 'BOOTLOADER'], ['CapsLock', 'CAPSLOCK'], ['PrintScreen', 'PSCRN']].forEach(function (entry) { appendActionChip(specialPalette, entry[0], entry[1], 'special-chip'); });
 
     var asciiPalette = additions.querySelector('[data-ascii-palette]');
+    appendActionChip(specialPalette, localized({ ja: '左側ブートローダー', en: 'Left bootloader', 'zh-CN': '左侧引导模式', ko: '왼쪽 부트로더', th: 'บูตโหลดเดอร์ด้านซ้าย', es: 'Bootloader izquierdo', de: 'Linker Bootloader' }, 'Left bootloader'), 'BOOTLOADER_LEFT', 'special-chip');
     // Use the visible character itself as the action value.  The previous
     // ASCII_<character> wrapper was not understood by every save path, and
     // punctuation such as `/` could fall through to an unrelated keycode.

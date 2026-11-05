@@ -720,6 +720,8 @@
       .replace(/[＋]/g, '+')
       .replace(/\s+/g, ' ');
     var customActionMatchers = {
+      'BOOTLOADER_LEFT': /^Left\s+Bootloader$/i,
+      'Left Bootloader': /^Left\s+Bootloader$/i,
       'CPI -': /^CPI\s*-$/i,
       'CPI +': /^CPI\s*\+$/i,
       'Trackpad -': /^Trackpad\s*-$/i,
