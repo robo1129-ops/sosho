@@ -251,21 +251,16 @@
     return !!a && !!b && a.behaviorId === b.behaviorId && a.param1 === b.param1 && a.param2 === b.param2;
   }
 
-  // The Web editor's human-facing 半角/全角 action uses the Windows
-  // US/IME-compatible Alt+Grave combination. LANG5 (0x94) remains an
-  // explicit low-level option for hosts that implement that usage directly.
-  // Keep this conversion explicit because the Japanese display label can be
-  // written with either slash direction and Chromium may preserve full-width
-  // punctuation from the action palette.
+  // Resolve the human-facing Japanese 半角/全角 action to the dedicated HID
+  // Language 5 usage. Keep this conversion explicit because the Japanese
+  // display label can be written with either slash direction and Chromium may
+  // preserve full-width punctuation from the action palette.
   function japaneseHalfFullwidthCode(value) {
     var text = String(value || '').trim().toUpperCase();
-    /* On Windows with a US keyboard layout, Alt+Grave is the IME toggle
-     * equivalent of the Japanese 半角/全角 key. */
-    if (/^(?:半角\s*[\/／]\s*全角|全角\s*[\/／]\s*半角)$/.test(text)) return 0x35;
+    if (/^(?:半角\s*[\/／]\s*全角|全角\s*[\/／]\s*半角)$/.test(text)) return 0x94;
     var compact = text.replace(/[\s_\-\/／（）()]+/g, '');
-    if (compact === '半角全角' || compact === '全角半角') return 0x35;
-    // LANG5/HANKAKUZENKAKU are explicit raw usages and are resolved by the
-    // named-key tables below; do not apply the human-facing Alt modifier.
+    if (compact === '半角全角' || compact === '全角半角') return 0x94;
+    // LANG5/HANKAKUZENKAKU are equivalent explicit raw usages.
     return null;
   }
 
@@ -304,10 +299,10 @@
       CTRL: 0xe0, LCTRL: 0xe0, SHIFT: 0xe1, LSHIFT: 0xe1,
       ALT: 0xe2, LALT: 0xe2, GUI: 0xe3, WIN: 0xe3,
       RCTRL: 0xe4, RSHIFT: 0xe5, RALT: 0xe6, RGUI: 0xe7,
-      // The human-facing Japanese 半角/全角 action is sent as Alt+GRAVE,
-      // which is the Windows-US/IME composition path. LANG5 (0x94) remains
-      // available as an explicit low-level usage.
-      '半角全角': 0x35, '全角半角': 0x35, LANG5: 0x94, HANKAKUZENKAKU: 0x94,
+      // The Japanese half/full-width key is the dedicated HID Language 5
+      // usage. Do not synthesize Alt+GRAVE: applications such as Zoho Chat
+      // can treat that combination as a focus/menu shortcut.
+      '半角全角': 0x94, '全角半角': 0x94, LANG5: 0x94, HANKAKUZENKAKU: 0x94,
       // USB HID punctuation: these entries intentionally keep the literal
       // character.  Word aliases are included for the enhanced palette.
       '`': 0x35, GRAVE: 0x35, '-': 0x2d, MINUS: 0x2d, '=': 0x2e, EQUAL: 0x2e, PLUS: shifted(0x2e),
@@ -328,9 +323,6 @@
       '＄': shifted(0x21), '％': shifted(0x22)
     };
     var japaneseCode = japaneseHalfFullwidthCode(baseLabel);
-    if (japaneseCode !== null && !modified.valid) {
-      modified = { base: modified.base, modifiers: ['LALT'], mask: modifierBits.LALT, valid: true };
-    }
     var code = japaneseCode;
     if (code === null) code = named[normalized];
     if (code === undefined && /^[A-Z]$/.test(normalized)) code = 0x04 + normalized.charCodeAt(0) - 65;

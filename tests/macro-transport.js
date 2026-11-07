@@ -114,6 +114,14 @@ vm.runInNewContext(source, context);
   assert.equal(longReadBack[0].name, '64-step macro');
   assert.equal(longReadBack[0].steps.split('\n').length, 64);
   assert.match(longReadBack[0].steps, /A\|tap\|64/);
+
+  await protocol.writeAll([{
+    name: 'Bluetooth lock sequence',
+    target: 'l3-left-0',
+    steps: 'BT0|tap|1\nBT_DISC1|tap|1\nBT_DISC2|tap|1\nBT_NEXT|tap|1',
+  }]);
+  const bluetoothReadBack = await protocol.readAll();
+  assert.equal(bluetoothReadBack[0].steps, 'BT0|tap|1\nBT_DISC1|tap|1\nBT_DISC2|tap|1\nBT_NEXT|tap|1');
   console.log('BLE macro write/read-back simulation passed');
 })().catch((error) => {
   console.error(error);

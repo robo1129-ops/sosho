@@ -408,7 +408,7 @@
   // The runtime-configurable package is committed as a public repository
   // asset so the download remains available even while the release workflow
   // is being repaired. It contains only the six required module profiles.
-  var firmwareZipUrl = 'https://raw.githubusercontent.com/robo1129-ops/sosho-firmware/main/downloads/sosho-firmware-latest-local.zip?v=20261105-holdfix-2';
+  var firmwareZipUrl = 'https://raw.githubusercontent.com/robo1129-ops/sosho-firmware/main/downloads/sosho-firmware-latest-local.zip?v=20261107-integrated-final-1';
   if (firmwareRepoLink) {
     firmwareRepoLink.href = firmwareZipUrl;
     firmwareRepoLink.textContent = 'カスタムファームウェアZIPを直接ダウンロード';
@@ -796,7 +796,11 @@
     keyEntries.forEach(function (entry) { appendMacroKeyChip(chipContainer, entry); });
     [['Shift','LSHFT'],['Ctrl','LCTRL'],['Alt','LALT'],['GUI','LGUI'],['Enter','RET'],['Backspace','BSPC'],['Tab','TAB'],['Escape','ESC']].forEach(function (entry) { appendMacroKeyChip(palette.querySelector('[data-macro-functions]'), entry); });
     [['Mouse Left','LCLK'],['Mouse Right','RCLK'],['Mouse Middle','MCLK'],['Wheel Up','WH_U'],['Wheel Down','WH_D'],['Wheel Left','WH_L'],['Wheel Right','WH_R']].forEach(function (entry) { appendMacroKeyChip(palette.querySelector('[data-macro-device]'), entry); });
-    [['RESET','RESET'],['BOOTLOADER','BOOT'],['Scroll Hold','SCROLL_HOLD'],['CPI −','CPI_DOWN'],['CPI ＋','CPI_UP']].forEach(function (entry) { appendMacroKeyChip(palette.querySelector('[data-macro-special]'), entry); });
+    [['RESET','RESET'],['BOOTLOADER','BOOT'],['Scroll Hold','SCROLL_HOLD'],['CPI −','CPI_DOWN'],['CPI ＋','CPI_UP'],
+      ['BT 0','BT0'],['BT 1','BT1'],['BT 2','BT2'],['BT 3','BT3'],['BT 4','BT4'],
+      ['BT next','BT_NEXT'],['BT previous','BT_PREV'],['BT disconnect 0','BT_DISC0'],['BT disconnect 1','BT_DISC1'],
+      ['BT disconnect 2','BT_DISC2'],['BT disconnect 3','BT_DISC3'],['BT disconnect 4','BT_DISC4'],
+      ['BT clear selected','BT_CLR'],['BT clear all','BT_CLR_ALL']].forEach(function (entry) { appendMacroKeyChip(palette.querySelector('[data-macro-special]'), entry); });
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-=[]\\;\',./+"~_{}|:?<>`'.split('').forEach(function (character) {
       appendMacroKeyChip(palette.querySelector('[data-macro-ascii]'), [character, character]);
     });
@@ -818,7 +822,11 @@
       RET: 'Enter', BSPC: 'Backspace', TAB: 'Tab', ESC: 'Escape', SPACE: 'Space',
       LEFT: '← Left', RIGHT: '→ Right', UP: '↑ Up', DOWN: '↓ Down',
       LCLK: 'Mouse Left', RCLK: 'Mouse Right', MCLK: 'Mouse Middle',
-      WH_U: 'Wheel Up', WH_D: 'Wheel Down', WH_L: 'Wheel Left', WH_R: 'Wheel Right'
+      WH_U: 'Wheel Up', WH_D: 'Wheel Down', WH_L: 'Wheel Left', WH_R: 'Wheel Right',
+      BT0: 'Bluetooth profile 0', BT1: 'Bluetooth profile 1', BT2: 'Bluetooth profile 2', BT3: 'Bluetooth profile 3', BT4: 'Bluetooth profile 4',
+      BT_NEXT: 'Bluetooth next profile', BT_PREV: 'Bluetooth previous profile', BT_DISC0: 'Disconnect Bluetooth profile 0',
+      BT_DISC1: 'Disconnect Bluetooth profile 1', BT_DISC2: 'Disconnect Bluetooth profile 2', BT_DISC3: 'Disconnect Bluetooth profile 3',
+      BT_DISC4: 'Disconnect Bluetooth profile 4', BT_CLR: 'Clear selected Bluetooth profile', BT_CLR_ALL: 'Clear all Bluetooth profiles'
     };
     function macroReadableCode(code) {
       return macroCodeLabels[code] || code.replace(/^L(SHFT|CTRL|ALT|GUI)$/, function (_, name) {
@@ -1123,7 +1131,7 @@
     var japaneseKeys = [
       ['かな', 'LANG1'],
       ['英数', 'LANG2'],
-      ['半角/全角', 'GRAVE'],
+      ['半角/全角', 'LANG5'],
       ['カナ/かな', 'INT2'],
       ['変換', 'INT4'],
       ['無変換', 'INT5'],

@@ -236,7 +236,7 @@ window.soshoReadMacros=readMacrosFromDevice;
 async function saveMacrosToUsb(){save();var rpc=macroRpc();if(!rpc||typeof window.SoshoMacroCodec!=='object'){rpcStatus.textContent='マクロ対応ファームウェアのUSBまたはBLE Studio RPCへ接続してください。';return false}var expected=macros.map(function(macro){return macro?{name:macro.name,target:macro.target,steps:macro.steps}:macro});try{if(window.soshoMacroSetBusy)window.soshoMacroSetBusy(true);var existingMask=typeof rpc.listMacros==='function'?await rpc.listMacros():0;for(var index=0;index<16;index++){if(macros[index]){var blob=window.SoshoMacroCodec.encode(macros[index],index);await rpc.setMacro(index,blob)}else if(existingMask&(1<<index)){await rpc.deleteMacro(index)}}var verified=await readMacrosFromDevice();for(var check=0;check<16;check++)if(!macroModelsEqual(expected[check],verified[check]))throw new Error('Macro '+check+' の再読み取りが一致しません');rpcStatus.textContent=(activeTransport.kind==='ble'?'BLE':'USB')+'へマクロを保存し、再読み取り一致を確認しました。';if(window.soshoLog)window.soshoLog('macro','Studio RPCマクロ保存成功');return true}catch(error){var detail=error&&error.message?error.message:String(error);rpcStatus.textContent='マクロ保存失敗: '+detail;if(window.soshoConnectionError)window.soshoConnectionError('マクロ保存失敗: '+detail,'ファームウェアのMacro RPC応答を確認してください。');return false}finally{if(window.soshoMacroSetBusy)window.soshoMacroSetBusy(false)}}
 async function runMacroOnUsb(index){var rpc=macroRpc();if(!rpc||typeof rpc.runMacro!=='function'){rpcStatus.textContent='マクロ対応Studio RPCへ接続してください。';return false}try{await rpc.runMacro(index);rpcStatus.textContent='マクロを実行しました。';return true}catch(error){rpcStatus.textContent='マクロ実行失敗: '+(error&&error.message?error.message:error);return false}}
 function newMacro(index){return{name:'Macro '+index,steps:'A|tap|1',target:''}}
-var macroStepPalette=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','Enter','Escape','Backspace','Tab','Space','Delete','Left','Right','Up','Down','LCTRL','LSHFT','LALT','LGUI'];
+var macroStepPalette=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','Enter','Escape','Backspace','Tab','Space','Delete','Left','Right','Up','Down','LCTRL','LSHFT','LALT','LGUI','BT0','BT1','BT2','BT3','BT4','BT_NEXT','BT_PREV','BT_DISC0','BT_DISC1','BT_DISC2','BT_DISC3','BT_DISC4','BT_CLR','BT_CLR_ALL'];
 function macroStepParts(line){var parts=String(line||'').split('|');var mode=['tap','press','release'].indexOf(String(parts[1]||'tap').toLowerCase())>=0?String(parts[1]||'tap').toLowerCase():'tap';var wait=Number(parts[2]);if(!Number.isInteger(wait)||wait<0)wait=1;return{key:parts[0]||'A',mode:mode,wait:Math.min(60000,wait)}}
 function macroStepLines(macro){return String(macro.steps||'A|tap|1').split(/\r?\n/).filter(Boolean).map(macroStepParts)}
 function macroBytesRemaining(macro){return Math.max(0,512-String(macro.steps||'').length)}
@@ -371,6 +371,6 @@ connectUsbAuthorized.addEventListener('click',async function(){if(!usb||typeof u
 })();
 </script>
   <script src="/sosho/sosho-rpc-ui.js?v=ime-alt-grave-20261028"></script>
-<script src="/sosho/ui-enhancements.js?v=20261105-2"></script>
+<script src="/sosho/ui-enhancements.js?v=20261107-1"></script>
 </body>
 </html>

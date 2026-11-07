@@ -11,6 +11,14 @@
   var MAX_STEPS = 64;
   var MAX_PAYLOAD = 512;
   var MAX_WAIT_MS = 60000;
+  var bluetoothMacroActions = {
+    BT0: { mode: 3, value: 0 }, BT1: { mode: 3, value: 1 }, BT2: { mode: 3, value: 2 },
+    BT3: { mode: 3, value: 3 }, BT4: { mode: 3, value: 4 },
+    BT_NEXT: { mode: 4, value: 0 }, BT_PREV: { mode: 5, value: 0 },
+    BT_DISC0: { mode: 6, value: 0 }, BT_DISC1: { mode: 6, value: 1 },
+    BT_DISC2: { mode: 6, value: 2 }, BT_DISC3: { mode: 6, value: 3 }, BT_DISC4: { mode: 6, value: 4 },
+    BT_CLR: { mode: 7, value: 0 }, BT_CLR_ALL: { mode: 8, value: 0 }
+  };
 
   var encoder = typeof TextEncoder === 'function' ? new TextEncoder() : null;
   var decoder = typeof TextDecoder === 'function' ? new TextDecoder() : null;
@@ -127,6 +135,23 @@
 
   function modeId(mode) { return mode === 'press' ? 1 : mode === 'release' ? 2 : 0; }
   function modeName(mode) { return mode === 1 ? 'press' : mode === 2 ? 'release' : 'tap'; }
+  function bluetoothAction(name) {
+    var normalized = String(name || '').trim().toUpperCase().replace(/[ -]+/g, '_');
+    if (/^BT\s*([0-4])$/.test(normalized)) normalized = normalized.replace(/^BT\s*/, 'BT');
+    if (/^BT_(?:SELECT|SEL)_([0-4])$/.test(normalized)) normalized = 'BT' + normalized.slice(-1);
+    if (/^BT_(?:DISCONNECT|DISC)_([0-4])$/.test(normalized)) normalized = 'BT_DISC' + normalized.slice(-1);
+    if (normalized === 'BT_NEXT_PROFILE') normalized = 'BT_NEXT';
+    if (normalized === 'BT_PREVIOUS_PROFILE' || normalized === 'BT_PREV_PROFILE') normalized = 'BT_PREV';
+    return bluetoothMacroActions[normalized] ? { name: normalized, action: bluetoothMacroActions[normalized] } : null;
+  }
+  function bluetoothActionName(mode, value) {
+    var names = Object.keys(bluetoothMacroActions);
+    for (var i = 0; i < names.length; i++) {
+      var action = bluetoothMacroActions[names[i]];
+      if (action.mode === mode && action.value === value) return names[i];
+    }
+    return '';
+  }
 
   function encodeMacro(macro, id) {
     var name = utf8((macro && macro.name) || '新しいマクロ');
@@ -142,8 +167,14 @@
       var parts = line.split('|');
       var wait = Number(parts[2] || 0);
       if (!Number.isInteger(wait) || wait < 0 || wait > MAX_WAIT_MS) throw new Error('待ち時間は0〜60000ミリ秒で指定してください');
-      put32(out, offset, keycode(parts[0]));
-      out[offset + 4] = modeId(String(parts[1] || 'tap').toLowerCase());
+      var btAction = bluetoothAction(parts[0]);
+      if (btAction) {
+        put32(out, offset, btAction.action.value);
+        out[offset + 4] = btAction.action.mode;
+      } else {
+        put32(out, offset, keycode(parts[0]));
+        out[offset + 4] = modeId(String(parts[1] || 'tap').toLowerCase());
+      }
       put16(out, offset + 5, wait);
       offset += 7;
     });
@@ -163,6 +194,12 @@
     var offset = header;
     for (var i = 0; i < stepsCount; i++) {
       var encoded = get32(bytes, offset);
+      var btName = bluetoothActionName(bytes[offset + 4], encoded);
+      if (btName) {
+        steps.push(btName + '|tap|' + get16(bytes, offset + 5));
+        offset += 7;
+        continue;
+      }
       var modifierMask = encoded >>> 24;
       var usage = encoded & 0xffff;
       var shiftedKey = modifierMask === macroModifierBits.LSHFT && Object.keys(shiftedKeyIds).find(function (key) { return shiftedKeyIds[key] === usage; });
