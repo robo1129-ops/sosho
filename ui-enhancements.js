@@ -210,6 +210,8 @@
     if (connectBle) connectBle.textContent = copy.bleConnect || 'BLE';
     var reconnectBle = document.getElementById('connect-ble-authorized');
     if (reconnectBle) reconnectBle.textContent = copy.bleReconnect || 'Reconnect BLE';
+    var connectWindowsBle = document.getElementById('connect-windows-ble');
+    if (connectWindowsBle) connectWindowsBle.textContent = ({ja:'Windows BLEブリッジ', en:'Windows BLE bridge', 'zh-CN':'Windows BLE桥接', ko:'Windows BLE 브리지', th:'บริดจ์ Windows BLE', es:'Puente BLE de Windows', de:'Windows-BLE-Brücke'})[language] || 'Windows BLE bridge';
     var disconnect = document.getElementById('disconnect');
     if (disconnect) disconnect.textContent = ({ja:'切断', en:'Disconnect', 'zh-CN':'断开', ko:'연결 해제', th:'ตัดการเชื่อมต่อ', es:'Desconectar', de:'Trennen'})[language] || '切断';
     var copyLog = document.getElementById('connection-log-copy');
