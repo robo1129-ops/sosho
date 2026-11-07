@@ -551,6 +551,19 @@
     // only as a compatibility fallback for earlier SO-SHO test images.
     try {
       await this.port.open({ baudRate: this.baudRate, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none' });
+      // Some Windows CDC-ACM implementations do not deliver the first RPC
+      // response until the host asserts DTR.  The official Studio transport
+      // treats the port as a live serial terminal, so mirror that behavior
+      // when the Web Serial implementation exposes modem-signal control.
+      if (typeof this.port.setSignals === 'function') {
+        try { await this.port.setSignals({ dataTerminalReady: true, requestToSend: true }); } catch (signalError) {
+          this._setLog('USB信号線設定を省略: ' + (signalError.message || signalError));
+        }
+      }
+      // Give the CDC endpoint a short settle time after DTR/RTS assertion.
+      // On Windows the XIAO CDC device can otherwise miss the first Studio
+      // request while the firmware finishes opening its USB stream.
+      await new Promise(function (resolve) { setTimeout(resolve, 100); });
     } catch (error) {
       // Web Serial keeps the selected SerialPort object alive after a failed
       // open.  Release every local lock before allowing a retry; otherwise
@@ -560,6 +573,11 @@
       try { if (this.reader) await this.reader.cancel(); } catch (cancelError) {}
       try { if (this.reader) this.reader.releaseLock(); } catch (releaseError) {}
       try { if (this.writer) this.writer.releaseLock(); } catch (writerError) {}
+      try {
+        if (port && typeof port.setSignals === 'function') {
+          try { await port.setSignals({ dataTerminalReady: false, requestToSend: false }); } catch (signalError) {}
+        }
+      } catch (signalOuterError) {}
       try { if (port && typeof port.close === 'function') await port.close(); } catch (closeError) {}
       this.reader = null;
       this.writer = null;
@@ -634,6 +652,17 @@
       var ports = targetPort ? [targetPort] : await this.getAuthorizedPorts();
       this._setLog('許可済みUSBポート: ' + ports.length + '件');
       if (!ports.length) { this._setStatus('許可済みUSBポートがありません。初回は「右側USB / COM接続」を押してください'); return false; }
+      // Chrome can retain permission for an old SO-SHO/board port. Prefer the
+      // currently used XIAO USB identity before falling back to the remaining
+      // authorized ports, instead of silently opening the first stale entry.
+      ports.sort(function (a, b) {
+        function score(port) {
+          var info = null;
+          try { info = typeof port.getInfo === 'function' ? port.getInfo() : null; } catch (error) {}
+          return info && info.usbVendorId === 0x1d50 && info.usbProductId === 0x615e ? 0 : 1;
+        }
+        return score(a) - score(b);
+      });
       var port = ports[0];
       var info = typeof port.getInfo === 'function' ? port.getInfo() : null;
       this._setLog('許可済みUSBポートを試行（VID=0x' + ((info && info.usbVendorId || 0).toString(16)) + ' PID=0x' + ((info && info.usbProductId || 0).toString(16)) + '）');

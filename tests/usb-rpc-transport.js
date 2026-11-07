@@ -5,6 +5,7 @@ const vm = require('node:vm');
 
 const source = fs.readFileSync(path.resolve(__dirname, '..', 'zmk-studio-transport.js'), 'utf8');
 const writes = [];
+const signalCalls = [];
 let requestOptions = null;
 let readerCancelled = false;
 const reader = {
@@ -27,6 +28,7 @@ const port = {
     assert.equal(options.baudRate, 9600);
     this.opened = true;
   },
+  async setSignals(options) { signalCalls.push(options); },
   async close() { this.opened = false; },
 };
 
@@ -86,6 +88,8 @@ vm.runInNewContext(source, context);
   assert.equal(await transport.connectAuthorized(), true);
   assert.equal(transport.isConnected, true);
   assert.equal(port.opened, true);
+  assert.equal(signalCalls[0].dataTerminalReady, true);
+  assert.equal(signalCalls[0].requestToSend, true);
 
   await transport.sendFramedPayload(new Uint8Array([1, 2, 3]));
   assert.deepEqual(Array.from(writes[0]), [0xAB, 1, 2, 3, 0xAD]);
