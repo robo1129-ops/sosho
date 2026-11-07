@@ -32,7 +32,7 @@
   function blePickerUnavailableMessage() {
     var platform = browserPlatform();
     if (/Windows/i.test(platform)) {
-      return 'BLE: Chromeの選択一覧にSO-SHOがありません。WindowsのBluetooth接続中はZMKが広告を停止するため、既存のWindows接続を切断してから再試行してください。';
+      return 'BLE: Chromeの選択一覧にSO-SHOがありません。直接Web BLE対応ファームウェアではHID接続中も広告を継続します。旧ファームウェアやWindows側の広告抑制がある場合は、Windows BLEブリッジまたは右側USBを使ってください。';
     }
     return 'BLE: Chromeの選択一覧にSO-SHOがありません。キーボードを広告状態にし、他の接続を切断してから再試行してください。';
   }
@@ -40,7 +40,7 @@
   function blePickerUnavailableLog() {
     var platform = browserPlatform();
     if (/Windows/i.test(platform)) {
-      return 'BLE未検出: Windowsの既存Bluetooth接続中はZMKがアクティブプロファイルの広告を停止します。ChromeはWindowsの既存接続を引き継げないため、Windows接続を切断して広告状態にしてください。';
+      return 'BLE未検出: 直接Web BLE対応ファームウェアは、WindowsのHID接続を維持したまま編集用広告を出します。旧ファームウェア、OS側の広告抑制、またはChromeの制限がある場合はWindows BLEブリッジか右側USBへ切り替えてください。';
     }
     return 'BLE未検出: 既存ホストとの接続中はZMKが広告を停止する場合があります。キーボードを広告状態にして再試行してください。';
   }
