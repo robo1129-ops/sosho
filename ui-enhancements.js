@@ -211,7 +211,10 @@
     var reconnectBle = document.getElementById('connect-ble-authorized');
     if (reconnectBle) reconnectBle.textContent = copy.bleReconnect || 'Reconnect BLE';
     var connectWindowsBle = document.getElementById('connect-windows-ble');
-    if (connectWindowsBle) connectWindowsBle.textContent = ({ja:'Windows BLEブリッジ', en:'Windows BLE bridge', 'zh-CN':'Windows BLE桥接', ko:'Windows BLE 브리지', th:'บริดจ์ Windows BLE', es:'Puente BLE de Windows', de:'Windows-BLE-Brücke'})[language] || 'Windows BLE bridge';
+    if (connectWindowsBle) {
+      connectWindowsBle.textContent = ({ja:'Windows BLE接続（広告不要）', en:'Windows BLE (no advertising required)', 'zh-CN':'Windows BLE（无需广播）', ko:'Windows BLE（광고 불필요）', th:'Windows BLE (ไม่ต้องโฆษณา)', es:'Windows BLE (sin publicidad)', de:'Windows BLE (ohne Werbung)'})[language] || 'Windows BLE (no advertising required)';
+      connectWindowsBle.title = ({ja:'WindowsのBluetoothでペアリング済みのSO-SHOへ接続します。Chromeの一覧に表示されない場合も利用できます。', en:'Connects to a paired SO-SHO through Windows Bluetooth, even when Chrome cannot list it.', 'zh-CN':'通过Windows蓝牙连接已配对的SO-SHO，即使Chrome列表中不显示也可以使用。', ko:'Chrome 목록에 표시되지 않아도 Windows Bluetooth로 페어링된 SO-SHO에 연결합니다.', th:'เชื่อมต่อ SO-SHO ที่จับคู่ไว้ผ่าน Bluetooth ของ Windows แม้ Chrome จะไม่แสดงในรายการ', es:'Conecta con SO-SHO emparejado mediante Bluetooth de Windows aunque Chrome no lo muestre.', de:'Verbindet mit dem über Windows Bluetooth gekoppelten SO-SHO, auch wenn Chrome es nicht auflistet.'})[language] || 'Connects to a paired SO-SHO through Windows Bluetooth, even when Chrome cannot list it.';
+    }
     var disconnect = document.getElementById('disconnect');
     if (disconnect) disconnect.textContent = ({ja:'切断', en:'Disconnect', 'zh-CN':'断开', ko:'연결 해제', th:'ตัดการเชื่อมต่อ', es:'Desconectar', de:'Trennen'})[language] || '切断';
     var copyLog = document.getElementById('connection-log-copy');
