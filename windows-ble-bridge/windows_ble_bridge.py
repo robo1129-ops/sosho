@@ -93,7 +93,16 @@ class Bridge:
         return devices
 
     async def scan(self) -> list[dict[str, Any]]:
-        await self.status("Windows BLEデバイスを検索中…")
+        # Windows commonly suppresses advertisements for an already paired
+        # HID keyboard. Resolve paired devices first so the browser does not
+        # wait for a full active scan before it can connect.
+        await self.status("Windowsのペアリング済みBLEデバイスを確認中…")
+        paired = await self.paired_devices()
+        if paired:
+            await self.status(f"ペアリング済みSO-SHOを検出: {paired[0]['name']}")
+            return paired
+
+        await self.status("Windows BLE広告を検索中…")
         try:
             discovered = await BleakScanner.discover(timeout=8.0, return_adv=True)
         except TypeError:

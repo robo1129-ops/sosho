@@ -29,6 +29,10 @@
     this._connectResolve = null;
     this._connectReject = null;
     this._url = options.url || 'ws://127.0.0.1:8765';
+    // Windows can hide advertisements while the keyboard is connected as an
+    // HID device. The bridge resolves paired devices directly, and that
+    // lookup can take longer than a normal WebSocket handshake.
+    this._timeoutMs = Math.max(15000, Number(options.timeoutMs) || 45000);
   }
   ZmkWindowsBleBridgeTransport.prototype = Object.create(ZmkBleTransport.prototype);
   ZmkWindowsBleBridgeTransport.prototype.constructor = ZmkWindowsBleBridgeTransport;
@@ -81,7 +85,7 @@
         self.socket.addEventListener('message', self._handleMessage.bind(self));
         self.socket.addEventListener('error', function () { var error = new Error('Windows BLEブリッジに接続できません。start-windows.ps1を起動してください。'); self._setStatus(error.message); if (self._connectReject) self._connectReject(error); });
         self.socket.addEventListener('close', function () { self._handleDisconnected(); });
-        setTimeout(function () { if (self._connecting) { self._connecting = false; self._connectResolve = null; self._connectReject = null; reject(new Error('Windows BLEブリッジの接続がタイムアウトしました')); try { self.socket.close(); } catch (error) {} } }, 15000);
+        setTimeout(function () { if (self._connecting) { self._connecting = false; self._connectResolve = null; self._connectReject = null; reject(new Error('Windows BLEブリッジの接続がタイムアウトしました（ペアリング済みデバイスの検索に時間がかかっています）')); try { self.socket.close(); } catch (error) {} } }, self._timeoutMs);
       } catch (error) { self._connecting = false; self._connectResolve = null; self._connectReject = null; reject(error); }
     }).then(function () { return true; }).catch(function (error) { self._setStatus(error.message || String(error)); return false; });
   };
@@ -94,7 +98,8 @@
     var button = document.createElement('button');
     button.id = 'connect-windows-ble';
     button.type = 'button';
-    button.textContent = 'Windows BLEブリッジ';
+    button.textContent = 'Windows BLE接続（広告不要）';
+    button.title = 'WindowsのBluetoothでペアリング済みのSO-SHOへ接続します。Chromeの一覧に表示されない場合も利用できます。';
     actions.insertBefore(button, document.getElementById('disconnect') || null);
   }
   global.ZmkWindowsBleBridgeTransport = ZmkWindowsBleBridgeTransport;

@@ -18,7 +18,7 @@ Python 3.10以降とWindowsのBluetooth LEが必要です。すでに `sosho` �
 
 ## 起動
 
-`start-windows.ps1` を実行したまま、ChromeでSO-SHOページを開き、`Windows BLEブリッジ` を押します。まず広告中のSO-SHOを探し、WindowsがHID接続中で広告を隠している場合は、Windowsのペアリング済みデバイス情報からSO-SHOのアドレスを取得してWinRTへ直接GATT接続します。したがって、通常はWindowsのBluetooth接続を切断する必要はありません。
+`start-windows.ps1` を実行したまま、ChromeでSO-SHOページを開き、`Windows BLE接続（広告不要）` を押します。WindowsがHID接続中で広告を隠している場合でも、先にWindowsのペアリング済みデバイス情報からSO-SHOのアドレスを取得してWinRTへ直接GATT接続します。したがって、通常はWindowsのBluetooth接続を切断する必要はありません。Chromeの通常のWeb Bluetooth一覧にSO-SHOが出ない場合も、このボタンが正しい接続経路です。
 
 ブリッジは `127.0.0.1` のみに待ち受け、公開ページOrigin以外からの接続を拒否します。終了はPowerShellで `Ctrl+C` です。
 
