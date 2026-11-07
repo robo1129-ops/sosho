@@ -4,7 +4,17 @@ Windows版ChromeのWeb Bluetooth制約を回避するためのローカル接続
 
 ## 初回セットアップ
 
-PowerShellでこのフォルダーの `setup-windows.ps1` を一度実行してください。Python 3.10以降とWindowsのBluetooth LEが必要です。
+PowerShellをどのフォルダーで開いていても、まずリポジトリを取得してからブリッジのフォルダーへ移動してください。
+
+```powershell
+Set-Location $env:USERPROFILE
+git clone https://github.com/robo1129-ops/sosho.git
+Set-Location .\sosho\windows-ble-bridge
+Set-ExecutionPolicy -Scope Process Bypass
+.\setup-windows.ps1
+```
+
+Python 3.10以降とWindowsのBluetooth LEが必要です。すでに `sosho` を取得済みの場合は、`sosho\windows-ble-bridge` に移動してから実行してください。
 
 ## 起動
 
