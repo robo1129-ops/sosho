@@ -1,6 +1,6 @@
 # SO-SHO USB keymap editor
 
-公開済みのブラウザー編集画面です。右CentralをUSB接続してキーマップを編集します。PCとのBLE編集は使用せず、左右分割間の通信だけファームウェア側で維持します。
+公開済みのブラウザー編集画面です。右CentralをUSBまたはBLEで接続してキーマップを編集します。左右分割間の通信はファームウェア側で維持します。
 
 ## ZMK Studioベースの画面構成
 
@@ -40,9 +40,13 @@ ZIPには、5分・15分・30分・1時間・スリープなしの各フォル�
 
 Webページの「カスタムファームウェアZIPを直接ダウンロード」または「最新ZIPをダウンロード」から、同じリリースZIPを直接取得できます。
 
-## USB接続
+## USB / BLE接続
 
-右側Central（トラックボール側）をUSB接続し、ページの「右側USB / COM接続」を押してください。ChromeまたはEdgeのWeb SerialでUSB CDC-ACMを開き、「USBからキーマップを読み込む」→編集→「USBへキーマップを保存」の順に操作します。一度許可したポートは「許可済みUSBに再接続」で再利用できます。左右分割間の通信はファームウェア側で維持されます。
+USB編集では、右側Central（トラックボール側）をUSB接続し、ページの「右側USB / COM接続」を押してください。ChromeまたはEdgeのWeb SerialでUSB CDC-ACMを開きます。一度許可したポートは「許可済みUSBに再接続」で再利用できます。
+
+BLE編集では、右側CentralのBLE広告を有効にした状態で「右側BLE接続」を押し、デバイス選択画面でSO-SHOを選択してください。Web Bluetoothは公式ZMK Studioと同じGATTサービス（Service `00000000-0196-6107-c967-c5cfb1c2482a`、Characteristic `00000001-0196-6107-c967-c5cfb1c2482a`）を使用します。初回は「BLE接続」、許可後は「許可済みBLEに再接続」を使えます。Windowsでは既存のBluetooth HID接続中にキーボードが広告を停止することがあるため、Device Pickerに表示されない場合は一時的にPC側のSO-SHO接続を切断し、キーボードを広告状態にしてから再試行してください。ChromeのWeb Bluetooth実装やOSの制限によりBLE編集が利用できない場合は、右側USBへ切り替えてください。
+
+USBとBLEを同時に接続しないでください。接続後は、実機の読み取り完了を確認してから編集し、「保存」を押します。保存はRPC応答を受け取り、再読み取りの一致まで確認します。左右分割間の通信はファームウェア側で維持されます。
 
 キーマップ画面は `sosho.layout.json` / `sosho-layouts.dtsi` の実機配置に合わせ、左右各22キーの12列×4行で表示します。最下段は左右それぞれ外側2列・内側2列にキーを置き、中央の2列分の空きを実機どおりに表現します。左右のロータリーエンコーダーと、左トラックパッド/右トラックボールの位置も各モジュール内に表示します。
 
@@ -67,11 +71,9 @@ Webページの「カスタムファームウェアZIPを直接ダウンロー�
 
 参考実装: [Keyball keycodes](https://github.com/Yowkees/keyball/blob/main/qmk_firmware/keyboards/keyball/lib/keyball/keycodes.md)、[Keyball firmware implementation](https://github.com/Yowkees/keyball/blob/main/qmk_firmware/keyboards/keyball/lib/keyball/keyball.c)
 
-## 過去のBLE診断について
+## BLEの制約
 
-BLE検出のコードと拡張機能は過去の切り分け用として残していますが、USB専用の公開ページからは読み込みません。
-
-WindowsのBluetooth設定やWeb Bluetoothは、USB専用ページの編集経路には使用しません。診断拡張は過去の調査資料として残しています。
+BLE編集は公式ZMK Studio RPCのBLE transportを使います。マクロと実行時スリープはSO-SHO拡張RPCとして同じBLE GATT接続に載せます。PC側のBluetooth HID入力接続とWeb BluetoothのGATT接続は別の接続ですが、WindowsのBluetoothスタックやキーボードの広告状態によって同時利用できない場合があります。その場合はUSBで編集してください。
 
 ## RPCの自動テスト
 

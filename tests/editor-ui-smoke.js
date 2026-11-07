@@ -39,6 +39,7 @@ assert.match(css, /\.remap-palette-tab\[aria-selected=/);
 assert.match(css, /\.keyboard-frame \.bottom-row \.key:nth-child\(4\)/);
 assert.match(css, /\.connection-error-banner/);
 assert.match(css, /\.studio-language-picker/);
+assert.doesNotMatch(css, /#connect-ble,\s*#connect-ble-authorized\s*\{\s*display:\s*none/);
 assert.match(fs.readFileSync('sosho-rpc-ui.js', 'utf8'), /soshoConnectionError/);
 assert.match(fs.readFileSync('sosho-macro-transport.js', 'utf8'), /MAX_MACROS = 16/);
 assert.match(html, /USBまたはBLEのZMK Studio RPC/);
