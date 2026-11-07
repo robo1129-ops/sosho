@@ -453,9 +453,9 @@
     this.onStatus = typeof options.onStatus === 'function' ? options.onStatus : function () {};
     this.onDevice = typeof options.onDevice === 'function' ? options.onDevice : function () {};
     this.onLog = typeof options.onLog === 'function' ? options.onLog : function () {};
-    this._inFrame = false; this._escaped = false; this._frameBytes = []; this._pending = []; this._frameQueue = [];
+    this._inFrame = false; this._escaped = false; this._frameBytes = []; this._pending = []; this._frameQueue = []; this.lastStatus = '';
   }
-  FramedTransport.prototype._setStatus = function (text) { try { this.onStatus(text); } catch (error) {} };
+  FramedTransport.prototype._setStatus = function (text) { this.lastStatus = String(text || ''); try { this.onStatus(text); } catch (error) {} };
   FramedTransport.prototype._setDevice = function (text) { try { this.onDevice(text || '—'); } catch (error) {} };
   FramedTransport.prototype._setLog = function (text) { try { this.onLog(String(text || '')); } catch (error) {} };
   FramedTransport.prototype._consume = function (bytes) {

@@ -10,7 +10,8 @@ for (const group of ['BASIC', 'FUNCTIONS', 'LAYER', 'DEVICE', 'SPECIAL', 'ASCII'
 assert.match(html, /remap-palette-tabs/);
 assert.match(html, /remap-palette-search/);
 assert.match(html, /bottom-row/);
-assert.match(html, /<span class="status">USB<\/span>/);
+assert.match(html, /<span class="status">USB \/ BLE<\/span>/);
+assert.match(html, /キーマップを保存/);
 assert.match(html, /USBまたはBLE/);
 assert.match(html, /MO 3/);
 assert.match(html, /save-current-as-default/);
