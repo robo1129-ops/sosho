@@ -23,6 +23,9 @@
 
   function serialOpenFailureMessage(error) {
     var detail = error && error.message ? String(error.message) : String(error || 'unknown error');
+    if (/BootloaderMode|XIAO-BOOT|UF2|ブートローダー/i.test(detail)) {
+      return 'XIAO nRF52840がブートローダーモードです。通常のキーマップ編集はできないため、UF2を書き込んでから右側を通常モードで再接続してください。';
+    }
     if (/Failed to open serial port|already open|NetworkError|InvalidStateError|Access is denied|別のSO-SHOページ/i.test(detail)) {
       return 'USBシリアルポートを開けませんでした。別のSO-SHOタブ、ZMK Studio、シリアルモニターがCOMポートを使用中の可能性があります。先に切断してから「許可済みUSBに再接続」を押してください。';
     }
@@ -546,6 +549,15 @@
   ZmkSerialTransport.prototype._open = async function (port) {
     this.port = port;
     try { this.portInfo = typeof port.getInfo === 'function' ? port.getInfo() : null; } catch (error) { this.portInfo = null; }
+    // The XIAO UF2 bootloader exposes a serial-looking interface, but it does
+    // not implement ZMK Studio RPC.  Reject it before opening so the page does
+    // not report a misleading baud-rate or RPC timeout failure.
+    if (this.portInfo && this.portInfo.usbVendorId === 0x2886 && this.portInfo.usbProductId === 0x0064) {
+      this._setLog('XIAO-BOOTを検出。通常RPC接続は行わずUF2書き込みを案内');
+      var bootloaderError = new Error('XIAO-BOOT UF2 BootloaderMode');
+      bootloaderError.name = 'BootloaderMode';
+      throw bootloaderError;
+    }
     // Match the official ZMK Studio serial transport first.  Its reference
     // implementation opens the CDC/ACM port at 9600 baud; 12500 is retained
     // only as a compatibility fallback for earlier SO-SHO test images.

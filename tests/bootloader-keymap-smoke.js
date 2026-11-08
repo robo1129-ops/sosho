@@ -23,9 +23,12 @@ assert.ok(editor.includes('setDropTarget(key,id)'), 'the former reserved key mus
 assert.match(enhancements, /\['RESET', 'RESET'\]/);
 assert.match(enhancements, /\['BOOTLOADER', 'BOOTLOADER'\]/);
 
-// The default Layer 3 map exposes a safe left-side key while the momentary
-// Layer 3 key is held, so the user can enter UF2 mode without a PC-side RPC.
-assert.match(firmwareKeymap, /&bt BT_CLR &bootloader &trans/);
+// Bootloader remains available through the connected behavior registry, but
+// no factory key physically enters UF2 mode.  This prevents an accidental
+// Layer 3 key press from looking like a dead or failed firmware.
+assert.match(firmwareKeymap, /&bt BT_CLR &trans &trans &trans/);
+assert.ok(!firmwareKeymap.includes('&sosho_bootloader'), 'factory keymap must not bind a physical bootloader action');
+assert.ok(!firmwareKeymap.includes('&bootloader'), 'factory keymap must not bind a physical bootloader action');
 
 // The physical left bottom key second from the right is the Japanese
 // half-width/full-width key on tap and Layer 1 on hold.  Keep the firmware
