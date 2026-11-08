@@ -77,6 +77,16 @@
     de: { readCurrent: 'Aktuelles Layout laden', moduleLayout: 'Modullayout', moduleDescription: 'Linke und rechte Seite getrennt auswählen. Für ein leeres Dummy-Modul None wählen.', leftModule: 'Linkes Modul', rightModule: 'Rechtes Modul', none: 'None (Dummy)', trackball: 'Trackball', trackpad: 'Trackpad', encoderTitle: 'Drehencoder', encoderLeft: 'Gegen den Uhrzeigersinn', encoderRight: 'Im Uhrzeigersinn', encoderAssignment: 'Zuordnung', encoderRuntimeNote: 'Weise jeder Drehrichtung normale Tasten oder Geräteaktionen zu und speichere sie als JSON. Für die aktuelle Sensorbindung der Firmware ist ein Neubau erforderlich.', scrollUp: 'Vertikales Scrollen (auf)', scrollDown: 'Vertikales Scrollen (ab)', scrollLeft: 'Horizontales Scrollen (links)', scrollRight: 'Horizontales Scrollen (rechts)', encoderNone: 'Nicht zugewiesen' }
   };
 
+  var runtimeDeviceCopy = {
+    ja: { runtimeTitle: '現在値（Web設定）', runtimeNote: '上下ボタンでこのブラウザーに保存する調整値を変更できます。実機の動作は、割り当てたCPI・パッド倍率・スクロール量の増減キーで変更します。', cpiLabel: 'トラックボール CPI', padScaleLabel: 'トラックパッド移動量', scrollAmountLabel: 'スクロール量', decrease: '下げる', increase: '上げる' },
+    en: { runtimeTitle: 'Current values (Web profile)', runtimeNote: 'Use the buttons to save adjustment values in this browser. Device runtime changes use the assigned CPI, trackpad-scale and scroll-step actions.', cpiLabel: 'Trackball CPI', padScaleLabel: 'Trackpad movement', scrollAmountLabel: 'Scroll amount', decrease: 'Decrease', increase: 'Increase' },
+    'zh-CN': { runtimeTitle: '当前值（网页配置）', runtimeNote: '使用上下按钮保存本浏览器中的调节值。设备运行时请使用已分配的 CPI、触控板倍率和滚动步进操作。', cpiLabel: '轨迹球 CPI', padScaleLabel: '触控板移动量', scrollAmountLabel: '滚动量', decrease: '减少', increase: '增加' },
+    ko: { runtimeTitle: '현재 값(웹 프로필)', runtimeNote: '버튼으로 이 브라우저에 조정값을 저장합니다. 장치의 실행 중 변경은 할당된 CPI·트랙패드 배율·스크롤 단계 동작을 사용합니다.', cpiLabel: '트랙볼 CPI', padScaleLabel: '트랙패드 이동량', scrollAmountLabel: '스크롤 양', decrease: '감소', increase: '증가' },
+    th: { runtimeTitle: 'ค่าปัจจุบัน (โปรไฟล์เว็บ)', runtimeNote: 'ใช้ปุ่มเพื่อบันทึกค่าปรับในเบราว์เซอร์นี้ การเปลี่ยนค่าขณะใช้งานอุปกรณ์ใช้การทำงาน CPI, สเกลทัชแพด และขั้นการเลื่อนที่กำหนดไว้', cpiLabel: 'CPI แทร็กบอล', padScaleLabel: 'การเคลื่อนที่แทร็กแพด', scrollAmountLabel: 'ปริมาณการเลื่อน', decrease: 'ลดลง', increase: 'เพิ่มขึ้น' },
+    es: { runtimeTitle: 'Valores actuales (perfil web)', runtimeNote: 'Usa los botones para guardar valores de ajuste en este navegador. Los cambios en el dispositivo usan las acciones asignadas de CPI, escala del trackpad y paso de desplazamiento.', cpiLabel: 'CPI del trackball', padScaleLabel: 'Movimiento del trackpad', scrollAmountLabel: 'Cantidad de desplazamiento', decrease: 'Reducir', increase: 'Aumentar' },
+    de: { runtimeTitle: 'Aktuelle Werte (Webprofil)', runtimeNote: 'Mit den Tasten werden Anpassungswerte in diesem Browser gespeichert. Laufzeitänderungen am Gerät verwenden die zugewiesenen CPI-, Trackpad-Skalierungs- und Scrollschritt-Aktionen.', cpiLabel: 'Trackball-CPI', padScaleLabel: 'Trackpad-Bewegung', scrollAmountLabel: 'Scrollmenge', decrease: 'Verringern', increase: 'Erhöhen' }
+  };
+
   function storedLanguage() {
     try {
       var value = localStorage.getItem('sosho-language-v1') || 'ja';
@@ -139,7 +149,7 @@
 
   function applyLanguage(language) {
     language = Object.prototype.hasOwnProperty.call(languageCatalog, language) ? language : 'ja';
-    var copy = Object.assign({}, languageCatalog.ja, languageCatalog[language], transportCopy[language] || transportCopy.en, physicalCopy[language] || physicalCopy.en, deviceCopy[language] || deviceCopy.en);
+    var copy = Object.assign({}, languageCatalog.ja, languageCatalog[language], transportCopy[language] || transportCopy.en, physicalCopy[language] || physicalCopy.en, deviceCopy[language] || deviceCopy.en, runtimeDeviceCopy[language] || runtimeDeviceCopy.en);
     window.soshoCurrentCopy = copy;
     var verificationCopy = rpcVerificationCatalog[language] || rpcVerificationCatalog.ja;
     window.soshoRpcVerificationLabels = verificationCopy;
@@ -363,6 +373,7 @@
     setText('[data-scroll-card] p', copy.scrollDesc);
     setText('.device-setting-note', copy.deviceBuildNote || copy.deviceNote);
     setText('[data-scroll-scale-label]', copy.scrollScale);
+    if (typeof window.soshoRefreshDeviceRuntimeControls === 'function') window.soshoRefreshDeviceRuntimeControls(copy);
     if (typeof window.soshoRefreshPhysicalTitles === 'function') window.soshoRefreshPhysicalTitles(copy);
     var leftMarker = document.querySelector('#keyboard .half.left .device-marker');
     var rightMarker = document.querySelector('#keyboard .half.right .device-marker');
@@ -659,7 +670,7 @@
       encoderLeftCw: encoderValue(value.encoderLeftCw, 'scroll-right'),
       encoderRightCcw: encoderValue(value.encoderRightCcw, 'scroll-down'),
       encoderRightCw: encoderValue(value.encoderRightCw, 'scroll-up'),
-      trackballCpi: Math.max(200, Math.min(1200, Number(value.trackballCpi) || 200)),
+      trackballCpi: Math.max(200, Math.min(3200, Number(value.trackballCpi) || 200)),
       trackpadScale: Math.max(.5, Math.min(2, Number(value.trackpadScale) || 1)),
       autoMouseEnabled: value.autoMouseEnabled !== false,
       autoMouseLayer: Math.max(0, Math.min(3, Number.isInteger(Number(value.autoMouseLayer)) ? Number(value.autoMouseLayer) : 1)),
@@ -1307,10 +1318,19 @@
     var devicePanel = document.createElement('div');
     devicePanel.className = 'device-settings-panel';
     devicePanel.dataset.paletteCategory = 'device';
-    devicePanel.innerHTML = '<p class="device-setting-note">センサー配置、初期CPI、初期スクロール倍率、スリープ時間、オートマウス、エンコーダーのセンサーバインドは、キーマップRPCでは変更できないため、この画面から外しています。変更する場合は対応するファームウェアプロファイルを選んで書き換えてください。</p>';
+    devicePanel.innerHTML = '<p class="device-setting-note">実機へ保存できる項目と、ブラウザーで管理する調整値を分けて表示します。</p>';
     var deviceActions = document.createElement('section');
     deviceActions.className = 'device-settings-card device-settings-card-wide device-action-palette';
     deviceActions.innerHTML = '<h4>デバイスアクション</h4><p>マウスボタン、ホイール、CPI、スクロールモードをキーへ割り当てます。</p><div class="palette-grid" data-device-actions></div>';
+    var runtimeDeviceCard = document.createElement('section');
+    runtimeDeviceCard.className = 'device-settings-card device-settings-card-wide device-runtime-settings';
+    runtimeDeviceCard.innerHTML = '<h4 data-runtime-device-title></h4><p data-runtime-device-note></p>' +
+      '<div class="device-runtime-grid">' +
+        '<div class="device-runtime-row"><span data-runtime-label="trackballCpi"></span><strong data-runtime-value="trackballCpi"></strong><button type="button" data-device-runtime-control="trackballCpi" data-delta="-200" aria-label="Decrease">−</button><button type="button" data-device-runtime-control="trackballCpi" data-delta="200" aria-label="Increase">＋</button></div>' +
+        '<div class="device-runtime-row"><span data-runtime-label="trackpadScale"></span><strong data-runtime-value="trackpadScale"></strong><button type="button" data-device-runtime-control="trackpadScale" data-delta="-0.1" aria-label="Decrease">−</button><button type="button" data-device-runtime-control="trackpadScale" data-delta="0.1" aria-label="Increase">＋</button></div>' +
+        '<div class="device-runtime-row"><span data-runtime-label="scrollScalePercent"></span><strong data-runtime-value="scrollScalePercent"></strong><button type="button" data-device-runtime-control="scrollScalePercent" data-delta="-5" aria-label="Decrease">−</button><button type="button" data-device-runtime-control="scrollScalePercent" data-delta="5" aria-label="Increase">＋</button></div>' +
+      '</div>';
+    devicePanel.insertBefore(runtimeDeviceCard, devicePanel.firstChild);
     devicePanel.insertBefore(deviceActions, devicePanel.firstChild);
     shellDeviceActions.forEach(function (name) { appendActionChip(deviceActions.querySelector('[data-device-actions]'), name, name, 'device-chip'); });
     palette.appendChild(devicePanel);
@@ -1407,11 +1427,60 @@
       if (typeof window.soshoRefreshPhysicalTitles === 'function') window.soshoRefreshPhysicalTitles(window.soshoCurrentCopy);
       if (typeof window.soshoRefreshDeviceMarkers === 'function') window.soshoRefreshDeviceMarkers(window.soshoCurrentCopy);
     }
+
+    function renderDeviceRuntimeControls(copy) {
+      copy = copy || window.soshoCurrentCopy || {};
+      var labels = {
+        trackballCpi: copy.cpiLabel || 'Trackball CPI',
+        trackpadScale: copy.padScaleLabel || 'Trackpad movement',
+        scrollScalePercent: copy.scrollAmountLabel || 'Scroll amount'
+      };
+      var title = runtimeDeviceCard.querySelector('[data-runtime-device-title]');
+      var note = runtimeDeviceCard.querySelector('[data-runtime-device-note]');
+      if (title) title.textContent = copy.runtimeTitle || 'Current values (Web profile)';
+      if (note) note.textContent = copy.runtimeNote || '';
+      Object.keys(labels).forEach(function (key) {
+        var label = runtimeDeviceCard.querySelector('[data-runtime-label="' + key + '"]');
+        var value = runtimeDeviceCard.querySelector('[data-runtime-value="' + key + '"]');
+        if (label) label.textContent = labels[key];
+        if (!value) return;
+        if (key === 'trackballCpi') value.textContent = String(deviceSettings.trackballCpi) + ' CPI';
+        else if (key === 'trackpadScale') value.textContent = String(Math.round(deviceSettings.trackpadScale * 100)) + '%';
+        else value.textContent = String(deviceSettings.scrollScalePercent) + '%';
+      });
+      runtimeDeviceCard.querySelectorAll('[data-device-runtime-control]').forEach(function (button) {
+        var decrease = Number(button.dataset.delta) < 0;
+        button.setAttribute('aria-label', decrease ? (copy.decrease || 'Decrease') : (copy.increase || 'Increase'));
+        button.title = decrease ? (copy.decrease || 'Decrease') : (copy.increase || 'Increase');
+      });
+    }
+
+    function adjustDeviceSetting(key, delta) {
+      if (key === 'trackballCpi') deviceSettings.trackballCpi += delta;
+      else if (key === 'trackpadScale') deviceSettings.trackpadScale += delta;
+      else if (key === 'scrollScalePercent') deviceSettings.scrollScalePercent += delta;
+      saveDeviceSettings();
+      renderDeviceRuntimeControls(window.soshoCurrentCopy);
+    }
+
+    runtimeDeviceCard.addEventListener('click', function (event) {
+      var button = event.target.closest('[data-device-runtime-control]');
+      if (!button) return;
+      event.preventDefault();
+      adjustDeviceSetting(button.dataset.deviceRuntimeControl, Number(button.dataset.delta));
+    });
+    window.soshoRefreshDeviceRuntimeControls = renderDeviceRuntimeControls;
     window.soshoDeviceSettings = {
       get: function () { return Object.assign({}, deviceSettings); },
+      set: function (patch) {
+        deviceSettings = validDeviceSettings(Object.assign({}, deviceSettings, patch || {}));
+        saveDeviceSettings();
+        renderDeviceRuntimeControls(window.soshoCurrentCopy);
+      },
       writableByStudioRpc: false
     };
     saveDeviceSettings();
+    renderDeviceRuntimeControls(window.soshoCurrentCopy);
     showPaletteCategory('basic');
   }
 

@@ -132,6 +132,12 @@ assert.match(enhancements, /actionPanel\.replaceChildren\(\)/);
 assert.match(enhancements, /\['半角\/全角', 'LANG5'\]/);
 assert.match(enhancements, /function choosePaletteAction\(chip, action\)/);
 assert.match(enhancements, /window\.soshoAssignAction\(action\)/);
+assert.match(enhancements, /data-device-runtime-control/);
+assert.match(enhancements, /trackballCpi/);
+assert.match(enhancements, /trackpadScale/);
+assert.match(enhancements, /scrollScalePercent/);
+assert.match(enhancements, /soshoRefreshDeviceRuntimeControls/);
+assert.match(css, /\.device-runtime-settings/);
 assert.match(fs.readFileSync('sosho-rpc-ui.js', 'utf8'), /japaneseHalfFullwidthCode/);
 assert.match(fs.readFileSync('sosho-rpc-ui.js', 'utf8'), /return 0x94/);
 

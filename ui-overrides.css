@@ -1108,6 +1108,67 @@
   font-size: .74rem;
 }
 
+.device-runtime-settings {
+  display: grid;
+  gap: 8px;
+}
+
+.device-runtime-settings h4,
+.device-runtime-settings p {
+  grid-column: 1 / -1;
+}
+
+.device-runtime-grid {
+  display: grid;
+  gap: 7px;
+}
+
+.device-runtime-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(72px, auto) 34px 34px;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+}
+
+.device-runtime-row > span {
+  color: var(--text);
+  font-size: .78rem;
+  font-weight: 650;
+}
+
+.device-runtime-row > strong {
+  color: #9ecbff;
+  font-size: .8rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.device-runtime-row > button {
+  width: 34px;
+  height: 32px;
+  border: 1px solid #48515c;
+  border-radius: 7px;
+  background: #21262d;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.device-runtime-row > button:hover,
+.device-runtime-row > button:focus-visible {
+  border-color: var(--accent);
+  background: #1f6feb33;
+}
+
+@media (max-width: 520px) {
+  .device-runtime-row {
+    grid-template-columns: minmax(0, 1fr) 62px 32px 32px;
+    gap: 5px;
+  }
+}
+
 .macro-drag-palette {
   margin-top: 12px;
   padding: 12px;
