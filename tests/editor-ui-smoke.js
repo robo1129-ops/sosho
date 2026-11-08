@@ -46,6 +46,8 @@ assert.match(fs.readFileSync('sosho-macro-transport.js', 'utf8'), /MAX_MACROS = 
 assert.match(html, /USBまたはBLEのZMK Studio RPC/);
 assert.match(html, /ZmkBleTransport/);
 assert.match(html, /sosho-macro-transport/);
+assert.match(html, /sosho-windows-ble-bridge-setup\.exe/);
+assert.doesNotMatch(html, /download="install-windows\.ps1"/);
 assert.doesNotMatch(fs.readFileSync('ui-enhancements.js', 'utf8'), /sleepMode|sleepMinutes|data-sleep-/);
 assert.match(fs.readFileSync('ui-enhancements.js', 'utf8'), /sleep-\*|sleep-5m|sleep-off/);
 assert.match(html, /現在のレイアウトを読み込む/);

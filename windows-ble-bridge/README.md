@@ -4,16 +4,19 @@ Windows版ChromeのWeb Bluetooth制約を回避するためのローカル接続
 
 ## 初回セットアップ（推奨）
 
-公開ページの「Windows BLEブリッジをインストール」リンクを保存し、PowerShellで実行してください。管理者権限は不要です。
+公開ページの「Windows BLEブリッジをセットアップ」から `sosho-windows-ble-bridge-setup.exe` をダウンロードして実行してください。ユーザー用の `%LOCALAPPDATA%` とスタートアップフォルダーだけを使うため、管理者権限は不要です。Python、仮想環境、pip、PowerShellの実行は必要ありません。
 
-```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-& "$env:USERPROFILE\Downloads\install-windows.ps1"
-```
+セットアップは次を自動で行います。
 
-インストーラーはPython 3.10以降（未導入ならwinget経由）、専用仮想環境、Bleak依存パッケージを設定し、WindowsのスタートアップへSO-SHO BLEブリッジを登録します。インストール後はWindows起動時にバックグラウンドで起動するため、毎回手動でブリッジを立ち上げる必要はありません。
+- BLEブリッジ本体を `%LOCALAPPDATA%\SO-SHO\windows-ble-bridge` に配置
+- Windowsログオン時に起動するショートカットをユーザー用スタートアップへ登録
+- ブリッジをバックグラウンドで起動
 
-手動でリポジトリから実行する場合は、次の従来手順も利用できます。
+インストール後、SO-SHO Webアプリで「Windows BLE接続（広告不要）」を押してください。
+
+### 手動セットアップ（開発者向け）
+
+Python環境を自分で管理する場合だけ、次の従来手順を利用できます。
 
 ```powershell
 Set-Location $env:USERPROFILE
