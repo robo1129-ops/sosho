@@ -17,6 +17,8 @@ assert.ok(!rpcUi.includes('右下のブートローダーキーはWebアプリ�
 const editor = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 assert.ok(!editor.includes('reservedBootloader'), 'renderer must not mark a physical key as reserved');
 assert.ok(editor.includes('setDropTarget(key,id)'), 'the former reserved key must use the normal drop path');
+assert.ok(!editor.includes("left:['Studio','BT0','BT1','BT2','BT3','BT4','□','BT CLR ALL','BT CLR','Bootloader'"), 'factory editor layout must not bind Bootloader to a physical key');
+assert.match(editor, /ブートローダーは通常キーへ固定せず/);
 
 // Keep the action visible in the enhanced palette; it is now safe to save
 // when the connected firmware advertises the built-in behavior.
