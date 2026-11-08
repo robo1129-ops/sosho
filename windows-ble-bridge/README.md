@@ -1,10 +1,10 @@
 # SO-SHO Windows BLE bridge
 
-Windows版ChromeのWeb Bluetooth制約を回避するためのローカル接続ブリッジです。Chromeの公開ページは `ws://127.0.0.1:8765` に接続し、このプロセスがWindows BLE GATTでSO-SHOへ接続します。ZMK Studioの公式Service/Characteristic UUIDとフレーミングをそのまま中継します。
+SO-SHO WebアプリとWindowsのBluetooth接続を仲介する補助アプリです。通常のChromeのBLE一覧にSO-SHOが表示されない場合でも、ペアリング済みのSO-SHOを使ってWebアプリから接続できます。
 
 ## 初回セットアップ（推奨）
 
-公開ページの「Windows BLEブリッジをセットアップ」から `sosho-windows-ble-bridge-setup.exe` をダウンロードして実行してください。ユーザー用の `%LOCALAPPDATA%` とスタートアップフォルダーだけを使うため、管理者権限は不要です。Python、仮想環境、pip、PowerShellの実行は必要ありません。
+公開ページの「Windows BLEブリッジをセットアップ」から `sosho-windows-ble-bridge-setup.exe` をダウンロードして実行してください。ユーザー用フォルダーだけを使うため、管理者権限は不要です。Python、仮想環境、pip、PowerShellの実行は必要ありません。
 
 セットアップは次を自動で行います。
 
@@ -12,7 +12,7 @@ Windows版ChromeのWeb Bluetooth制約を回避するためのローカル接続
 - Windowsログオン時に起動するショートカットをユーザー用スタートアップへ登録
 - ブリッジをバックグラウンドで起動
 
-インストール後、SO-SHO Webアプリで「Windows BLE接続（広告不要）」を押してください。
+インストール後、SO-SHO Webアプリで「Windows BLE接続（広告不要）」を押してください。セットアップ完了後は、通常は手動で補助アプリを起動する必要はありません。
 
 ### 手動セットアップ（開発者向け）
 
@@ -30,12 +30,12 @@ Python 3.10以降とWindowsのBluetooth LEが必要です。すでに `sosho` �
 
 ## 起動
 
-`start-windows.ps1` を実行したまま、ChromeでSO-SHOページを開き、`Windows BLE接続（広告不要）` を押します。WindowsがHID接続中で広告を隠している場合でも、先にWindowsのペアリング済みデバイス情報からSO-SHOのアドレスを取得してWinRTへ直接GATT接続します。したがって、通常はWindowsのBluetooth接続を切断する必要はありません。Chromeの通常のWeb Bluetooth一覧にSO-SHOが出ない場合も、このボタンが正しい接続経路です。
+セットアップを実行した後、ChromeでSO-SHOページを開き、`Windows BLE接続（広告不要）` を押します。WindowsがHID接続中で広告を隠している場合でも、先にWindowsのBluetooth接続を切断する必要はありません。Chromeの通常のWeb Bluetooth一覧にSO-SHOが出ない場合も、このボタンが正しい接続経路です。
 
 キーマップの書き込みは右側CentralのUSB/COMを優先してください。Windows BLEブリッジはBLE接続を維持したままの編集・読み取り用に残しています。
 
-ブリッジは `127.0.0.1` のみに待ち受け、公開ページOrigin以外からの接続を拒否します。終了はPowerShellで `Ctrl+C` です。
+ブリッジは外部公開せず、SO-SHO Webアプリからの接続だけを受け付けます。終了や再インストールが必要な場合は、導入先に作成されるアンインストール用スクリプトを使用してください。
 
 ## 重要な制約
 
-これはWindows ChromeへBLE APIを追加するものではありません。Windows側のWinRT BLE GATTをローカルプロセスで利用し、Chromeとはlocalhost WebSocketで接続します。Windowsのペアリング情報から公式ZMK Studioサービスを持つSO-SHOを直接解決できるため、広告スキャンに見えないHID接続中でも接続できます。ペアリング情報にも見つからない場合だけ、WindowsのBluetooth設定でキーボード接続を一度切断し、SO-SHOを広告状態にしてから再試行してください。
+これはWindowsのBluetooth接続を使って、SO-SHO Webアプリから公式ZMK Studioサービスへ接続するための補助アプリです。Windowsのペアリング情報からSO-SHOを解決するため、広告スキャンに表示されない場合でも接続できます。ペアリング情報にも見つからない場合だけ、WindowsのBluetooth設定でキーボード接続を一度切断し、SO-SHOを広告状態にしてから再試行してください。
