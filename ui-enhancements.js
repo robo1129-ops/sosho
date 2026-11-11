@@ -384,12 +384,17 @@
     setFirstText('.macro-latency', copy.macroLatency || 'Delay per added step (ms)');
     setText('.macro-drop-zone', copy.macroDropZone || 'Drag a key here to add it');
     setText('.macro-builder > small', copy.macroStepHelp || 'The number at the end of each row is that step delay.');
-    setText('.palette-group:nth-of-type(1) summary', copy.groupBasic);
-    setText('.palette-group:nth-of-type(2) summary', copy.groupJis);
-    setText('.palette-group:nth-of-type(3) summary', copy.groupLayer);
-    setText('.palette-group:nth-of-type(4) summary', copy.groupSpecial);
-    setText('.palette-group:nth-of-type(5) summary', copy.groupAscii);
-    setText('.palette-group:nth-of-type(6) summary', copy.groupTapDance);
+    // Use the explicit category markers instead of nth-of-type.  The media
+    // group and the function group are inserted dynamically, so positional
+    // selectors would rename the wrong sections after a language change.
+    setText('[data-palette-category="basic"] summary', copy.groupBasic);
+    setText('[data-palette-category="jis"] summary', copy.groupJis);
+    setText('[data-palette-category="layer"] summary', copy.groupLayer);
+    setText('[data-palette-category="special"] summary', copy.groupSpecial);
+    setText('[data-palette-category="ascii"] summary', copy.groupAscii);
+    setText('[data-palette-category="tap-dance"] summary', copy.groupTapDance);
+    var mediaGroupNames = { ja: 'メディア / オーディオ', en: 'Media / audio', 'zh-CN': '媒体 / 音频', ko: '미디어 / 오디오', th: 'สื่อ / เสียง', es: 'Medios / audio', de: 'Medien / Audio' };
+    setText('[data-palette-category="media"] summary', mediaGroupNames[language] || 'MEDIA');
     var footer = document.querySelector('.studio-footer');
     if (footer) {
       var footerLinks = footer.querySelectorAll('a');
@@ -1110,6 +1115,7 @@
     additions.className = 'palette-additions';
     additions.innerHTML = '<details class="palette-group" open><summary>通常キー <span>A / ENTER / 数字 / 記号</span></summary><div class="palette-grid" data-basic-palette></div><p class="palette-help">キーをつかんで、上の実機配列へドラッグ＆ドロップしてください。</p></details>' +
       '<details class="palette-group" open><summary>日本語 / JIS <span>かな・英数・変換</span></summary><div class="palette-grid" data-jis-palette></div><p class="palette-help">Windowsの日本語入力で使うLANG/INTキーです。</p></details>' +
+      '<details class="palette-group" open><summary>メディア / オーディオ <span>音量・再生・ミュート</span></summary><div class="palette-grid" data-media-palette></div><p class="palette-help">標準Consumer HIDのメディア操作です。マイクは「マイクキャプチャ切替」として送信します。</p></details>' +
       '<details class="palette-group" open><summary>レイヤー <span>TO / MO / TG / TT / OSL</span></summary><div class="palette-grid" data-layer-palette></div><p class="palette-help">レイヤー操作をキーへクリックまたはドラッグで割り当てます。</p></details>' +
       '<details class="palette-group" open><summary>特殊キー <span>RESET / BOOT / SCROLL</span></summary><div class="palette-grid" data-special-palette></div><p class="palette-help">デバイス操作や押下中スクロールを割り当てます。</p></details>' +
       '<details class="palette-group" open><summary>ASCII <span>文字コード</span></summary><div class="palette-grid" data-ascii-palette></div><p class="palette-help">ASCII文字をキーへ割り当てます。</p></details>' +
@@ -1170,6 +1176,24 @@
       jisPalette.appendChild(chip);
     });
 
+    var mediaPalette = additions.querySelector('[data-media-palette]');
+    var mediaActions = [
+      ['音量＋', 'MEDIA_VOLUME_UP'],
+      ['音量−', 'MEDIA_VOLUME_DOWN'],
+      ['スピーカー/音声ミュート', 'MEDIA_MUTE'],
+      ['再生/一時停止', 'MEDIA_PLAY_PAUSE'],
+      ['次の曲', 'MEDIA_NEXT'],
+      ['前の曲', 'MEDIA_PREV'],
+      ['停止', 'MEDIA_STOP'],
+      ['再生', 'MEDIA_PLAY'],
+      ['一時停止', 'MEDIA_PAUSE'],
+      ['早送り', 'MEDIA_FAST_FORWARD'],
+      ['巻き戻し', 'MEDIA_REWIND'],
+      ['音声アシスタント', 'MEDIA_VOICE'],
+      ['マイクキャプチャ切替', 'MEDIA_MIC_CAPTURE']
+    ];
+    mediaActions.forEach(function (entry) { appendActionChip(mediaPalette, entry[0], entry[1], 'media-chip'); });
+
     function appendActionChip(container, label, action, className) {
       var chip = document.createElement('button');
       chip.type = 'button';
@@ -1214,7 +1238,7 @@
       appendActionChip(asciiPalette, character, character, 'ascii-chip');
     });
 
-    var optionKeys = ['未設定'].concat(basicKeys).concat(['Ctrl', 'Shift', 'Alt', 'GUI', 'MO 1', 'MO 2', 'BT0', 'BT1', 'BT2', 'BT3', 'BT4']);
+    var optionKeys = ['未設定'].concat(basicKeys).concat(mediaActions.map(function (entry) { return entry[1]; })).concat(['Ctrl', 'Shift', 'Alt', 'GUI', 'MO 1', 'MO 2', 'BT0', 'BT1', 'BT2', 'BT3', 'BT4']);
     var tapDanceState = [];
     try {
       tapDanceState = JSON.parse(localStorage.getItem('sosho-tap-dance-v1') || '[]') || [];
@@ -1293,12 +1317,14 @@
 
     var basicDetail = additions.querySelector('[data-basic-palette]').closest('.palette-group');
     var jisDetail = additions.querySelector('[data-jis-palette]').closest('.palette-group');
+    var mediaDetail = additions.querySelector('[data-media-palette]').closest('.palette-group');
     var layerDetail = additions.querySelector('[data-layer-palette]').closest('.palette-group');
     var specialDetail = additions.querySelector('[data-special-palette]').closest('.palette-group');
     var asciiDetail = additions.querySelector('[data-ascii-palette]').closest('.palette-group');
     var tapDanceDetail = additions.querySelector('[data-tap-dance-list]').closest('.palette-group');
     basicDetail.dataset.paletteCategory = 'basic';
     jisDetail.dataset.paletteCategory = 'jis';
+    mediaDetail.dataset.paletteCategory = 'media';
     layerDetail.dataset.paletteCategory = 'layer';
     specialDetail.dataset.paletteCategory = 'special';
     asciiDetail.dataset.paletteCategory = 'ascii';
@@ -1321,7 +1347,7 @@
     devicePanel.innerHTML = '<p class="device-setting-note">実機へ保存できる項目と、ブラウザーで管理する調整値を分けて表示します。</p>';
     var deviceActions = document.createElement('section');
     deviceActions.className = 'device-settings-card device-settings-card-wide device-action-palette';
-    deviceActions.innerHTML = '<h4>デバイスアクション</h4><p>マウスボタン、ホイール、CPI、スクロールモードをキーへ割り当てます。</p><div class="palette-grid" data-device-actions></div>';
+    deviceActions.innerHTML = '<h4>デバイスアクション</h4><p>マウスボタン、ホイール、CPI、スクロールモードをキーへ割り当てます。音量・再生・ミュートはMEDIAタブから選択します。</p><div class="palette-grid" data-device-actions></div>';
     var runtimeDeviceCard = document.createElement('section');
     runtimeDeviceCard.className = 'device-settings-card device-settings-card-wide device-runtime-settings';
     runtimeDeviceCard.innerHTML = '<h4 data-runtime-device-title></h4><p data-runtime-device-note></p>' +
@@ -1342,6 +1368,7 @@
       ['functions', 'FUNCTIONS'],
       ['layer', 'LAYER'],
       ['device', 'DEVICE'],
+      ['media', 'MEDIA'],
       ['special', 'SPECIAL'],
       ['ascii', 'ASCII'],
       ['jis', '日本語/JIS'],
@@ -1370,7 +1397,7 @@
         // Search must be global.  Keeping the other category panels hidden
         // made searches such as 半角 appear empty while the matching JIS
         // action was present in the DOM.
-        [basicDetail, jisDetail, functionsDetail, layerDetail, specialDetail, asciiDetail, tapDanceDetail, devicePanel].forEach(function (panel) {
+        [basicDetail, jisDetail, mediaDetail, functionsDetail, layerDetail, specialDetail, asciiDetail, tapDanceDetail, devicePanel].forEach(function (panel) {
           panel.style.display = '';
         });
         tabBar.querySelectorAll('[data-palette-tab]').forEach(function (tab) {
@@ -1388,7 +1415,7 @@
 
     function showPaletteCategory(category) {
       palette.dataset.activeCategory = category;
-      [basicDetail, jisDetail, functionsDetail, layerDetail, specialDetail, asciiDetail, tapDanceDetail, devicePanel].forEach(function (panel) {
+      [basicDetail, jisDetail, mediaDetail, functionsDetail, layerDetail, specialDetail, asciiDetail, tapDanceDetail, devicePanel].forEach(function (panel) {
         panel.style.display = panel.dataset.paletteCategory === category ? '' : 'none';
       });
       tabBar.querySelectorAll('[data-palette-tab]').forEach(function (tab) {

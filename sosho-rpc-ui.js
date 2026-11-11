@@ -139,11 +139,80 @@
     var valid = modifiers.length === parts.length - 1 && !!parts[parts.length - 1];
     return { base: parts[parts.length - 1], modifiers: modifiers, mask: mask, valid: valid };
   }
+  // USB HID Consumer Control usages are encoded by ZMK as page 0x0C plus
+  // the usage id.  Keep the names in one table so the palette, drag/drop,
+  // hold-tap parameters, and read-back all use the same values.
+  var consumerUsageNames = {
+    0xe0: '音量',
+    0xe2: 'スピーカー/音声ミュート',
+    0xe9: '音量＋',
+    0xea: '音量−',
+    0xb0: '再生',
+    0xb1: '一時停止',
+    0xb2: '録音',
+    0xb3: '早送り',
+    0xb4: '巻き戻し',
+    0xb5: '次の曲',
+    0xb6: '前の曲',
+    0xb7: '停止',
+    0xb8: '取り出し',
+    0xcd: '再生/一時停止',
+    0xcf: '音声アシスタント',
+    0xd5: 'マイクキャプチャ切替'
+  };
+  function consumerUsageForLabel(value) {
+    var raw = String(value || '').trim();
+    if (!raw) return null;
+    var compact = raw.toUpperCase().replace(/[\s_\-\/／＋+()（）]/g, '');
+    var aliases = {
+      MEDIA_VOLUME: 0xe0, VOLUME: 0xe0,
+      MEDIA_VOLUME_UP: 0xe9, VOLUME_UP: 0xe9, VOL_UP: 0xe9, CVOLUP: 0xe9,
+      MEDIA_VOLUME_DOWN: 0xea, VOLUME_DOWN: 0xea, VOL_DN: 0xea, VOLDN: 0xea,
+      MEDIA_MUTE: 0xe2, MUTE: 0xe2, CMUTE: 0xe2,
+      MEDIA_PLAY: 0xb0, PLAY: 0xb0, CPLAY: 0xb0,
+      MEDIA_PAUSE: 0xb1, PAUSE: 0xb1, CPAUSE: 0xb1,
+      MEDIA_RECORD: 0xb2, RECORD: 0xb2, CRECORD: 0xb2,
+      MEDIA_FAST_FORWARD: 0xb3, FAST_FORWARD: 0xb3, FASTFORWARD: 0xb3, CFASTFORWARD: 0xb3,
+      MEDIA_REWIND: 0xb4, REWIND: 0xb4, CREWIND: 0xb4,
+      MEDIA_NEXT: 0xb5, NEXT: 0xb5, CNEXT: 0xb5, SCANNEXT: 0xb5,
+      MEDIA_PREV: 0xb6, MEDIA_PREVIOUS: 0xb6, PREV: 0xb6, PREVIOUS: 0xb6, CPREV: 0xb6, CPREVIOUS: 0xb6,
+      MEDIA_STOP: 0xb7, STOP: 0xb7, C_STOP: 0xb7, CSTOP: 0xb7,
+      MEDIA_EJECT: 0xb8, EJECT: 0xb8, CEJECT: 0xb8,
+      MEDIA_PLAY_PAUSE: 0xcd, PLAY_PAUSE: 0xcd, PLAYPAUSE: 0xcd, CPP: 0xcd, CPLAYPAUSE: 0xcd,
+      MEDIA_VOICE: 0xcf, VOICE: 0xcf, VOICE_COMMAND: 0xcf, VOICECOMMAND: 0xcf, CVOICECOMMAND: 0xcf,
+      MEDIA_MIC_CAPTURE: 0xd5, MIC_CAPTURE: 0xd5, MIC_TOGGLE: 0xd5, MICROPHONE: 0xd5,
+      MICCAPTURE: 0xd5, CMICCAPTURE: 0xd5
+    };
+    var japaneseAliases = {
+      '音量': 0xe0, '音量＋': 0xe9, '音量アップ': 0xe9, '音量−': 0xea, '音量ダウン': 0xea,
+      'ミュート': 0xe2, 'スピーカーミュート': 0xe2, 'スピーカー/音声ミュート': 0xe2, 'スピーカー音声ミュート': 0xe2,
+      '再生': 0xb0, '一時停止': 0xb1, '再生一時停止': 0xcd, '録音': 0xb2,
+      '早送り': 0xb3, '巻き戻し': 0xb4, '次の曲': 0xb5, '前の曲': 0xb6,
+      '停止': 0xb7, '取り出し': 0xb8, '音声アシスタント': 0xcf,
+      'マイクキャプチャ切替': 0xd5, 'マイクミュートキャプチャ切替': 0xd5
+    };
+    var aliasCode = aliases[compact];
+    if (aliasCode === undefined) Object.keys(aliases).some(function (name) {
+      if (name.replace(/[\s_\-\/／＋+()（）]/g, '') !== compact) return false;
+      aliasCode = aliases[name];
+      return true;
+    });
+    if (aliasCode !== undefined) return (0x0c << 16) | aliasCode;
+    if (Object.prototype.hasOwnProperty.call(japaneseAliases, raw)) return (0x0c << 16) | japaneseAliases[raw];
+    var direct = /^C_?([0-9A-F]{2,3})$/i.exec(raw);
+    if (direct) {
+      var numeric = parseInt(direct[1], 16);
+      if (Object.prototype.hasOwnProperty.call(consumerUsageNames, numeric)) return (0x0c << 16) | numeric;
+    }
+    return null;
+  }
   function hidUsageLabel(value) {
     var number = Number(value);
     if (!Number.isFinite(number)) return '';
     var usage = number >>> 0;
-    if (((usage >>> 16) & 0xff) !== 0x07) return '';
+    var page = (usage >>> 16) & 0xff;
+    if (page === 0x0c) return consumerUsageNames[usage & 0xffff] || 'Consumer 0x' + (usage & 0xffff).toString(16).toUpperCase();
+    if (page !== 0x07) return '';
     var modifierMask = usage >>> 24;
     var code = usage & 0xffff;
     var modifierText = [];
@@ -273,6 +342,8 @@
     var rawLabel = String(value || '').trim();
     var modified = parseModifiedLabel(rawLabel);
     var baseLabel = modified.valid ? modified.base : rawLabel;
+    var consumerUsage = consumerUsageForLabel(baseLabel);
+    if (consumerUsage !== null) return consumerUsage;
     var asciiLabel = /^ASCII_(.)$/u.exec(baseLabel);
     if (asciiLabel) {
       baseLabel = asciiLabel[1];
@@ -355,6 +426,7 @@
     parse: parseModifiedLabel,
     label: hidUsageLabel,
     keyboardUsage: keyboardUsageForHoldLabel,
+    consumerUsage: consumerUsageForLabel,
     canonicalLabel: canonicalKeyLabel
   };
   global.soshoCanonicalKeyLabel = canonicalKeyLabel;
@@ -889,7 +961,8 @@
       });
     }
     var wantedNames = keyNameAliases(label);
-    var desiredUsage = keyboardUsageForLabel(label);
+    var desiredConsumerUsage = consumerUsageForLabel(label);
+    var desiredUsage = desiredConsumerUsage !== null ? desiredConsumerUsage : keyboardUsageForLabel(label);
     function isWantedConstant(value) {
       var name = normalizeKeyName(value && value.name);
       if (wantedNames.indexOf(name) >= 0) return true;
@@ -912,7 +985,7 @@
       var detail = behaviorById[id];
       (detail.metadata || []).some(function (set) {
         return (set.param1 || []).some(function (value) {
-          if (value.type === 'constant' && desiredUsage !== null && (desiredUsage >>> 24) === 0 && Number(value.constant) === (desiredUsage & 0xffff)) { match = { behaviorId: detail.id, param1: value.constant, param2: 0 }; return true; }
+          if (value.type === 'constant' && desiredConsumerUsage === null && desiredUsage !== null && (desiredUsage >>> 24) === 0 && Number(value.constant) === (desiredUsage & 0xffff)) { match = { behaviorId: detail.id, param1: value.constant, param2: 0 }; return true; }
           if (value.type === 'constant' && isWantedConstant(value)) { match = { behaviorId: detail.id, param1: value.constant, param2: 0 }; return true; }
           if (value.type === 'hid_usage' && desiredUsage !== null) { match = { behaviorId: detail.id, param1: desiredUsage, param2: 0 }; return true; }
           return false;

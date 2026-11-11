@@ -56,6 +56,22 @@ for (const modifier of ['LCTRL', 'RCTRL', 'LSHIFT', 'RSHIFT', 'LALT', 'RALT', 'L
   if (!usage || (usage & 0xffff) !== 0x38) throw new Error(`${modifier}+/ lost the slash usage`);
 }
 
+for (const [label, code] of [
+  ['MEDIA_VOLUME_UP', 0xe9], ['MEDIA_VOLUME_DOWN', 0xea], ['MEDIA_MUTE', 0xe2],
+  ['MEDIA_PLAY_PAUSE', 0xcd], ['MEDIA_NEXT', 0xb5], ['MEDIA_PREV', 0xb6],
+  ['MEDIA_STOP', 0xb7], ['MEDIA_PLAY', 0xb0], ['MEDIA_PAUSE', 0xb1],
+  ['MEDIA_FAST_FORWARD', 0xb3], ['MEDIA_REWIND', 0xb4],
+  ['MEDIA_VOICE', 0xcf], ['MEDIA_MIC_CAPTURE', 0xd5]
+]) {
+  const usage = diagnostics.consumerUsage(label);
+  if (usage !== ((0x0c << 16) | code)) throw new Error(`${label} resolved to the wrong Consumer HID usage`);
+  if (!diagnostics.label(usage)) throw new Error(`${label} did not produce a readable Consumer HID label`);
+}
+if (diagnostics.consumerUsage('音量＋') !== ((0x0c << 16) | 0xe9)) throw new Error('Japanese volume label did not resolve');
+if (diagnostics.consumerUsage('スピーカー/音声ミュート') !== ((0x0c << 16) | 0xe2)) throw new Error('Japanese mute label did not resolve');
+if (diagnostics.consumerUsage('マイクキャプチャ切替') !== ((0x0c << 16) | 0xd5)) throw new Error('Japanese microphone label did not resolve');
+if (diagnostics.keyboardUsage('MEDIA_VOLUME_UP') !== ((0x0c << 16) | 0xe9)) throw new Error('Consumer usage was not accepted in hold-tap parameters');
+
 if (!/canonicalUiAction\(select\.value\)/.test(indexSource) || !/canonicalUiAction\(d\.slice\(7\)\)/.test(indexSource) || !/soshoAssignAction=function\(name\).*canonicalUiAction/.test(indexSource)) {
   throw new Error('normal, list, or layout drag paths do not share canonical labels');
 }
@@ -64,5 +80,8 @@ if (!/data-key-popover-tap/.test(indexSource) || !/data-key-popover-hold/.test(i
   throw new Error('tap/hold controls are not separated');
 }
 if (!/tapDanceRequest/.test(rpcSource) || !/behaviorById/.test(rpcSource)) throw new Error('tap dance is not resolved against advertised behavior metadata');
+if (!/data-media-palette/.test(enhancementSource) || !/MEDIA_VOLUME_UP/.test(enhancementSource) || !/MEDIA_MIC_CAPTURE/.test(enhancementSource)) {
+  throw new Error('media palette actions are not present');
+}
 
 console.log('All keycode, punctuation, modifier, hold-tap, tap-dance and drag paths round-trip');
