@@ -21,6 +21,13 @@
     ZmkBleTransport.call(this, options);
     this.kind = 'ble';
     this.transportLabel = 'Windows BLE';
+    this.isWindowsBleBridge = true;
+    // Do not let the first keymap request race the Windows GATT connection or
+    // the split Central's radio link.  The value is intentionally local to
+    // the transport so USB/direct BLE keep their existing timings.
+    this.rpcTimeoutMs = Math.max(8000, Number(options.rpcTimeoutMs) || 12000);
+    this.startupSettleMs = Math.max(500, Number(options.startupSettleMs) || 1400);
+    this.deferBehaviorDetails = true;
     this.requiredSide = 'central';
     this.socket = null;
     this.reading = false;
@@ -69,7 +76,7 @@
     }
     if (message.type === 'disconnected') { this._handleDisconnected(); }
   };
-  ZmkWindowsBleBridgeTransport.prototype._handleDisconnected = function () { this.reading = false; this.studioAvailable = false; this._setStatus('Windows BLEブリッジ切断済み'); this._setDevice('—'); var connectedButton = document.getElementById('connect-windows-ble'); if (connectedButton) connectedButton.disabled = false; };
+  ZmkWindowsBleBridgeTransport.prototype._handleDisconnected = function () { this.reading = false; this.studioAvailable = false; this._rejectPending(new Error('Windows BLEブリッジが切断されました')); this._setStatus('Windows BLEブリッジ切断済み'); this._setDevice('—'); var connectedButton = document.getElementById('connect-windows-ble'); if (connectedButton) connectedButton.disabled = false; };
   ZmkWindowsBleBridgeTransport.prototype.connect = function () {
     var self = this;
     if (this.isConnected) return Promise.resolve(true);
@@ -89,7 +96,7 @@
       } catch (error) { self._connecting = false; self._connectResolve = null; self._connectReject = null; reject(error); }
     }).then(function () { return true; }).catch(function (error) { self._setStatus(error.message || String(error)); return false; });
   };
-  ZmkWindowsBleBridgeTransport.prototype.disconnect = async function () { try { if (this.socket && this.socket.readyState === WebSocket.OPEN) this._send({ op: 'disconnect' }); } catch (error) {} this.reading = false; this.studioAvailable = false; if (this.socket) try { this.socket.close(); } catch (error) {} this.socket = null; this._setDevice('—'); this._setStatus('Windows BLEブリッジ切断済み'); };
+  ZmkWindowsBleBridgeTransport.prototype.disconnect = async function () { try { if (this.socket && this.socket.readyState === WebSocket.OPEN) this._send({ op: 'disconnect' }); } catch (error) {} this.reading = false; this.studioAvailable = false; this._rejectPending(new Error('Windows BLEブリッジが切断されました')); if (this.socket) try { this.socket.close(); } catch (error) {} this.socket = null; this._setDevice('—'); this._setStatus('Windows BLEブリッジ切断済み'); };
   ZmkWindowsBleBridgeTransport.prototype.sendFramedPayload = function (payload) { this._send({ op: 'write', data: encodeBase64(global.ZmkStudioProtocol.encodeFrame(payload)) }); return Promise.resolve(); };
   ZmkWindowsBleBridgeTransport.prototype.getDiagnostics = async function () { return { platform: 'Windows localhost BLE bridge', bridgeUrl: this._url, gattConnected: this.isConnected, officialServiceUuid: global.ZmkStudioProtocol.BLE_SERVICE_UUID, officialCharacteristicUuid: global.ZmkStudioProtocol.BLE_CHARACTERISTIC_UUID, keymapRpcReady: this.canWriteKeymap }; };
 

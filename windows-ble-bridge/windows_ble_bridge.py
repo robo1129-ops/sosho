@@ -53,12 +53,25 @@ class Bridge:
         self.client: BleakClient | None = None
         self.characteristic: Any = None
         self.device_name = ""
+        self._notification_queue: asyncio.Queue[dict[str, Any]] | None = None
+        self._notification_task: asyncio.Task[None] | None = None
 
     async def send(self, payload: dict[str, Any]) -> None:
         await self.websocket.send(json.dumps(payload, ensure_ascii=False))
 
     async def status(self, message: str, **extra: Any) -> None:
         await self.send({"type": "status", "message": message, **extra})
+
+    async def _forward_notifications(self) -> None:
+        queue = self._notification_queue
+        if queue is None:
+            return
+        while True:
+            payload = await queue.get()
+            try:
+                await self.send(payload)
+            finally:
+                queue.task_done()
 
     async def paired_devices(self) -> list[dict[str, Any]]:
         """Return paired Windows BLE devices even when HID suppresses adverts."""
@@ -163,6 +176,12 @@ class Bridge:
         return client
 
     async def connect(self, device_id: str | None = None, name_prefix: str | None = None) -> None:
+        if self.client and self.client.is_connected and self.characteristic:
+            # A browser can send a second select after the automatic paired
+            # device selection.  Reusing the existing GATT session avoids
+            # opening a second connection to the split Central.
+            await self.send({"type": "connected", "name": self.device_name, "service": SERVICE_UUID, "characteristic": CHARACTERISTIC_UUID})
+            return
         devices = await self.scan()
         prefix = name_prefix or ""
         candidates = [
@@ -207,15 +226,23 @@ class Bridge:
             if self.characteristic is None:
                 raise RuntimeError("公式ZMK Studio Characteristicが見つかりません")
 
+            self._notification_queue = asyncio.Queue(maxsize=256)
+            self._notification_task = asyncio.create_task(self._forward_notifications())
+
             def on_notification(_: Any, data: bytearray) -> None:
-                asyncio.create_task(
-                    self.send(
-                        {
-                            "type": "frame",
-                            "data": base64.b64encode(bytes(data)).decode("ascii"),
-                        }
-                    )
-                )
+                queue = self._notification_queue
+                if queue is None:
+                    return
+                payload = {
+                    "type": "frame",
+                    "data": base64.b64encode(bytes(data)).decode("ascii"),
+                }
+                try:
+                    queue.put_nowait(payload)
+                except asyncio.QueueFull:
+                    # Never let a burst of stale notifications reorder later
+                    # Studio responses or block the BLE callback thread.
+                    logging.warning("dropping an overflowing BLE notification queue")
 
             await self.client.start_notify(self.characteristic, on_notification)
             self.device_name = selected["name"]
@@ -240,6 +267,16 @@ class Bridge:
             await asyncio.sleep(0.004)
 
     async def disconnect(self) -> None:
+        if self._notification_task:
+            self._notification_task.cancel()
+            try:
+                await self._notification_task
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                pass
+            self._notification_task = None
+        self._notification_queue = None
         if self.client:
             try:
                 if self.characteristic:

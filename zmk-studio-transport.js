@@ -360,7 +360,14 @@
   StudioRpcClient.prototype._requestNow = async function (subsystem, operation, payload, timeoutMs) {
     var id = this.requestId++;
     if (this.requestId > 0x7FFFFFFF) this.requestId = 1;
-    var deadline = Date.now() + (timeoutMs || 5000);
+    // The Windows BLE bridge shares the Central radio with the keyboard's
+    // split link.  A Studio response can therefore arrive later than it does
+    // over USB, especially immediately after GATT service discovery.  Let a
+    // transport opt into a longer, still bounded deadline instead of making
+    // the caller retry while the first request is in flight.
+    var transportTimeout = Number(this.transport && this.transport.rpcTimeoutMs);
+    if (!Number.isFinite(transportTimeout) || transportTimeout <= 0) transportTimeout = 5000;
+    var deadline = Date.now() + (Number(timeoutMs) > 0 ? Number(timeoutMs) : transportTimeout);
     var framePromise = this.transport._waitForFrame(Math.max(250, deadline - Date.now()));
     try { await this.transport.sendFramedPayload(encodeRequest(id, subsystem, operation, payload)); }
     catch (error) { this.transport._rejectPending(error); throw error; }
@@ -456,8 +463,9 @@
     if (result && result.ok === false) { var error = new Error('saveChanges failed' + (result.error !== undefined ? ' (' + result.error + ')' : '')); error.code = result.error; throw error; }
     return response;
   };
-  StudioRpcClient.prototype.readDeviceState = async function () {
+  StudioRpcClient.prototype.readDeviceState = async function (options) {
     var self = this;
+    options = options || {};
     var readAll = async function () {
       var info = await self.getDeviceInfo();
       var lockState = await self.getLockState();
@@ -479,7 +487,14 @@
         });
       } catch (listError) {}
       var details = [];
-      for (var i = 0; i < ids.length; i++) { try { details.push(await self.getBehaviorDetails(ids[i])); } catch (error) {} }
+      // The browser editor only needs the keymap and advertised IDs to render
+      // an initial Windows BLE session.  Fetching every behavior detail here
+      // creates a burst of RPC requests while the split Central is still
+      // settling.  The bridge opts out of that burst; USB and direct Web BLE
+      // retain the complete behavior metadata path.
+      if (!options.skipBehaviorDetails) {
+        for (var i = 0; i < ids.length; i++) { try { details.push(await self.getBehaviorDetails(ids[i])); } catch (error) {} }
+      }
       // Keep the advertised IDs even when an older/custom firmware rejects a
       // detail request. SO-SHO controls are valid Studio behaviors and must
       // still be resolvable from their stable local ID in that situation.
@@ -551,7 +566,7 @@
   };
   Object.defineProperty(FramedTransport.prototype, 'canWriteKeymap', { get: function () { return RPC_SCHEMA_SUPPORTED; } });
 
-  function ZmkSerialTransport(options) { FramedTransport.call(this, options); this.kind = 'usb'; this.requiredSide = 'central'; this.roleState = 'unknown'; this.port = null; this.portInfo = null; this.reader = null; this.writer = null; this.reading = false; this._disconnecting = false; this._connecting = false; this._lockReady = null; this._lockRelease = null; this._lockHeld = false; this.baudRate = 9600; this._rpcBaudRetried = false; }
+  function ZmkSerialTransport(options) { FramedTransport.call(this, options); this.kind = 'usb'; this.requiredSide = 'central'; this.roleState = 'unknown'; this.port = null; this.portInfo = null; this.reader = null; this.writer = null; this.reading = false; this._disconnecting = false; this._connecting = false; this._lockReady = null; this._lockRelease = null; this._lockHeld = false; this.baudRate = 9600; this.rpcTimeoutMs = 8000; this.startupSettleMs = 400; this._rpcBaudRetried = false; }
   ZmkSerialTransport.prototype = Object.create(FramedTransport.prototype); ZmkSerialTransport.prototype.constructor = ZmkSerialTransport;
   Object.defineProperty(ZmkSerialTransport.prototype, 'isConnected', { get: function () { return !!this.port && this.reading; } });
   Object.defineProperty(ZmkSerialTransport.prototype, 'isSupported', { get: function () { return typeof navigator !== 'undefined' && !!navigator.serial && typeof navigator.serial.requestPort === 'function'; } });
@@ -628,7 +643,7 @@
       // Give the CDC endpoint a short settle time after DTR/RTS assertion.
       // On Windows the XIAO CDC device can otherwise miss the first Studio
       // request while the firmware finishes opening its USB stream.
-      await new Promise(function (resolve) { setTimeout(resolve, 100); });
+      await new Promise(function (resolve) { setTimeout(resolve, 300); });
     } catch (error) {
       // Web Serial keeps the selected SerialPort object alive after a failed
       // open.  Release every local lock before allowing a retry; otherwise
