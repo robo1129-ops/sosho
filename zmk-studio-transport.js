@@ -246,12 +246,34 @@
     });
     return result;
   }
+  function decodeEncoderBinding(bytes) {
+    var result = { layerId: 0, sensor: 0, direction: 0, behaviorId: 0, param1: 0, param2: 0 };
+    new ByteReader(bytes).fields(function (number, wireType, value) {
+      if (number === 1 && wireType === 0) result.layerId = value >>> 0;
+      else if (number === 2 && wireType === 0) result.sensor = value >>> 0;
+      else if (number === 3 && wireType === 0) result.direction = value >>> 0;
+      else if (number === 4 && wireType === 0) result.behaviorId = value >>> 0;
+      else if (number === 5 && wireType === 0) result.param1 = value >>> 0;
+      else if (number === 6 && wireType === 0) result.param2 = value >>> 0;
+    });
+    return result;
+  }
+  function decodeEncoderSettings(bytes) {
+    var result = { bindings: [], runtimeControl: false };
+    new ByteReader(bytes).fields(function (number, wireType, value) {
+      if (number === 1 && wireType === 2) result.bindings.push(decodeEncoderBinding(value));
+      else if (number === 2 && wireType === 0) result.runtimeControl = !!value;
+    });
+    return result;
+  }
   function decodeSoshoResponse(bytes) {
     var result = {};
     new ByteReader(bytes).fields(function (number, wireType, value) {
       if (number === 1 && wireType === 2) result.getSleep = decodeSleepSettings(value);
       else if (number === 2 && wireType === 2) result.setSleepTimeoutMs = decodeSleepSettings(value);
       else if (number === 3 && wireType === 0) result.error = value;
+      else if (number === 4 && wireType === 2) result.getEncoders = decodeEncoderSettings(value);
+      else if (number === 5 && wireType === 2) result.setEncoders = decodeEncoderSettings(value);
     });
     return result;
   }
@@ -300,9 +322,28 @@
     if (operation === 'runMacro') return fieldVarint(5, payload);
     throw new Error('unsupported macro operation ' + operation);
   }
+  function encodeEncoderBinding(binding) {
+    return concat(
+      fieldVarint(1, binding.layerId || 0),
+      fieldVarint(2, binding.sensor || 0),
+      fieldVarint(3, binding.direction || 0),
+      fieldVarint(4, binding.behaviorId || 0),
+      fieldVarint(5, binding.param1 || 0),
+      fieldVarint(6, binding.param2 || 0)
+    );
+  }
+  function encodeEncoderSettings(bindings) {
+    var list = Array.isArray(bindings) ? bindings : [];
+    var fields = [];
+    list.forEach(function (binding) { fields.push(fieldMessage(1, encodeEncoderBinding(binding))); });
+    fields.push(boolField(2));
+    return concat.apply(null, fields);
+  }
   function encodeSoshoRequest(operation, payload) {
     if (operation === 'getSleep') return boolField(1);
     if (operation === 'setSleepTimeoutMs') return fieldVarint(2, payload);
+    if (operation === 'getEncoders') return boolField(3);
+    if (operation === 'setEncoders') return fieldMessage(4, encodeEncoderSettings(payload));
     throw new Error('unsupported SO-SHO operation ' + operation);
   }
   function encodeRequest(requestId, subsystem, operation, payload) {
@@ -389,6 +430,18 @@
     var response = await this.request('sosho', 'setSleepTimeoutMs', Number(timeoutMs) >>> 0);
     var settings = response && response.data && response.data.setSleepTimeoutMs;
     if (!settings) throw new Error('SO-SHOスリープ設定の保存応答が空です');
+    return settings;
+  };
+  StudioRpcClient.prototype.getEncoderSettings = async function () {
+    var response = await this.request('sosho', 'getEncoders');
+    var settings = response && response.data && response.data.getEncoders;
+    if (!settings) throw new Error('SO-SHOエンコーダー設定の応答が空です');
+    return settings;
+  };
+  StudioRpcClient.prototype.setEncoderSettings = async function (bindings) {
+    var response = await this.request('sosho', 'setEncoders', bindings || []);
+    var settings = response && response.data && response.data.setEncoders;
+    if (!settings) throw new Error('SO-SHOエンコーダー設定の保存応答が空です');
     return settings;
   };
   StudioRpcClient.prototype.setLayerBinding = async function (layerId, keyPosition, binding) {

@@ -9,6 +9,9 @@
   var deviceState = null;
   var rawById = Object.create(null);
   var labelById = Object.create(null);
+  var encoderRawById = Object.create(null);
+  var encoderLabelById = Object.create(null);
+  var encoderRpcSupported = false;
   var behaviorById = Object.create(null);
   var behaviorIds = [];
   var readInProgress = false;
@@ -288,6 +291,9 @@
   }
 
   function bindingLabel(binding) {
+    if (binding && Number(binding.behaviorId) === soshoWheelBehaviorId) {
+      return ({ 0: 'Wheel Up', 1: 'Wheel Down', 2: 'Wheel Left', 3: 'Wheel Right' })[Number(binding.param1)] || 'Wheel';
+    }
     var detail = detailFor(binding.behaviorId);
     if (!detail) return 'Action';
     var behaviorName = friendlyBehaviorName(detail.displayName);
@@ -525,6 +531,8 @@
     var keymap = deviceState.keymap;
     rawById = Object.create(null);
     labelById = Object.create(null);
+    encoderRawById = Object.create(null);
+    encoderLabelById = Object.create(null);
     // A device read is authoritative. Drop browser-only overrides first so
     // stale hold/tap entries cannot be mistaken for edits to another key.
     if (editor.resetForDevice) editor.resetForDevice();
@@ -543,6 +551,81 @@
     });
     if (typeof global.soshoSetKeymapLoaded === 'function') global.soshoSetKeymapLoaded(true);
     else editor.render();
+  }
+
+  function encoderUiId(binding) {
+    var side = Number(binding.sensor) === 0 ? 'left' : 'right';
+    var direction = Number(binding.direction) === 0 ? 'ccw' : 'cw';
+    return 'l' + Number(binding.layerId) + '-' + side + '-encoder-' + direction;
+  }
+
+  function mapEncoderSettings(settings) {
+    encoderRawById = Object.create(null);
+    encoderLabelById = Object.create(null);
+    (settings && settings.bindings || []).forEach(function (binding) {
+      var id = encoderUiId(binding);
+      var copy = {
+        layerId: Number(binding.layerId) || 0,
+        sensor: Number(binding.sensor) || 0,
+        direction: Number(binding.direction) || 0,
+        behaviorId: Number(binding.behaviorId) || 0,
+        param1: Number(binding.param1) || 0,
+        param2: Number(binding.param2) || 0
+      };
+      encoderRawById[id] = copy;
+      encoderLabelById[id] = bindingLabel(copy);
+      if (editor.setDeviceEncoderAssignment) editor.setDeviceEncoderAssignment(id, encoderLabelById[id]);
+    });
+    if (global.soshoRefreshEncoderTargets) global.soshoRefreshEncoderTargets();
+  }
+
+  async function readEncoderSettings(rpc) {
+    if (!rpc || typeof rpc.getEncoderSettings !== 'function') {
+      encoderRpcSupported = false;
+      return null;
+    }
+    var settings = await rpc.getEncoderSettings();
+    if (!settings || !Array.isArray(settings.bindings) || !settings.bindings.length) {
+      throw new Error('実機からエンコーダー設定を読み取れませんでした');
+    }
+    encoderRpcSupported = true;
+    mapEncoderSettings(settings);
+    return settings;
+  }
+
+  function encoderChangesFor(editedAssignments) {
+    var changes = [];
+    var encoderChanges = [];
+    Object.keys(encoderRawById).forEach(function (id) {
+      var match = /^l(\d+)-(left|right)-encoder-(ccw|cw)$/.exec(id);
+      if (!match) return;
+      var desiredLabel = editedAssignments[id] || encoderLabelById[id];
+      var unchanged = (editor.isDeviceAssignmentUnchanged && editor.isDeviceAssignmentUnchanged(id, desiredLabel)) || desiredLabel === encoderLabelById[id];
+      if (unchanged) return;
+      var binding = resolveBinding(desiredLabel, encoderRawById[id]);
+      if (!binding) throw new Error(id + ' のエンコーダー割り当てをbehavior bindingへ変換できません: ' + desiredLabel);
+      changes.push({
+        layerId: Number(match[1]),
+        sensor: match[2] === 'left' ? 0 : 1,
+        direction: match[3] === 'ccw' ? 0 : 1,
+        binding: binding
+      });
+    });
+    return changes;
+  }
+
+  function sameEncoderBinding(actual, expected) {
+    return !!actual && Number(actual.layerId) === Number(expected.layerId) &&
+      Number(actual.sensor) === Number(expected.sensor) && Number(actual.direction) === Number(expected.direction) &&
+      Number(actual.behaviorId) === Number(expected.binding.behaviorId) &&
+      Number(actual.param1) === Number(expected.binding.param1) && Number(actual.param2) === Number(expected.binding.param2);
+  }
+
+  function encoderVerificationMismatches(actualSettings, changes) {
+    var actual = actualSettings && actualSettings.bindings || [];
+    return changes.filter(function (change) {
+      return !actual.some(function (entry) { return sameEncoderBinding(entry, change); });
+    });
   }
 
   async function readKeymap() {
@@ -570,6 +653,7 @@
       });
       try { console.info('[sosho-behaviors]', JSON.stringify(global.soshoBehaviorDiagnostics)); } catch (_) {}
       mapDeviceState();
+      await readEncoderSettings(rpc);
       global.soshoStudioState = { rpc: rpc, deviceState: deviceState, rawById: rawById, labelById: labelById };
       var lockText = deviceState.lockState === 1 ? 'Studioロック解除済み' : deviceState.lockState === 0 ? 'Studioロック中（キーボードの&studio_unlockを押すと保存可能）' : 'lockState=' + deviceState.lockState;
       setVerificationStep('prepare', 'success', deviceState.keymap.layers.length + 'レイヤーを読み取りました。' + (deviceState.info && deviceState.info.name ? ' ' + deviceState.info.name : ''));
@@ -1067,31 +1151,52 @@
           if (!sameBinding(original, desired)) changes.push({ layerId: layer.id, keyPosition: position, binding: desired });
         });
       });
-      setVerificationStep('prepare', 'success', changes.length ? changes.length + '件の変更を準備しました。' : '変更はありません。保存状態を再確認します。');
-      setVerificationStep('write', 'running', changes.length ? changes.length + '件を公式RPCへ送信中です。' : '保存状態を公式RPCへ確認中です。');
-      setStatus(changes.length ? changes.length + '件を公式RPCで保存中…' : '変更なし。保存後の再読み取りを行います…');
+      encoderChanges = encoderChangesFor(editedAssignments);
+      if (encoderChanges.length && !encoderRpcSupported) {
+        throw new Error('このファームウェアはエンコーダー設定RPCに対応していません。対応版ファームウェアへ更新してください。');
+      }
+      var totalChanges = changes.length + encoderChanges.length;
+      setVerificationStep('prepare', 'success', totalChanges ? totalChanges + '件の変更を準備しました。' : '変更はありません。保存状態を再確認します。');
+      setVerificationStep('write', 'running', totalChanges ? totalChanges + '件を公式RPCへ送信中です。' : '保存状態を公式RPCへ確認中です。');
+      setStatus(totalChanges ? totalChanges + '件を公式RPCで保存中…' : '変更なし。保存後の再読み取りを行います…');
       var rpc = global.soshoStudioState.rpc;
       writePhase = 'write';
       var afterWrite = await rpc.writeKeymap(changes);
-      setVerificationStep('write', 'success', changes.length ? changes.length + '件の書き込み要求を送信しました。' : '書き込み対象はありませんでした。');
-      setVerificationStep('save', 'success', 'ファームウェアから保存応答を受信しました。');
+      if (encoderChanges.length) {
+        await rpc.setEncoderSettings(encoderChanges.map(function (change) {
+          return {
+            layerId: change.layerId,
+            sensor: change.sensor,
+            direction: change.direction,
+            behaviorId: change.binding.behaviorId,
+            param1: change.binding.param1,
+            param2: change.binding.param2
+          };
+        }));
+      }
+      setVerificationStep('write', 'success', totalChanges ? totalChanges + '件の書き込み要求を送信しました。' : '書き込み対象はありませんでした。');
+      setVerificationStep('save', 'success', encoderChanges.length ? 'キーマップとエンコーダー設定の保存応答を受信しました。' : 'ファームウェアから保存応答を受信しました。');
       setVerificationStep('verify', 'running', '保存後の実機キーマップを再読み取りしています。');
       setStatus('保存応答を受信しました。実機を再読み取り中…');
       writePhase = 'verify';
       deviceState.keymap = afterWrite;
       var verified = await rpc.readDeviceState();
       var mismatches = findVerificationMismatches(verified.keymap, changes);
-      if (mismatches.length) {
-        var mismatchError = new Error('再読み取りで ' + mismatches.length + '件の差分が残っています');
+      var verifiedEncoderSettings = await rpc.getEncoderSettings();
+      var encoderMismatches = encoderVerificationMismatches(verifiedEncoderSettings, encoderChanges);
+      if (mismatches.length || encoderMismatches.length) {
+        var mismatchError = new Error('再読み取りで ' + (mismatches.length + encoderMismatches.length) + '件の差分が残っています');
         mismatchError.verification = true;
         throw mismatchError;
       }
       deviceState = verified;
       mapDeviceState();
+      mapEncoderSettings(verifiedEncoderSettings);
+      global.soshoStudioState = { rpc: rpc, deviceState: deviceState, rawById: rawById, labelById: labelById, encoderSettings: verifiedEncoderSettings };
       var lockText = verified.lockState === 1 ? 'Studioロック解除済み' : verified.lockState === 0 ? 'Studioロック中' : 'lockState=' + verified.lockState;
       setVerificationStep('verify', 'success', '再読み取りした実機の値が送信内容と一致しました。');
       setVerificationResult('success', '実機反映成功：保存応答と再読み取りの一致を確認しました。');
-      setStatus('保存・再読み取り成功: ' + changes.length + '件 / ' + lockText);
+      setStatus('保存・再読み取り成功: ' + totalChanges + '件 / ' + lockText);
     } catch (error) {
       var errorText = error.message || String(error);
       if (writePhase === 'prepare') {
