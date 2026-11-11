@@ -33,6 +33,19 @@ ALLOWED_ORIGINS = {
 }
 
 
+def is_likely_peripheral_name(name: str) -> bool:
+    return bool(re.search(r"(^|[- _])(left|peripheral)([- _]|$)", name.strip(), re.IGNORECASE))
+
+
+def is_likely_central_name(name: str) -> bool:
+    normalized = name.strip().lower()
+    if not normalized or is_likely_peripheral_name(normalized):
+        return False
+    return normalized in {"sosho", "so-sho"} or bool(
+        re.search(r"(^|[- _])(right|central)([- _]|$)", normalized, re.IGNORECASE)
+    )
+
+
 class Bridge:
     def __init__(self, websocket: Any, prefixes: tuple[str, ...]) -> None:
         self.websocket = websocket
@@ -75,6 +88,8 @@ class Bridge:
             name = str(item.get("FriendlyName") or "")
             match = re.search(r"DEV_([0-9A-F]{12})", str(item.get("InstanceId") or ""), re.IGNORECASE)
             if not match or not any(name.lower().startswith(prefix.lower()) for prefix in self.prefixes):
+                continue
+            if not is_likely_central_name(name):
                 continue
             raw = match.group(1).upper()
             address = ":".join(raw[index : index + 2] for index in range(0, 12, 2))
@@ -154,11 +169,15 @@ class Bridge:
             item for item in devices
             if (not device_id or item["id"] == device_id)
             and (not prefix or item["name"].lower().startswith(prefix.lower()))
+            and not is_likely_peripheral_name(str(item.get("name") or ""))
         ]
         if not device_id:
-            preferred = [item for item in candidates if item["matchesPrefix"]]
-            if preferred:
-                candidates = preferred
+            official = [item for item in candidates if item.get("matchesOfficialService")]
+            central = [item for item in candidates if is_likely_central_name(str(item.get("name") or ""))]
+            if official:
+                candidates = official
+            elif central:
+                candidates = central
         if not candidates:
             await self.send({"type": "error", "code": "not_found", "message": "SO-SHOのBLE広告が見つかりません。WindowsのBluetooth接続を一時的に切断し、キーボードを広告状態にしてください。", "devices": devices})
             return
@@ -174,6 +193,9 @@ class Bridge:
             await self.status(f"複数候補から公式ZMK Studioサービスを優先: {candidates[0]['name']}")
 
         selected = candidates[0]
+        if is_likely_peripheral_name(str(selected.get("name") or "")):
+            await self.send({"type": "error", "code": "wrong_side", "message": "左側Peripheralが選択されています。右側Central（sosho）を選択してください。", "devices": devices})
+            return
         await self.status(f"{selected['name']}へGATT接続中…")
         self.client = self.make_client(selected["id"])
         try:

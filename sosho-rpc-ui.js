@@ -843,6 +843,10 @@
     // Output Selection is also firmware-defined.  Expose the constants that
     // the connected device advertises instead of inventing a HID keycode.
     var outputAction = String(label || '').trim().toUpperCase();
+    // USB HID is intentionally disabled in the SO-SHO firmware.  USB remains
+    // available for charging and keymap RPC only, so never serialize a USB
+    // host-output binding even if an old browser profile still contains it.
+    if (outputAction === 'USB OUTPUT' || outputAction === 'USB出力') return null;
     var outputConstantName = {
       'USB OUTPUT': /USB\s+OUTPUT/,
       'BLE OUTPUT': /BLE\s+OUTPUT|BLUETOOTH\s+OUTPUT/,

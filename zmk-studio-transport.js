@@ -745,6 +745,14 @@
   ZmkSerialTransport.prototype.sendFramedPayload = async function (payload) { if (!this.isConnected) throw new Error('USB未接続です'); if (!this.port || !this.port.writable) throw new Error('USB writer unavailable'); var writer = this.writer || this.port.writable.getWriter(); this.writer = writer; await writer.write(encodeFrame(payload)); return true; };
 
   var BLE_NAME_PREFIXES = ['sosho', 'soho', 'SO-SHO', 'SOHO', 'ZMK'];
+  function isLikelyPeripheralName(name) {
+    return /(^|[- _])(left|peripheral)([- _]|$)/i.test(String(name || '').trim());
+  }
+  function isLikelyCentralName(name) {
+    var normalized = String(name || '').trim().toLowerCase();
+    if (!normalized || isLikelyPeripheralName(normalized)) return false;
+    return normalized === 'sosho' || normalized === 'so-sho' || /(^|[- _])(right|central)([- _]|$)/i.test(normalized);
+  }
   function ZmkBleTransport(options) { options = options || {}; FramedTransport.call(this, options); this.kind = 'ble'; this.requiredSide = 'central'; this.roleState = 'unknown'; this.device = null; this.server = null; this.service = null; this.characteristic = null; this.macroService = null; this.studioAvailable = false; this.reading = false; this._connecting = false; this.writeChunkSize = Math.max(1, Math.min(BLE_SAFE_WRITE_CHUNK_SIZE, Number(options.writeChunkSize) || BLE_SAFE_WRITE_CHUNK_SIZE)); this.writeDelayMs = Math.max(0, Number(options.writeDelayMs) || BLE_INTER_CHUNK_DELAY_MS); this._writeChain = Promise.resolve(); this._onValue = this._handleValue.bind(this); this._onDisconnected = this._handleDisconnected.bind(this); }
   ZmkBleTransport.prototype = Object.create(FramedTransport.prototype); ZmkBleTransport.prototype.constructor = ZmkBleTransport;
   Object.defineProperty(ZmkBleTransport.prototype, 'isSupported', { get: function () { return typeof navigator !== 'undefined' && !!navigator.bluetooth && typeof window !== 'undefined' && window.isSecureContext === true; } });
@@ -843,11 +851,12 @@
     }
   };
   ZmkBleTransport.prototype._attach = async function (device) {
+    if (isLikelyPeripheralName(device && device.name)) throw new Error('左側Peripheralが選択されています。右側Central（sosho）を選択してください');
     this.device = device; try { if (this.device.removeEventListener) this.device.removeEventListener('gattserverdisconnected', this._onDisconnected); } catch (error) {} if (this.device.addEventListener) this.device.addEventListener('gattserverdisconnected', this._onDisconnected); this._setDevice(device.name || 'sosho'); this._setLog('デバイス選択完了: ' + (device.name || '名称なし')); if (!device.gatt) throw new Error('GATT unavailable'); this._setLog('GATT接続開始'); this.server = await device.gatt.connect(); this._setLog('GATT接続成功'); this.service = null; this.characteristic = null; this.macroService = null; this.studioAvailable = false; this.reading = false;
     try { this._setLog('公式Service discovery開始: ' + BLE_SERVICE_UUID); this.service = await this._findService(this.server, BLE_SERVICE_UUID); this._setLog('公式Service discovery成功: ' + (this.service.uuid || BLE_SERVICE_UUID)); this._setLog('公式Characteristic discovery開始: ' + BLE_CHARACTERISTIC_UUID); this.characteristic = await this._findCharacteristic(this.service, BLE_CHARACTERISTIC_UUID); this._setLog('公式Characteristic discovery成功: ' + (this.characteristic.uuid || BLE_CHARACTERISTIC_UUID)); this.characteristic.addEventListener('characteristicvaluechanged', this._onValue); this._setLog('公式Characteristic notifications開始'); await this.characteristic.startNotifications(); this.reading = true; this.studioAvailable = true; this._setLog('Studio RPC transport準備完了（通知受信 + 分割書き込み）'); this._setStatus('BLE接続済み（公式ZMK Studioサービス / RPC準備完了）'); return true; }
     catch (studioError) { var studioName = studioError && studioError.name ? studioError.name : 'Error'; var studioMessage = studioError && studioError.message ? studioError.message : 'GATT service not found'; this._setLog('公式GATT discovery失敗 [' + studioName + ']: ' + studioMessage); try { this._setLog('SO-SHOマクロService discovery開始: ' + MACRO_SERVICE_UUID); this.macroService = await this._findService(this.server, MACRO_SERVICE_UUID); this._setLog('SO-SHOマクロService discovery成功（公式Studio RPCは未接続）'); this.reading = true; this._setStatus('BLE接続済み（SO-SHOマクロサービスのみ）'); return true; } catch (macroError) { var macroName = macroError && macroError.name ? macroError.name : 'Error'; var macroMessage = macroError && macroError.message ? macroError.message : 'GATT service not found'; this._setLog('SO-SHOマクロService discovery失敗 [' + macroName + ']: ' + macroMessage); this._handleDisconnected(); throw new Error('公式ZMK Studioサービスに接続できません: ' + studioMessage); } }
   };
-  ZmkBleTransport.prototype._authorizedDevice = async function () { if (typeof navigator.bluetooth.getDevices !== 'function') return null; try { var devices = await navigator.bluetooth.getDevices(); return devices.find(function (device) { var name = device && device.name || ''; return BLE_NAME_PREFIXES.some(function (prefix) { return name.indexOf(prefix) === 0; }); }) || null; } catch (error) { return null; } };
+  ZmkBleTransport.prototype._authorizedDevice = async function () { if (typeof navigator.bluetooth.getDevices !== 'function') return null; try { var devices = await navigator.bluetooth.getDevices(); return devices.find(function (device) { return isLikelyCentralName(device && device.name); }) || null; } catch (error) { return null; } };
   ZmkBleTransport.prototype.connectAuthorized = async function () {
     if (this.isConnected) return true;
     if (!this.isSupported) { this._setStatus('Web Bluetooth非対応、またはHTTPS/localhostが必要です'); return false; }
@@ -859,14 +868,10 @@
       this._setLog('getDevices開始（許可済みデバイス再接続）');
       var devices = await navigator.bluetooth.getDevices();
       this._setLog('getDevices完了: ' + devices.length + '件');
-      var device = devices.find(function (candidate) {
-        var name = candidate && candidate.name || '';
-        return BLE_NAME_PREFIXES.some(function (prefix) { return name.indexOf(prefix) === 0; });
-      });
-      if (!device && devices.length === 1) device = devices[0];
+      var device = devices.find(function (candidate) { return isLikelyCentralName(candidate && candidate.name); });
       if (!device) {
-        this._setLog('許可済みSO-SHOデバイスが見つかりません');
-        this._setStatus('許可済みSO-SHOがありません。Windowsの既存接続を切断後、「BLE接続」で選択してください');
+        this._setLog('許可済みの右側Central（sosho）が見つかりません');
+        this._setStatus('許可済みの右側Centralがありません。左側Peripheralではなく、右側のsoshoを「BLE接続」で選択してください');
         return false;
       }
       this._setLog('許可済みデバイスを再接続: ' + (device.name || '名称なし'));
