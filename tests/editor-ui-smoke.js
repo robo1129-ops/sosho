@@ -17,6 +17,8 @@ assert.match(html, /MO 3/);
 assert.match(html, /save-current-as-default/);
 assert.match(html, /restore-firmware-defaults/);
 assert.match(html, /connect-usb-authorized/);
+assert.match(html, /tryAlternateUsbPorts/);
+assert.match(html, /選択後のRPC応答なし。別の許可済みUSBポートを確認/);
 assert.match(html, /connection-error/);
 assert.match(html, /rpc-verification/);
 assert.match(html, /rpc-verification-steps/);
