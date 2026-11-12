@@ -68,12 +68,25 @@ Write-Host 'SO-SHO Windows BLE bridge was uninstalled.'
   $shortcut.Save()
 
   Start-Process -FilePath $installedExe -ArgumentList '--host 127.0.0.1 --port 8765' -WorkingDirectory $InstallRoot -WindowStyle Hidden
-  Start-Sleep -Seconds 2
-  $running = Get-Process -Name 'sosho_ble_bridge' -ErrorAction SilentlyContinue | Where-Object {
-    try { $_.Path -eq $installedExe } catch { $false }
+  # A PyInstaller one-file executable can need several seconds to unpack
+  # before it starts listening.  Checking only the process name at two seconds
+  # allowed installation to report success while the WebSocket was not ready.
+  $ready = $false
+  for ($attempt = 0; $attempt -lt 30; $attempt++) {
+    $client = $null
+    try {
+      $client = New-Object System.Net.Sockets.TcpClient
+      $client.Connect('127.0.0.1', 8765)
+      $ready = $true
+      break
+    } catch {
+      Start-Sleep -Milliseconds 500
+    } finally {
+      if ($client) { $client.Dispose() }
+    }
   }
-  if (-not $running) {
-    throw 'The bridge process did not start. Check the install log and Windows security history.'
+  if (-not $ready) {
+    throw 'The bridge process did not open its local WebSocket port. Check the install log and Windows security history.'
   }
 
   Write-InstallLog 'Installation completed successfully.'

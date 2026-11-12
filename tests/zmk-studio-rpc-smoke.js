@@ -49,6 +49,32 @@ const fakeTransport = {
   const rpc = new Rpc(fakeTransport);
   const info = await rpc.getDeviceInfo();
   assert.strictEqual(info.name, 'sosho');
+
+  let attempts = 0;
+  const retryTransport = {
+    rpcTimeoutMs: 20,
+    resolver: null,
+    _waitForFrame(timeout) {
+      return new Promise((resolve, reject) => {
+        this.resolver = resolve;
+        setTimeout(() => reject(new Error('Timed out waiting for framed response')), timeout);
+      });
+    },
+    _rejectPending() {},
+    _discardQueuedFrames() {},
+    async sendFramedPayload() {
+      attempts += 1;
+      if (attempts === 2) {
+        const name = new Uint8Array([0x0A, 5, 115, 111, 115, 104, 111]);
+        const core = new Uint8Array([0x0A, name.length, ...name]);
+        const requestResponse = new Uint8Array([0x08, 1, 0x1A, core.length, ...core]);
+        setTimeout(() => this.resolver(new Uint8Array([0x0A, requestResponse.length, ...requestResponse])), 0);
+      }
+    },
+  };
+  const retryInfo = await new Rpc(retryTransport).getDeviceInfo();
+  assert.strictEqual(retryInfo.name, 'sosho');
+  assert.strictEqual(attempts, 2, 'a lost response must trigger one bounded retry');
   console.log('ZMK Studio RPC smoke test passed');
 })().catch((error) => {
   console.error(error);

@@ -55,9 +55,13 @@ class Bridge:
         self.device_name = ""
         self._notification_queue: asyncio.Queue[dict[str, Any]] | None = None
         self._notification_task: asyncio.Task[None] | None = None
+        self._send_lock = asyncio.Lock()
 
     async def send(self, payload: dict[str, Any]) -> None:
-        await self.websocket.send(json.dumps(payload, ensure_ascii=False))
+        # Keep status/frame messages ordered even when a GATT callback and a
+        # browser request complete on the same event-loop turn.
+        async with self._send_lock:
+            await self.websocket.send(json.dumps(payload, ensure_ascii=False))
 
     async def status(self, message: str, **extra: Any) -> None:
         await self.send({"type": "status", "message": message, **extra})

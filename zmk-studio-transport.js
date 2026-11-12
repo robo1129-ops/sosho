@@ -358,39 +358,64 @@
   // identical when a device has persisted an RPC session state.
   function StudioRpcClient(transport) { this.transport = transport; this.requestId = 0; this.serial = Promise.resolve(); }
   StudioRpcClient.prototype._requestNow = async function (subsystem, operation, payload, timeoutMs) {
-    var id = this.requestId++;
-    if (this.requestId > 0x7FFFFFFF) this.requestId = 1;
     // The Windows BLE bridge shares the Central radio with the keyboard's
     // split link.  A Studio response can therefore arrive later than it does
-    // over USB, especially immediately after GATT service discovery.  Let a
-    // transport opt into a longer, still bounded deadline instead of making
-    // the caller retry while the first request is in flight.
+    // over USB, especially immediately after GATT service discovery.  A
+    // response can also be lost while the firmware changes endpoint or while
+    // a BLE indication is being retried.  Keep the request serialized, but
+    // resend the same logical operation with a fresh request id when no
+    // correlated response arrives.  This is safe for Studio operations:
+    // setters apply a final value and the firmware correlates each request by
+    // its request id.
     var transportTimeout = Number(this.transport && this.transport.rpcTimeoutMs);
     if (!Number.isFinite(transportTimeout) || transportTimeout <= 0) transportTimeout = 5000;
-    var deadline = Date.now() + (Number(timeoutMs) > 0 ? Number(timeoutMs) : transportTimeout);
-    var framePromise = this.transport._waitForFrame(Math.max(250, deadline - Date.now()));
-    try { await this.transport.sendFramedPayload(encodeRequest(id, subsystem, operation, payload)); }
-    catch (error) { this.transport._rejectPending(error); throw error; }
-    while (Date.now() < deadline) {
-      var frame = await framePromise;
-      var decoded = decodeStudioResponse(frame);
-      if (!decoded.response || decoded.response.requestId !== id) {
-        framePromise = this.transport._waitForFrame(Math.max(250, deadline - Date.now()));
-        continue;
+    var perAttemptTimeout = Number(timeoutMs) > 0 ? Number(timeoutMs) : transportTimeout;
+    var maxAttempts = this.transport && this.transport.isWindowsBleBridge ? 3 : 2;
+    var lastError = null;
+
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      var id = this.requestId++;
+      if (this.requestId > 0x7FFFFFFF) this.requestId = 1;
+      if (attempt > 0) {
+        if (typeof this.transport._discardQueuedFrames === 'function') this.transport._discardQueuedFrames();
+        if (typeof this.transport._setLog === 'function') {
+          this.transport._setLog('RPC応答を受信できなかったため再送します（' + (attempt + 1) + '/' + maxAttempts + '）');
+        }
       }
-      if (decoded.response.subsystem === 'meta' && decoded.response.data && decoded.response.data.simpleError !== undefined) {
-        var rpcError = new Error('ZMK Studio RPC error ' + decoded.response.data.simpleError);
-        rpcError.code = decoded.response.data.simpleError;
-        throw rpcError;
+
+      var deadline = Date.now() + perAttemptTimeout;
+      var framePromise = this.transport._waitForFrame(Math.max(250, deadline - Date.now()));
+      try {
+        await this.transport.sendFramedPayload(encodeRequest(id, subsystem, operation, payload));
+        while (Date.now() < deadline) {
+          var frame = await framePromise;
+          var decoded = decodeStudioResponse(frame);
+          if (!decoded.response || decoded.response.requestId !== id) {
+            framePromise = this.transport._waitForFrame(Math.max(250, deadline - Date.now()));
+            continue;
+          }
+          if (decoded.response.subsystem === 'meta' && decoded.response.data && decoded.response.data.simpleError !== undefined) {
+            var rpcError = new Error('ZMK Studio RPC error ' + decoded.response.data.simpleError);
+            rpcError.code = decoded.response.data.simpleError;
+            throw rpcError;
+          }
+          if (decoded.response.data && decoded.response.data.error !== undefined) {
+            var subsystemError = new Error('ZMK Studio RPC error ' + decoded.response.data.error);
+            subsystemError.code = decoded.response.data.error;
+            throw subsystemError;
+          }
+          return decoded.response;
+        }
+        throw new Error('ZMK Studio RPC response timeout');
+      } catch (error) {
+        this.transport._rejectPending(error);
+        lastError = error;
+        var message = String(error && error.message || error);
+        var retryable = /Timed out waiting for framed response|RPC response timeout|NetworkError|Failed to open serial port|切断|disconnected/i.test(message);
+        if (!retryable || attempt + 1 >= maxAttempts) throw error;
       }
-      if (decoded.response.data && decoded.response.data.error !== undefined) {
-        var subsystemError = new Error('ZMK Studio RPC error ' + decoded.response.data.error);
-        subsystemError.code = decoded.response.data.error;
-        throw subsystemError;
-      }
-      return decoded.response;
     }
-    throw new Error('ZMK Studio RPC response timeout');
+    throw lastError || new Error('ZMK Studio RPC response timeout');
   };
   StudioRpcClient.prototype.request = function (subsystem, operation, payload, timeoutMs) {
     var self = this;
@@ -558,6 +583,7 @@
       if (this._frameQueue.length > 32) this._frameQueue.shift();
     }
   };
+  FramedTransport.prototype._discardQueuedFrames = function () { this._frameQueue.splice(0); };
   FramedTransport.prototype._rejectPending = function (error) { this._pending.splice(0).forEach(function (item) { item.reject(error); }); };
   FramedTransport.prototype.requestFramedPayload = async function (payload, options) {
     var framePromise = this._waitForFrame((options || {}).timeoutMs || 3000);
