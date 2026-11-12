@@ -18,5 +18,7 @@ assert.match(page, /接続直後のRPCを安定させるため待機していま
 assert.match(page, /接続直後のマクロ・スリープ設定の自動読み取りは行いません/);
 assert.match(pythonBridge, /_notification_queue/);
 assert.match(pythonBridge, /queue\.put_nowait\(payload\)/);
+assert.match(pythonBridge, /GATT_CONNECT_ATTEMPTS = 3/);
+assert.match(pythonBridge, /get_services/);
 
 console.log('Windows BLE / USB startup ordering policy test passed');

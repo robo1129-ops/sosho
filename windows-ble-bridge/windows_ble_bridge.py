@@ -24,6 +24,8 @@ import websockets
 SERVICE_UUID = "00000000-0196-6107-c967-c5cfb1c2482a"
 CHARACTERISTIC_UUID = "00000001-0196-6107-c967-c5cfb1c2482a"
 WRITE_CHUNK_SIZE = 20
+GATT_CONNECT_ATTEMPTS = 3
+GATT_RETRY_DELAY_SECONDS = 0.6
 DEFAULT_PREFIXES = ("sosho", "soho", "SO-SHO", "SOHO", "ZMK")
 ALLOWED_ORIGINS = {
     "https://robo1129-ops.github.io",
@@ -220,16 +222,42 @@ class Bridge:
             await self.send({"type": "error", "code": "wrong_side", "message": "左側Peripheralが選択されています。右側Central（sosho）を選択してください。", "devices": devices})
             return
         await self.status(f"{selected['name']}へGATT接続中…")
-        self.client = self.make_client(selected["id"])
-        try:
-            await self.client.connect()
-            service = self.client.services.get_service(SERVICE_UUID)
-            if service is None:
-                raise RuntimeError("公式ZMK Studio Serviceが見つかりません")
-            self.characteristic = service.get_characteristic(CHARACTERISTIC_UUID)
-            if self.characteristic is None:
-                raise RuntimeError("公式ZMK Studio Characteristicが見つかりません")
+        last_error: Exception | None = None
+        for attempt in range(1, GATT_CONNECT_ATTEMPTS + 1):
+            self.client = self.make_client(selected["id"])
+            try:
+                await self.status(f"{selected['name']}へGATT接続中（{attempt}/{GATT_CONNECT_ATTEMPTS}）…")
+                await self.client.connect()
+                # Windows may report the link as connected before the WinRT
+                # service cache is populated.  Refresh it before looking up
+                # the Studio service instead of treating that transient state
+                # as a permanent connection failure.
+                await asyncio.sleep(GATT_RETRY_DELAY_SECONDS)
+                if hasattr(self.client, "get_services"):
+                    await self.client.get_services()
+                service = self.client.services.get_service(SERVICE_UUID)
+                if service is None:
+                    raise RuntimeError("公式ZMK Studio Serviceが見つかりません")
+                self.characteristic = service.get_characteristic(CHARACTERISTIC_UUID)
+                if self.characteristic is None:
+                    raise RuntimeError("公式ZMK Studio Characteristicが見つかりません")
+                break
+            except Exception as error:
+                last_error = error
+                try:
+                    if self.client and self.client.is_connected:
+                        await self.client.disconnect()
+                except Exception:
+                    pass
+                self.client = None
+                self.characteristic = None
+                if attempt < GATT_CONNECT_ATTEMPTS:
+                    await self.status("Windows BLEのサービス応答を待って再接続します…")
+                    await asyncio.sleep(GATT_RETRY_DELAY_SECONDS)
+        else:
+            raise RuntimeError(f"Windows BLEのGATT接続に失敗しました: {last_error}") from last_error
 
+        try:
             self._notification_queue = asyncio.Queue(maxsize=256)
             self._notification_task = asyncio.create_task(self._forward_notifications())
 
