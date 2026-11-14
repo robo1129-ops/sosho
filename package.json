@@ -1,6 +1,7 @@
 {
   "name": "sosho-keymap-editor",
   "private": true,
+  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "syntax-check": "node tests/syntax-check.mjs",

@@ -1,0 +1,80 @@
+name: Windows BLE signed release preparation
+on:
+  workflow_dispatch:
+    inputs:
+      sign:
+        description: Request SignPath signing (requires approved project and manual signing approval)
+        type: boolean
+        default: false
+permissions:
+  contents: read
+  actions: read
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install build dependencies
+        run: python -m pip install pyinstaller==6.22.3 bleak==3.0.2 websockets==17.4
+      - name: Compile Python sources
+        run: python -m py_compile windows-ble-bridge/windows_ble_bridge.py windows-ble-bridge/installer.py
+      - name: Build bridge from source
+        shell: pwsh
+        run: ./windows-ble-bridge/build-release.ps1 -Phase bridge
+      - uses: actions/upload-artifact@v4
+        id: bridge
+        with:
+          name: bridge-unsigned
+          path: build/windows-ble-release/bridge/dist/sosho_ble_bridge.exe
+          if-no-files-found: error
+      - name: Sign bridge
+        if: inputs.sign
+        uses: SignPath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_BRIDGE_CONFIGURATION }}
+          github-artifact-id: ${{ steps.bridge.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: '1800'
+          output-artifact-directory: signed/bridge
+      - name: Build installer containing verified signed bridge
+        if: inputs.sign
+        shell: pwsh
+        run: ./windows-ble-bridge/build-release.ps1 -Phase installer -BridgePath signed/bridge/sosho_ble_bridge.exe
+      - uses: actions/upload-artifact@v4
+        if: inputs.sign
+        id: installer
+        with:
+          name: installer-unsigned
+          path: build/windows-ble-release/installer/dist/sosho-windows-ble-bridge-setup.exe
+          if-no-files-found: error
+      - name: Sign installer
+        if: inputs.sign
+        uses: SignPath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_INSTALLER_CONFIGURATION }}
+          github-artifact-id: ${{ steps.installer.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: '1800'
+          output-artifact-directory: signed/installer
+      - name: Verify both signatures and timestamps
+        if: inputs.sign
+        shell: pwsh
+        run: ./windows-ble-bridge/build-release.ps1 -Phase verify -BridgePath signed/bridge/sosho_ble_bridge.exe -InstallerPath signed/installer/sosho-windows-ble-bridge-setup.exe
+      - uses: actions/upload-artifact@v4
+        if: inputs.sign
+        with:
+          name: verified-signed-release
+          path: signed/
+          if-no-files-found: error

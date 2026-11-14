@@ -4,6 +4,10 @@ SO-SHO WebアプリとWindowsのBluetooth接続を仲介する補助アプリで
 
 ## 初回セットアップ（推奨）
 
+現在のEXEは未署名のため、Windowsで「発行元不明」と表示されます。
+無料のOSS署名サービスの利用準備を進めていますが、審査・署名は未完了です。
+詳細は [Code signing policy](CODE_SIGNING.md) を確認してください。
+
 公開ページの「Windows BLEブリッジをセットアップ」から `sosho-windows-ble-bridge-setup.exe` をダウンロードして実行してください。ユーザー用フォルダーだけを使うため、管理者権限は不要です。Python、仮想環境、pip、PowerShellの実行は必要ありません。
 
 セットアップは次を自動で行います。

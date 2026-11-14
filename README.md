@@ -1,5 +1,9 @@
 # SO-SHO USB keymap editor
 
+SO-SHO独自コードは [Apache-2.0](LICENSE) です。第三者コードの権利表記は維持します。
+Windows BLEブリッジの [Code signing policy](windows-ble-bridge/CODE_SIGNING.md)
+に、未署名の現状と無料署名サービスへの対応手順を記載しています。
+
 公開済みのブラウザー編集画面です。右CentralをUSBまたはBLEで接続してキーマップを編集します。左右分割間の通信はファームウェア側で維持します。
 
 ## ZMK Studioベースの画面構成

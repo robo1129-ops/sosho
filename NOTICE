@@ -1,5 +1,8 @@
 SO-SHO keymap editor
 
+SO-SHO original code is licensed under Apache-2.0; see LICENSE.
+Third-party components retain their original copyright notices and licenses.
+
 The visual shell and navigation structure are inspired by ZMK Studio.
 ZMK Studio is developed by The ZMK Contributors and is licensed under the
 Apache License, Version 2.0.
