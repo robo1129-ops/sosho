@@ -657,7 +657,14 @@
       });
       try { console.info('[sosho-behaviors]', JSON.stringify(global.soshoBehaviorDiagnostics)); } catch (_) {}
       mapDeviceState();
-      await readEncoderSettings(rpc);
+      try {
+        await readEncoderSettings(rpc);
+      } catch (encoderReadError) {
+        encoderRpcSupported = false;
+        encoderRawById = Object.create(null);
+        encoderLabelById = Object.create(null);
+        if (transport._setLog) transport._setLog('エンコーダー設定取得失敗（通常キーは編集可能）: ' + encoderReadError.message);
+      }
       global.soshoStudioState = { rpc: rpc, deviceState: deviceState, rawById: rawById, labelById: labelById };
       var lockText = deviceState.lockState === 1 ? 'Studioロック解除済み' : deviceState.lockState === 0 ? 'Studioロック中（キーボードの&studio_unlockを押すと保存可能）' : 'lockState=' + deviceState.lockState;
       setVerificationStep('prepare', 'success', deviceState.keymap.layers.length + 'レイヤーを読み取りました。' + (deviceState.info && deviceState.info.name ? ' ' + deviceState.info.name : ''));
@@ -1188,9 +1195,9 @@
       setStatus('保存応答を受信しました。実機を再読み取り中…');
       writePhase = 'verify';
       deviceState.keymap = afterWrite;
-      var verified = await rpc.readDeviceState();
+      var verified = Object.assign({}, deviceState, { keymap: await rpc.getKeymap() });
       var mismatches = findVerificationMismatches(verified.keymap, changes);
-      var verifiedEncoderSettings = await rpc.getEncoderSettings();
+      var verifiedEncoderSettings = encoderRpcSupported ? await rpc.getEncoderSettings() : null;
       var encoderMismatches = encoderVerificationMismatches(verifiedEncoderSettings, encoderChanges);
       if (mismatches.length || encoderMismatches.length) {
         var mismatchError = new Error('再読み取りで ' + (mismatches.length + encoderMismatches.length) + '件の差分が残っています');

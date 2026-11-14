@@ -384,6 +384,7 @@
       }
 
       var deadline = Date.now() + perAttemptTimeout;
+      if (typeof this.transport._setLog === 'function') this.transport._setLog('RPC ' + subsystem + '.' + operation + ' #' + id);
       var framePromise = this.transport._waitForFrame(Math.max(250, deadline - Date.now()));
       try {
         await this.transport.sendFramedPayload(encodeRequest(id, subsystem, operation, payload));
