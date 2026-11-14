@@ -640,11 +640,10 @@
       setVerificationResult('running', '実機の現在値を確認しています。');
       setStatus('公式RPCでキーマップを読み取り中…');
       var rpc = new global.ZmkStudioRpc(transport);
-      // Windows BLE connects to the already-paired Central through the
-      // localhost bridge.  Keep the first read small while that GATT session
-      // settles; behavior details are not needed to display the physical
-      // keymap and can be resolved from the advertised IDs when editing.
-      deviceState = await rpc.readDeviceState({ skipBehaviorDetails: !!transport.isWindowsBleBridge });
+      // Bindings use firmware-assigned IDs. Both transports need the same
+      // metadata to display and encode keys correctly; omitting it on BLE
+      // makes valid assignments appear as "Action" and prevents editing.
+      deviceState = await rpc.readDeviceState();
       behaviorById = Object.create(null);
       behaviorIds = (deviceState.behaviorIds || []).map(Number).filter(function (id) { return Number.isFinite(id); });
       (deviceState.behaviors || []).forEach(function (detail) { behaviorById[String(detail.id)] = detail; });
