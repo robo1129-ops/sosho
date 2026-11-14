@@ -518,8 +518,8 @@
     if (/失敗|タイムアウト|応答なし|見つかりません/.test(detail)) {
       if (typeof global.soshoConnectionError === 'function') {
         global.soshoConnectionError(
-          'キーマップ通信に失敗しました。',
-          'USBポートは開けましたが、キーマップRPCの応答がありません。右側Centralを選択し、他のシリアル接続ソフトを閉じてから再接続してください。'
+          'キーマップ操作に失敗しました。',
+          detail
         );
       }
     } else if (/読み取り成功|保存後の再読み取り成功/.test(detail) && typeof global.soshoClearConnectionError === 'function') {
@@ -1159,7 +1159,7 @@
           if (!sameBinding(original, desired)) changes.push({ layerId: layer.id, keyPosition: position, binding: desired });
         });
       });
-      encoderChanges = encoderChangesFor(editedAssignments);
+      var encoderChanges = encoderChangesFor(editedAssignments);
       if (encoderChanges.length && !encoderRpcSupported) {
         throw new Error('このファームウェアはエンコーダー設定RPCに対応していません。対応版ファームウェアへ更新してください。');
       }
