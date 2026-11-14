@@ -1734,8 +1734,9 @@
     function syncState() {
       if (!stateNode) return;
       var text = connectionStatus ? connectionStatus.textContent : '未接続';
-      var connected = /^USB接続済み/.test(text) || text === '接続済み';
-      stateNode.textContent = connected ? 'USB接続済み' : '未接続';
+      var connected = /^(USB|BLE|Windows BLE)接続済み/.test(text) || text === '接続済み';
+      var label = /^USB/.test(text) ? 'USB接続済み' : 'BLE接続済み';
+      if (stateNode.textContent !== (connected ? label : '未接続')) stateNode.textContent = connected ? label : '未接続';
       topbar.classList.toggle('studio-connected', connected);
     }
     if (connectionStatus && typeof MutationObserver === 'function') {
