@@ -8,8 +8,10 @@
 
 ## Free signing route / 無料署名の方針
 
-We are preparing to apply to [SignPath Foundation](https://signpath.org/apply)
-for its free open-source signing service. Acceptance is subject to their review;
+We submitted an application to [SignPath Foundation](https://signpath.org/apply)
+for its free open-source signing service on 2026-11-14 (Japan time).
+The form confirmed submission; the application is awaiting review.
+Acceptance is subject to their review;
 no sponsorship or certificate is claimed before approval.
 The project-owned code is Apache-2.0. Third-party components retain their own licenses.
 
@@ -88,8 +90,10 @@ accept the program without a warning.
 - Installation: current-user folder and current-user startup shortcut; uninstall instructions included.
 - Signing scope: project-owned bridge EXE and setup EXE, built by the checked-in GitHub workflow.
 
-The maintainer must provide their own contact information and complete the service
-application/account steps. No application has been submitted by this change.
+The maintainer's supplied contact details were used only in the application and
+are not included in this repository. The application form confirmed submission
+on 2026-11-14. Approval, account setup, GitHub integration and actual signing
+remain pending; submitting the application does not mean the EXEs are signed.
 
 ## References
 
