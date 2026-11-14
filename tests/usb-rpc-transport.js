@@ -9,8 +9,8 @@ const signalCalls = [];
 let requestOptions = null;
 let readerCancelled = false;
 const reader = {
-  async read() { return { done: true, value: undefined }; },
-  async cancel() { readerCancelled = true; },
+  async read() { return new Promise((resolve) => { this.finishRead = resolve; }); },
+  async cancel() { readerCancelled = true; if (this.finishRead) this.finishRead({ done: true }); },
   releaseLock() {},
 };
 const port = {
@@ -35,8 +35,8 @@ const port = {
 let retryOpenAttempts = 0;
 let retryCloseCalls = 0;
 const retryReader = {
-  async read() { return { done: true, value: undefined }; },
-  async cancel() {},
+  async read() { return new Promise((resolve) => { this.finishRead = resolve; }); },
+  async cancel() { if (this.finishRead) this.finishRead({ done: true }); },
   releaseLock() {},
 };
 const retryPort = {
@@ -138,6 +138,24 @@ vm.runInNewContext(source, context);
   assert.deepEqual(requestOptions, undefined);
   await transport.disconnect();
   console.log('USB/COM RPC fallback test passed');
+  const eof = new context.window.ZmkSerialTransport();
+  let readersAcquired = 0;
+  let portClosed = false;
+  eof.port = {
+    readable: { getReader() {
+      if (++readersAcquired > 1) throw new Error('Reader reacquired after EOF');
+      return { async read() { return { done: true }; }, releaseLock() {} };
+    } },
+    async close() { portClosed = true; },
+  };
+  eof.reading = true;
+  const pending = eof._waitForFrame(1000).then(() => false, () => true);
+  await eof._readLoop();
+  assert.equal(readersAcquired, 1, 'EOF must end the receive loop without polling the closed stream');
+  assert.equal(portClosed, true);
+  assert.equal(eof.isConnected, false);
+  assert.equal(await pending, true, 'EOF must reject a waiting RPC');
+  console.log('USB stream EOF cleanup test passed');
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;

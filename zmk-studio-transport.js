@@ -782,7 +782,30 @@
     } finally { this._connecting = false; }
   };
   ZmkSerialTransport.prototype.disconnect = async function (silent) { var had = !!this.port || !!this.reader; this._disconnecting = true; try { if (this.reader) await this.reader.cancel(); } catch (error) {} try { if (this.writer) this.writer.releaseLock(); } catch (error) {} try { if (this.port) await this.port.close(); } catch (error) {} this.reader = null; this.writer = null; this.port = null; this.portInfo = null; this.reading = false; this.roleState = 'unknown'; this._disconnecting = false; this._rpcBaudRetried = false; this.baudRate = 9600; this._releaseConnectionLock(); this._rejectPending(new Error('USB disconnected')); this._setDevice('—'); if (had && !silent) this._setStatus('USB切断済み'); };
-  ZmkSerialTransport.prototype._readLoop = async function () { while (this.port && this.reading && !this._disconnecting) { try { this.reader = this.port.readable.getReader(); while (this.reading && !this._disconnecting) { var result = await this.reader.read(); if (result.done) break; if (result.value) this._consume(result.value); } this.reader.releaseLock(); this.reader = null; } catch (error) { if (this.reader) try { this.reader.releaseLock(); } catch (releaseError) {} this.reader = null; if (!this._disconnecting) { this.reading = false; this._setStatus('USB受信失敗: ' + (error.message || 'unknown error')); try { await this.disconnect(true); } catch (disconnectError) {} } } } };
+  ZmkSerialTransport.prototype._readLoop = async function () {
+    var failure = null;
+    var ended = false;
+    try {
+      if (!this.port || !this.port.readable || !this.reading || this._disconnecting) return;
+      this.reader = this.port.readable.getReader();
+      while (this.reading && !this._disconnecting) {
+        var result = await this.reader.read();
+        if (result.done) { ended = true; break; }
+        if (result.value) this._consume(result.value);
+      }
+    } catch (error) { failure = error; }
+    finally {
+      if (this.reader) try { this.reader.releaseLock(); } catch (releaseError) {}
+      this.reader = null;
+    }
+    // A closed ReadableStream always returns done immediately. Reacquiring
+    // its reader in a loop starves Chrome's event loop after USB disconnect.
+    if (!this._disconnecting && (ended || failure)) {
+      this.reading = false;
+      this._setStatus(failure ? 'USB受信失敗: ' + (failure.message || 'unknown error') : 'USB受信終了。再接続してください。');
+      try { await this.disconnect(true); } catch (disconnectError) {}
+    }
+  };
   ZmkSerialTransport.prototype.sendFramedPayload = async function (payload) { if (!this.isConnected) throw new Error('USB未接続です'); if (!this.port || !this.port.writable) throw new Error('USB writer unavailable'); var writer = this.writer || this.port.writable.getWriter(); this.writer = writer; await writer.write(encodeFrame(payload)); return true; };
 
   var BLE_NAME_PREFIXES = ['sosho', 'soho', 'SO-SHO', 'SOHO', 'ZMK'];

@@ -18,6 +18,7 @@ import subprocess
 from typing import Any
 
 from bleak import BleakClient, BleakScanner
+from bleak.backends.device import BLEDevice
 import websockets
 
 
@@ -26,6 +27,7 @@ CHARACTERISTIC_UUID = "00000001-0196-6107-c967-c5cfb1c2482a"
 WRITE_CHUNK_SIZE = 20
 GATT_CONNECT_ATTEMPTS = 3
 GATT_RETRY_DELAY_SECONDS = 0.6
+GATT_CONNECT_TIMEOUT_SECONDS = 12
 DEFAULT_PREFIXES = ("sosho", "soho", "SO-SHO", "SOHO", "ZMK")
 ALLOWED_ORIGINS = {
     "https://robo1129-ops.github.io",
@@ -169,17 +171,15 @@ class Bridge:
         return devices
 
     @staticmethod
-    def make_client(device_id: str) -> BleakClient:
-        client = BleakClient(device_id)
-        # Bleak's Windows backend normally insists on a fresh advertisement.
-        # For a paired HID keyboard Windows can suppress that advertisement,
-        # while WinRT can still resolve the paired address directly.
+    def make_client(device_id: str, use_cached_services: bool = False) -> BleakClient:
+        target: BLEDevice | str = device_id
         if os.name == "nt" and re.fullmatch(r"[0-9A-Fa-f:]{17}", device_id):
-            try:
-                client._backend._device_info = int(device_id.replace(":", ""), 16)  # type: ignore[attr-defined]
-            except Exception:
-                pass
-        return client
+            # BLEDevice is the public API for a known device. Passing a raw
+            # address triggers an unnecessary advertisement scan on Windows.
+            target = BLEDevice(device_id, "sosho", None)
+        return BleakClient(target, services=[SERVICE_UUID],
+                           timeout=GATT_CONNECT_TIMEOUT_SECONDS,
+                           winrt={"use_cached_services": use_cached_services})
 
     async def connect(self, device_id: str | None = None, name_prefix: str | None = None) -> None:
         if self.client and self.client.is_connected and self.characteristic:
@@ -224,10 +224,10 @@ class Bridge:
         await self.status(f"{selected['name']}へGATT接続中…")
         last_error: Exception | None = None
         for attempt in range(1, GATT_CONNECT_ATTEMPTS + 1):
-            self.client = self.make_client(selected["id"])
+            self.client = self.make_client(selected["id"], use_cached_services=(attempt == 2))
             try:
                 await self.status(f"{selected['name']}へGATT接続中（{attempt}/{GATT_CONNECT_ATTEMPTS}）…")
-                await self.client.connect()
+                await asyncio.wait_for(self.client.connect(), GATT_CONNECT_TIMEOUT_SECONDS)
                 # Windows may report the link as connected before the WinRT
                 # service cache is populated.  Refresh it before looking up
                 # the Studio service instead of treating that transient state
@@ -244,9 +244,12 @@ class Bridge:
                 break
             except Exception as error:
                 last_error = error
+                logging.warning("GATT attempt %s/%s failed: %s: %s", attempt,
+                                GATT_CONNECT_ATTEMPTS, type(error).__name__, error)
+                await self.status(f"GATT接続失敗（{attempt}/{GATT_CONNECT_ATTEMPTS}）: {type(error).__name__}: {error}")
                 try:
                     if self.client and self.client.is_connected:
-                        await self.client.disconnect()
+                        await asyncio.wait_for(self.client.disconnect(), 3)
                 except Exception:
                     pass
                 self.client = None
