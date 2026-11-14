@@ -1,7 +1,8 @@
 param(
   [ValidateSet('bridge','installer','verify')][string]$Phase = 'bridge',
   [string]$BridgePath,
-  [string]$InstallerPath
+  [string]$InstallerPath,
+  [switch]$AllowUnsigned
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -32,8 +33,12 @@ $name = 'sosho_ble_bridge'
 $entry = Join-Path $PSScriptRoot 'windows_ble_bridge.py'
 $extra = @()
 if ($Phase -eq 'installer') {
-  if (-not $BridgePath) { throw 'A signed BridgePath is required.' }
-  Assert-Signed $BridgePath
+  if (-not $BridgePath) { throw 'A BridgePath is required.' }
+  if ($AllowUnsigned) {
+    Write-Warning 'Building an unsigned development installer. Do not describe this artifact as signed.'
+  } else {
+    Assert-Signed $BridgePath
+  }
   $name = 'sosho-windows-ble-bridge-setup'
   $entry = Join-Path $PSScriptRoot 'installer.py'
   $extra = @('--add-data', ((Join-Path $PSScriptRoot 'install-embedded.ps1') + ';.'),

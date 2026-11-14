@@ -38,6 +38,13 @@ Set-ExecutionPolicy -Scope Process Bypass
 
 Python 3.10以降とWindowsのBluetooth LEが必要です。すでに `sosho` を取得済みの場合は、`sosho\windows-ble-bridge` に移動してから実行してください。
 
+署名審査中にunsignedインストーラーをローカルで再生成する場合は、先にブリッジをビルドしてから次を実行します。`-AllowUnsigned` は署名検証を明示的に省略する指定であり、署名済みリリースを作るものではありません。
+
+```powershell
+$bridge = (Resolve-Path .\build\windows-ble-release\bridge\dist\sosho_ble_bridge.exe).Path
+./windows-ble-bridge/build-release.ps1 -Phase installer -BridgePath $bridge -AllowUnsigned
+```
+
 ## 起動
 
 セットアップを実行した後、ChromeでSO-SHOページを開き、`Windows BLE接続（広告不要）` を押します。WindowsがHID接続中で広告を隠している場合でも、先にWindowsのBluetooth接続を切断する必要はありません。Chromeの通常のWeb Bluetooth一覧にSO-SHOが出ない場合も、このボタンが正しい接続経路です。
