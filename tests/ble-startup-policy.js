@@ -13,7 +13,10 @@ assert.match(transport, /this\.rpcTimeoutMs = 8000/);
 assert.match(transport, /this\.startupSettleMs = 400/);
 assert.match(bridge, /this\.isWindowsBleBridge = true/);
 assert.match(bridge, /this\.rpcTimeoutMs = Math\.max\(8000/);
-assert.match(rpcUi, /readDeviceState\(\{ skipBehaviorDetails: !!transport\.isWindowsBleBridge \}\)/);
+// Skipping metadata made every BLE binding display as "Action" and made
+// valid keys uneditable. Both transports must load the behavior registry.
+assert.doesNotMatch(rpcUi, /skipBehaviorDetails:\s*!!transport\.isWindowsBleBridge/);
+assert.match(rpcUi, /deviceState = await rpc\.readDeviceState\(\)/);
 assert.match(page, /接続直後のRPCを安定させるため待機しています/);
 assert.match(page, /接続直後のマクロ・スリープ設定の自動読み取りは行いません/);
 assert.match(pythonBridge, /_notification_queue/);
