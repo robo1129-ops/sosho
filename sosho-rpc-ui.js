@@ -1189,7 +1189,7 @@
         }));
       }
       setVerificationStep('write', 'success', totalChanges ? totalChanges + '件の書き込み要求を送信しました。' : '書き込み対象はありませんでした。');
-      setVerificationStep('save', 'success', encoderChanges.length ? 'キーマップとエンコーダー設定の保存応答を受信しました。' : 'ファームウェアから保存応答を受信しました。');
+      setVerificationStep('save', totalChanges ? 'success' : 'idle', totalChanges ? (encoderChanges.length ? 'キーマップとエンコーダー設定の保存応答を受信しました。' : 'ファームウェアから保存応答を受信しました。') : '変更がないため保存要求は送信していません。');
       setVerificationStep('verify', 'running', '保存後の実機キーマップを再読み取りしています。');
       setStatus('保存応答を受信しました。実機を再読み取り中…');
       writePhase = 'verify';
@@ -1209,7 +1209,7 @@
       global.soshoStudioState = { rpc: rpc, deviceState: deviceState, rawById: rawById, labelById: labelById, encoderSettings: verifiedEncoderSettings };
       var lockText = verified.lockState === 1 ? 'Studioロック解除済み' : verified.lockState === 0 ? 'Studioロック中' : 'lockState=' + verified.lockState;
       setVerificationStep('verify', 'success', '再読み取りした実機の値が送信内容と一致しました。');
-      setVerificationResult('success', '実機反映成功：保存応答と再読み取りの一致を確認しました。');
+      setVerificationResult('success', totalChanges ? '実機反映成功：保存応答と再読み取りの一致を確認しました。' : '変更なし：実機の再読み取りを確認しました。保存要求は送信していません。');
       setStatus('保存・再読み取り成功: ' + totalChanges + '件 / ' + lockText);
     } catch (error) {
       var errorText = error.message || String(error);
