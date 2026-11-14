@@ -292,7 +292,7 @@
     };
     var macroScope = macroTransportCopy[language] || macroTransportCopy.en;
     if (macroContract) macroContract.innerHTML = '<strong>' + macroScope.label + '</strong> ' + macroScope.body;
-    setText('.download-card strong', copy.downloadHeading);
+    setText('.download-card strong', ({ja:'ファームウェア（右トラックボール・左トラックパッド）',en:'Firmware (right trackball / left trackpad)','zh-CN':'固件（右轨迹球／左触控板）',ko:'펌웨어 (오른쪽 트랙볼 / 왼쪽 트랙패드)',th:'เฟิร์มแวร์ (แทร็กบอลขวา / แทร็กแพดซ้าย)',es:'Firmware (trackball derecho / panel izquierdo)',de:'Firmware (Trackball rechts / Trackpad links)'})[language] || copy.downloadHeading);
     setText('.download-card > div:first-child span', copy.downloadDescription);
     /* Touch-named firmware variants were removed from the build matrix. Keep
      * older translation entries from advertising files that no longer exist. */
@@ -428,8 +428,8 @@
   var firmwareRepoLink = document.querySelector('a[href="https://github.com/robo1129-ops/sosho-firmware"]');
   // The runtime-configurable package is committed as a public repository
   // asset so the download remains available even while the release workflow
-  // is being repaired. It contains only the six required module profiles.
-  var firmwareZipUrl = 'https://raw.githubusercontent.com/robo1129-ops/sosho-firmware/main/downloads/sosho-firmware-usb-rpc-multiplex-20261113.zip?v=20261113-usb-rpc-multiplex-1';
+  // is being repaired. This verified package is for right trackball / left trackpad.
+  var firmwareZipUrl = 'https://raw.githubusercontent.com/robo1129-ops/sosho-firmware/main/downloads/sosho-usb-ble-r-trackball-l-trackpad-20261114.zip';
   if (firmwareRepoLink) {
     firmwareRepoLink.href = firmwareZipUrl;
     firmwareRepoLink.textContent = 'カスタムファームウェアZIPを直接ダウンロード';
@@ -440,8 +440,8 @@
     card.className = 'download-card';
     card.setAttribute('aria-labelledby', 'firmware-download-heading');
     card.innerHTML = '' +
-      '<div><strong id="firmware-download-heading">カスタムファームウェア（全パターン）</strong>' +
-      '<span>右/左のトラックボール・トラックパッド・Noneの6構成を含む実行時スリープ対応ZIPです。スリープ時間は接続後にWebアプリから保存できます。</span></div>' +
+      '<div><strong id="firmware-download-heading">ファームウェア（右トラックボール・左トラックパッド）</strong>' +
+      '<span>右トラックボールと左トラックパッド用の通信修正版です。スリープ時間は接続後にWebアプリから保存できます。</span></div>' +
       '<div class="download-actions">' +
       '<a href="' + firmwareZipUrl + '" download="sosho-firmware-latest.zip" rel="noopener">最新ZIPをダウンロード</a>' +
       '</div>';
