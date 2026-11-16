@@ -333,9 +333,9 @@
   // preserve full-width punctuation from the action palette.
   function japaneseHalfFullwidthCode(value) {
     var text = String(value || '').trim().toUpperCase();
-    if (/^(?:半角\s*[\/／]\s*全角|全角\s*[\/／]\s*半角)$/.test(text)) return 0x94;
+    if (/^(?:半角\s*[\/／]\s*全角|全角\s*[\/／]\s*半角)$/.test(text)) return 0x35;
     var compact = text.replace(/[\s_\-\/／（）()]+/g, '');
-    if (compact === '半角全角' || compact === '全角半角') return 0x94;
+    if (compact === '半角全角' || compact === '全角半角') return 0x35;
     // LANG5/HANKAKUZENKAKU are equivalent explicit raw usages.
     return null;
   }
