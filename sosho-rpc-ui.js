@@ -530,6 +530,10 @@
 
   function mapDeviceState() {
     var keymap = deviceState.keymap;
+    var uiLayers = editor.getLayers();
+    while (uiLayers.length < keymap.layers.length) {
+      uiLayers.push({name:'Layer ' + uiLayers.length, description:'', left:Array(22).fill(''), right:Array(22).fill('')});
+    }
     rawById = Object.create(null);
     labelById = Object.create(null);
     encoderRawById = Object.create(null);
@@ -735,10 +739,10 @@
     // TG(4), so the user-facing label is not required to be a ZMK token.
     var descriptiveLayer = String(label || '').trim();
     if (descriptiveLayer === '押している間だけスクロール' || descriptiveLayer === 'SCROLL_HOLD' || descriptiveLayer === 'Scroll Hold') {
-      return resolveBinding('MO 4', raw);
+      return resolveBinding('MO 10', raw);
     }
     if (descriptiveLayer === 'スクロール切替' || descriptiveLayer === 'SCROLL_TOGGLE' || descriptiveLayer === 'Scroll Toggle') {
-      return resolveBinding('TG 4', raw);
+      return resolveBinding('TG 10', raw);
     }
     var requestedLayer = layerActionKind(label);
     if (requestedLayer) {
