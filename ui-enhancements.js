@@ -429,7 +429,7 @@
   // The runtime-configurable package is committed as a public repository
   // asset so the download remains available even while the release workflow
   // is being repaired. This verified package is for right trackball / left trackpad.
-  var firmwareZipUrl = 'https://raw.githubusercontent.com/robo1129-ops/sosho-firmware/main/downloads/sosho-usb-ble-r-trackball-l-trackpad-20261114.zip';
+  var firmwareZipUrl = 'https://raw.githubusercontent.com/robo1129-ops/sosho-firmware/main/downloads/sosho-usb-ble-r-trackball-l-trackpad-20261116.zip';
   if (firmwareRepoLink) {
     firmwareRepoLink.href = firmwareZipUrl;
     firmwareRepoLink.textContent = 'カスタムファームウェアZIPを直接ダウンロード';
