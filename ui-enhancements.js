@@ -1579,9 +1579,11 @@
           if (action && action.indexOf('Macro ') !== 0 && action.indexOf('TapDance[') !== 0 && typeof window.soshoCanonicalKeyLabel === 'function') action = window.soshoCanonicalKeyLabel(action);
           if (action) {
             assignments[target] = action;
+            if (window.soshoEditor) window.soshoEditor.setAssignment(target, action);
             writeAssignments(assignments);
           } else {
             delete assignments[target];
+            if (window.soshoEditor) window.soshoEditor.clearAssignment(target);
             writeAssignments(assignments);
           }
           renderEncoderAssignment(button, target);
