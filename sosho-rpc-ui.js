@@ -604,6 +604,10 @@
       if (unchanged) return;
       var binding = resolveBinding(desiredLabel, encoderRawById[id]);
       if (!binding) throw new Error(id + ' のエンコーダー割り当てをbehavior bindingへ変換できません: ' + desiredLabel);
+      var encoderBehavior = detailFor(binding.behaviorId);
+      if (encoderBehavior && /sosho_encoder/i.test(String(encoderBehavior.name || ''))) {
+        throw new Error('エンコーダー自体を回転アクションに割り当てることはできません');
+      }
       changes.push({
         layerId: Number(match[1]),
         sensor: match[2] === 'left' ? 0 : 1,
