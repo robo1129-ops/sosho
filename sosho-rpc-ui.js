@@ -507,6 +507,11 @@
     });
     for (var i = 0; i < candidates.length; i++) {
       var detail = candidates[i];
+      // A numeric hold read from Layer-Tap means a layer ID, not a digit
+      // key for Mod-Tap. Choosing Mod-Tap first makes holding Layer 1 type 1.
+      if (/^\d+$/.test(String(holdLabel).trim()) && !(detail.metadata || []).some(function (set) {
+        return (set.param1 || []).some(function (value) { return value.type === 'layer_id'; });
+      })) continue;
       var holdValue = holdTapParameter(detail, 1, holdLabel);
       var tapValue = holdTapParameter(detail, 2, tapLabel);
       if (holdValue !== null && tapValue !== null) return { behaviorId: Number(detail.id), param1: holdValue, param2: tapValue };
