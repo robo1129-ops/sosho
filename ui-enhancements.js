@@ -1572,11 +1572,13 @@
         button.addEventListener('dragleave', function () { button.classList.remove('drop-ready'); });
         button.addEventListener('drop', function (event) {
           event.preventDefault();
+          event.stopPropagation();
           button.classList.remove('drop-ready');
           var data = event.dataTransfer.getData('text/plain');
           var assignments = readAssignments();
           var action = data.indexOf('action:') === 0 ? data.slice(7) : data.indexOf('macro:') === 0 ? 'Macro ' + data.slice(6) : '';
           if (action && action.indexOf('Macro ') !== 0 && action.indexOf('TapDance[') !== 0 && typeof window.soshoCanonicalKeyLabel === 'function') action = window.soshoCanonicalKeyLabel(action);
+          if (!action) return;
           if (action) {
             assignments[target] = action;
             if (window.soshoEditor) window.soshoEditor.setAssignment(target, action);

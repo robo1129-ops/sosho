@@ -242,7 +242,8 @@
         : code >= 0x3a && code <= 0x45
           ? 'F' + String(code - 0x39)
           : (names[code] || 'HID 0x' + code.toString(16).toUpperCase());
-    if (code === 0x35 && modifierMask === modifierBits.LALT) return '半角/全角';
+    // Preserve the actual shortcut in readback. Alt+Grave is not the JIS
+    // half/full-width usage and must not be hidden by an equivalent label.
     // Render shifted punctuation as the character the user selected.  This
     // keeps read-back labels such as `!`, `@`, and `?` identical to the
     // palette labels instead of showing an implementation-only Shift+digit
