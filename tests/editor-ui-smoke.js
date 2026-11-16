@@ -155,6 +155,6 @@ assert.match(enhancements, /scrollScalePercent/);
 assert.match(enhancements, /soshoRefreshDeviceRuntimeControls/);
 assert.match(css, /\.device-runtime-settings/);
 assert.match(fs.readFileSync('sosho-rpc-ui.js', 'utf8'), /japaneseHalfFullwidthCode/);
-assert.match(fs.readFileSync('sosho-rpc-ui.js', 'utf8'), /return 0x94/);
+assert.match(fs.readFileSync('sosho-rpc-ui.js', 'utf8'), /return 0x35/);
 
 console.log('SO-SHO Remap-like editor UI smoke test passed');

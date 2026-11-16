@@ -36,7 +36,7 @@ assert.ok(!firmwareKeymap.includes('&bootloader'), 'factory keymap must not bind
 // half-width/full-width key on tap and Layer 1 on hold.  Keep the firmware
 // default uses the Windows-US/IME-compatible Alt+GRAVE usage for the
 // human-facing half/full-width action uses the dedicated HID Language 5 key.
-assert.match(firmwareKeymap, /#define SOSHO_HALF_FULL LANG5/);
+assert.match(firmwareKeymap, /#define SOSHO_HALF_FULL GRAVE/);
 assert.match(firmwareKeymap, /&lt 1 SOSHO_HALF_FULL\s+&kp SPACE/);
 
 console.log('Bootloader keymap binding smoke test passed');

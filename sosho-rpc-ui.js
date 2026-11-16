@@ -242,6 +242,8 @@
         : code >= 0x3a && code <= 0x45
           ? 'F' + String(code - 0x39)
           : (names[code] || 'HID 0x' + code.toString(16).toUpperCase());
+    var layoutChoice = typeof document !== 'undefined' && document.getElementById('layout-selector');
+    if (code === 0x35 && modifierMask === 0 && layoutChoice && layoutChoice.value === 'Japanese') return '半角/全角';
     // Preserve the actual shortcut in readback. Alt+Grave is not the JIS
     // half/full-width usage and must not be hidden by an equivalent label.
     // Render shifted punctuation as the character the user selected.  This
