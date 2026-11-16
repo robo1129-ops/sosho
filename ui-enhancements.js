@@ -1196,6 +1196,7 @@
 
     function appendActionChip(container, label, action, className) {
       var chip = document.createElement('button');
+      chip.dataset.keymapAction = action;
       chip.type = 'button';
       chip.className = 'chip' + (className ? ' ' + className : '');
       chip.textContent = label;
@@ -1764,6 +1765,44 @@
     observer.observe(keyboard, { childList: true, subtree: true });
   }
   createEncoderTargets();
+  // Handle palette drags on a stable ancestor: rendering a layer can replace
+  // the encoder buttons while a drag is in progress.
+  var pendingEncoderAction = '';
+  document.addEventListener('pointerdown', function (event) {
+    var chip = event.target.closest('[data-keymap-action]');
+    pendingEncoderAction = chip ? chip.dataset.keymapAction : '';
+  }, true);
+  function commitEncoderDrop(event, action) {
+    var target = event.target.closest('.encoder-target');
+    if (!target || !action || !window.soshoEditor) return false;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    window.soshoEditor.setAssignment(target.dataset.target, action);
+    renderEncoderAssignment(target, target.dataset.target);
+    updateInspector(target.dataset.target, action);
+    pendingEncoderAction = '';
+    return true;
+  }
+  document.addEventListener('dragover', function (event) {
+    if (event.target.closest('.encoder-target')) event.preventDefault();
+  }, true);
+  document.addEventListener('drop', function (event) {
+    var payload = event.dataTransfer && event.dataTransfer.getData('text/plain');
+    commitEncoderDrop(event, payload && payload.indexOf('action:') === 0 ? payload.slice(7) : pendingEncoderAction);
+  }, true);
+  document.addEventListener('pointerup', function (event) {
+    commitEncoderDrop(event, pendingEncoderAction);
+    pendingEncoderAction = '';
+  }, true);
   setupZmkStudioShell();
+  var keyCheck = document.createElement('section');
+  keyCheck.className = 'card';
+  keyCheck.style.padding = '12px';
+  keyCheck.innerHTML = '<strong>キー入力の確認</strong><p>この欄を選んで実機のキーを押してください。</p><input aria-label="実機キー入力テスト" type="text" autocomplete="off"><output aria-live="polite" style="display:block" data-key-check-result>未入力</output>';
+  var keyCheckHost = document.querySelector('.editor') || document.getElementById('keyboard').parentElement;
+  keyCheckHost.prepend(keyCheck);
+  keyCheck.querySelector('input').addEventListener('keydown', function (event) {
+    keyCheck.querySelector('output').textContent = 'code=' + event.code + ' / key=' + event.key + ' / Alt=' + event.altKey + ' / Ctrl=' + event.ctrlKey + ' / Shift=' + event.shiftKey;
+  });
   applyLanguage(storedLanguage());
 })();
