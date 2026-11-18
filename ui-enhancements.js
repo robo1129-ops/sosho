@@ -429,7 +429,7 @@
   // The runtime-configurable package is committed as a public repository
   // asset so the download remains available even while the release workflow
   // is being repaired. This verified package is for right trackball / left trackpad.
-  var firmwareZipUrl = 'https://raw.githubusercontent.com/robo1129-ops/sosho-firmware/main/downloads/sosho-usb-ble-r-trackball-l-trackpad-layer10-20261116.zip';
+  var firmwareZipUrl = 'https://raw.githubusercontent.com/robo1129-ops/sosho-firmware/main/downloads/sosho-idle30-r-trackball-l-trackpad-20261119.zip';
   if (firmwareRepoLink) {
     firmwareRepoLink.href = firmwareZipUrl;
     firmwareRepoLink.textContent = 'カスタムファームウェアZIPを直接ダウンロード';
@@ -441,7 +441,7 @@
     card.setAttribute('aria-labelledby', 'firmware-download-heading');
     card.innerHTML = '' +
       '<div><strong id="firmware-download-heading">ファームウェア（右トラックボール・左トラックパッド）</strong>' +
-      '<span>右トラックボールと左トラックパッド用の通信修正版です。スリープ時間は接続後にWebアプリから保存できます。</span></div>' +
+      '<span>右トラックボール・左トラックパッド用。無操作30分で省電力へ移行し、スリープは行いません。入力安定化の修正を含みます。</span></div>' +
       '<div class="download-actions">' +
       '<a href="' + firmwareZipUrl + '" download="sosho-firmware-latest.zip" rel="noopener">最新ZIPをダウンロード</a>' +
       '</div>';
