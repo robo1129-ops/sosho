@@ -37,13 +37,11 @@ Windows BLEブリッジの [Code signing policy](windows-ble-bridge/CODE_SIGNING
 
 ## カンニングペーパーPDF
 
-実機のキーマップ読み込み後、画面の「カンニングペーパー PDF」からGitHub Actionsへ生成を依頼できます。画面上の未保存編集も含め、各レイヤーの左右キー、タップ／ホールド、エンコーダー割り当てをPDFにします。ページを開いたまま待つと生成完了後に自動ダウンロードします。ブラウザーで自動保存されない場合も、生成後に表示するリンクから保存できます。
+実機のキーマップ読み込み後、「カンニングペーパー PDF」の「PDFを生成してダウンロード」を押すと、自動でPDFを保存します。ログイン、GitHubトークン、外部への送信は不要です。未保存の編集も含む現在の画面から、レイヤー別の左右キー、タップ／ホールド、エンコーダーを出力します。
 
-生成には、このリポジトリでActionsの書き込み権限を持つGitHubトークンを入力してください。Fine-grained tokenは対象リポジトリをこのリポジトリに限定し、ActionsをRead and write、ContentsをRead-onlyにします。トークンはブラウザーのストレージやリポジトリに保存しません。リポジトリの操作権限がないアカウントでは起動できません。
+日本語を含む表示をブラウザーのCanvasで描画し、A4横向きのPDFにします。1レイヤーにつき1ページです。印刷用の画像PDFのため、PDF内の文字検索・テキスト選択には対応しません。自動保存されない場合は、生成後に現れるダウンロードリンクを押してください。
 
-公開前提の機能です。送信したキー配置はActionsの入力情報となり、生成PDFは公開リポジトリのdownloads/keymapsに保存されます。履歴にも残るため、機密情報を含む配置では使用しないでください。マクロ本文やBluetoothのペアリング情報は送信しません。
-
-処理は.github/workflows/keymap-pdf.yml、PDF描画はscripts/keymap_pdf.py、PDF公開はscripts/publish_keymap_pdf.py、Web操作はkeymap-pdf.jsです。Actionsは入力ラベルをコマンドとして実行せず、環境変数経由でJSONとして検証して扱います。
+Web操作はkeymap-pdf.js、ブラウザー内のPDF生成はkeymap-pdf-renderer.jsです。以前のGitHub Actions生成処理は手動の開発用として残っていますが、通常の出力ボタンからは使用しません。
 
 ## ファームウェアのダウンロード
 

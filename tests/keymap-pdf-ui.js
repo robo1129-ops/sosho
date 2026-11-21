@@ -2,8 +2,6 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const elements = {
-  '[data-pdf-token]': { value: 'test-only-token' },
-  '[data-pdf-consent]': { checked: true },
   '[data-pdf-generate]': { addEventListener(_, handler) { this.clickHandler = handler; } },
   '[data-pdf-status]': {},
   '[data-pdf-link]': { click() { this.clicked = true; } },
@@ -18,22 +16,14 @@ const editor = {
   keyId: (layer, side, index) => `l${layer}-${side}-${index}`,
 };
 let downloads = 0;
-const calls = [];
 const context = {
-  window: { soshoEditor: editor }, TextEncoder, Blob, setTimeout,
-  crypto: { randomUUID: () => 'test-request' },
+  window: { soshoEditor: editor, async soshoRenderKeymapPdf(data) { assert.equal(data.layers[0].left[0].tap, '半角/全角'); return new Blob(['%PDF-test'], { type: 'application/pdf' }); } }, TextEncoder, Blob, setTimeout,
   URL: { createObjectURL(blob) { assert.equal(blob.type, 'application/pdf'); downloads++; return 'blob:test'; }, revokeObjectURL() {} },
   document: { querySelector: () => ({ appendChild() {} }), createElement: () => section },
-  async fetch(url, options = {}) {
-    calls.push({ url, options });
-    if (url.endsWith('/dispatches')) return { ok: true, status: 204 };
-    if (url.includes('/runs?')) return { ok: true, status: 200, json: async () => ({ workflow_runs: [{ display_title: 'SO-SHO PDF test-request', status: 'completed', conclusion: 'success', id: 123 }] }) };
-    assert.ok(url.endsWith('/contents/downloads/keymaps/123.pdf'));
-    assert.equal(options.headers.Authorization, undefined);
-    return { ok: true, blob: async () => new Blob(['%PDF-test']) };
-  },
+  async fetch() { throw new Error('PDF generation must not use network'); },
 };
 vm.runInNewContext(fs.readFileSync('keymap-pdf.js', 'utf8'), context);
+assert.doesNotMatch(section.innerHTML, /data-pdf-token|data-pdf-consent|GitHub Actions/);
 (async () => {
   const data = context.window.soshoPdfSnapshot(editor);
   assert.equal(data.layers[0].left[0].tap, '半角/全角');
@@ -41,12 +31,8 @@ vm.runInNewContext(fs.readFileSync('keymap-pdf.js', 'utf8'), context);
   assert.equal(data.layers[0].encoders['left-cw'], '音量＋');
   assert.throws(() => context.window.soshoPdfSnapshot({ isKeymapLoaded: () => false }));
   await elements['[data-pdf-generate]'].clickHandler();
-  const dispatched = JSON.parse(calls[0].options.body);
-  assert.equal(dispatched.inputs.request_id, 'test-request');
-  assert.equal(JSON.parse(dispatched.inputs.keymap_snapshot).layers[0].left[0].hold, '2');
-  assert.equal(elements['[data-pdf-token]'].value, '');
   assert.equal(elements['[data-pdf-link]'].clicked, true);
   assert.equal(downloads, 1);
   assert.equal(elements['[data-pdf-generate]'].disabled, false);
-  console.log('Keymap snapshot, Actions dispatch and automatic PDF download passed');
+  console.log('Token-free offline keymap PDF download passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });
