@@ -35,6 +35,16 @@ Windows BLEブリッジの [Code signing policy](windows-ble-bridge/CODE_SIGNING
 - マクロ作成用のキーをドラッグして手順へ追加し、Shift＋Sなどの修飾キー組み合わせを作る。追加操作の待ち時間は初期1msで、手順ごとに変更する
 - マクロをJSON/localStorageへ保存し、未実装の実機送信を成功扱いにしない
 
+## カンニングペーパーPDF
+
+実機のキーマップ読み込み後、画面の「カンニングペーパー PDF」からGitHub Actionsへ生成を依頼できます。画面上の未保存編集も含め、各レイヤーの左右キー、タップ／ホールド、エンコーダー割り当てをPDFにします。ページを開いたまま待つと生成完了後に自動ダウンロードします。ブラウザーで自動保存されない場合も、生成後に表示するリンクから保存できます。
+
+生成には、このリポジトリでActionsの書き込み権限を持つGitHubトークンを入力してください。Fine-grained tokenは対象リポジトリをこのリポジトリに限定し、ActionsをRead and write、ContentsをRead-onlyにします。トークンはブラウザーのストレージやリポジトリに保存しません。リポジトリの操作権限がないアカウントでは起動できません。
+
+公開前提の機能です。送信したキー配置はActionsの入力情報となり、生成PDFは公開リポジトリのdownloads/keymapsに保存されます。履歴にも残るため、機密情報を含む配置では使用しないでください。マクロ本文やBluetoothのペアリング情報は送信しません。
+
+処理は.github/workflows/keymap-pdf.yml、PDF描画はscripts/keymap_pdf.py、PDF公開はscripts/publish_keymap_pdf.py、Web操作はkeymap-pdf.jsです。Actionsは入力ラベルをコマンドとして実行せず、環境変数経由でJSONとして検証して扱います。
+
 ## ファームウェアのダウンロード
 
 - [全スリープ設定・全モジュール構成を含む最新ZIP](https://github.com/robo1129-ops/sosho-firmware/releases/download/latest/sosho-firmware-latest.zip)

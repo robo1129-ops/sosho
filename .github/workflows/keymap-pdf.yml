@@ -1,0 +1,48 @@
+name: Keymap PDF
+run-name: SO-SHO PDF ${{ inputs.request_id }}
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: Browser request identifier
+        required: true
+        type: string
+      keymap_snapshot:
+        description: Current editor keymap JSON (published in PDF)
+        required: true
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: keymap-pdf-publish
+  cancel-in-progress: false
+jobs:
+  pdf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install PDF dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y fonts-ipafont-gothic
+          python -m pip install reportlab==5.0.0
+      - name: Generate PDF
+        env:
+          KEYMAP_SNAPSHOT: ${{ inputs.keymap_snapshot }}
+        run: |
+          python tests/test_keymap_pdf.py
+          python scripts/keymap_pdf.py --output output/pdf/keymap.pdf
+      - uses: actions/upload-artifact@v4
+        with:
+          name: keymap-pdf
+          path: output/pdf/keymap.pdf
+      - name: Publish PDF to main for browser download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: python scripts/publish_keymap_pdf.py
