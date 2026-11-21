@@ -47,6 +47,11 @@ function expected(modifiers, code) {
 }
 
 const cases = [
+  ['Windows+←', ['LGUI'], 0x50, 'GUI+LEFT'],
+  ['WIN+↑', ['LGUI'], 0x52, 'GUI+UP'],
+  ['LGUI+→', ['LGUI'], 0x4f, 'GUI+RIGHT'],
+  ['GUI+↓', ['LGUI'], 0x51, 'GUI+DOWN'],
+  ['Windows+ArrowLeft', ['LGUI'], 0x50, 'GUI+LEFT'],
   ['LALT+S', ['LALT'], key.S, 'Alt+S'],
   ['LCTRL+LALT+S', ['LCTRL', 'LALT'], key.S, 'Ctrl+Alt+S'],
   ['LSHIFT+LGUI+ENTER', ['LSHIFT', 'LGUI'], key.ENTER, 'Shift+GUI+ENTER'],

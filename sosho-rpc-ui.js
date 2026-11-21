@@ -120,7 +120,7 @@
   var modifierAliases = {
     CTRL: 'LCTRL', LCTRL: 'LCTRL', RCTRL: 'RCTRL', SHIFT: 'LSHIFT', LSHIFT: 'LSHIFT', LSHFT: 'LSHIFT',
     RSHIFT: 'RSHIFT', RSHFT: 'RSHIFT', ALT: 'LALT', LALT: 'LALT', RALT: 'RALT',
-    GUI: 'LGUI', WIN: 'LGUI', LGUI: 'LGUI', RGUI: 'RGUI'
+    GUI: 'LGUI', WIN: 'LGUI', WINDOWS: 'LGUI', LGUI: 'LGUI', RGUI: 'RGUI'
   };
   var modifierLabels = {
     LCTRL: 'Ctrl', LSHIFT: 'Shift', LALT: 'Alt', LGUI: 'GUI',
@@ -376,6 +376,8 @@
       LANG3: 0x92, LANG4: 0x93, LANG6: 0x95, LANG7: 0x96, LANG8: 0x97, LANG9: 0x98,
       KANA: 0x88,
       RIGHT: 0x4f, LEFT: 0x50, DOWN: 0x51, UP: 0x52,
+      '→': 0x4f, '←': 0x50, '↓': 0x51, '↑': 0x52,
+      ARROWRIGHT: 0x4f, ARROWLEFT: 0x50, ARROWDOWN: 0x51, ARROWUP: 0x52,
       CTRL: 0xe0, LCTRL: 0xe0, SHIFT: 0xe1, LSHIFT: 0xe1,
       ALT: 0xe2, LALT: 0xe2, GUI: 0xe3, WIN: 0xe3,
       RCTRL: 0xe4, RSHIFT: 0xe5, RALT: 0xe6, RGUI: 0xe7,
