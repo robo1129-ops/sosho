@@ -26,7 +26,7 @@
   var section = document.createElement('section');
   section.className = 'card';
   section.style.cssText = 'padding:16px;margin-top:16px';
-  section.innerHTML = '<h3>カンニングペーパー PDF</h3><p>現在の画面のキー配置・タップ／ホールド・エンコーダーをPDFにします。未保存の編集も含みます。ログインやトークン入力は不要です。</p>' +
+  section.innerHTML = '<h3>カンニングペーパー PDF</h3><p>現在の画面のキー配置・タップ／ホールド・エンコーダーを、A4縦・1ページ2レイヤーのPDFにします。未保存の編集も含みます。ログインやトークン入力は不要です。</p>' +
     '<p>PDFはこのブラウザー内で生成します。キーマップを外部へ送信しません。</p>' +
     '<button type="button" data-pdf-generate>PDFを生成してダウンロード</button>' +
     '<p role="status" aria-live="polite" data-pdf-status>実機のキーマップを読み込んでから押してください。</p>' +

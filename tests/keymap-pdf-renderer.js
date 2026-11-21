@@ -12,12 +12,13 @@ function canvas() {
 }
 (async () => {
   const layer = { name: 'Layer 0', left: Array.from({ length: 22 }, () => ({ tap: '半角/全角', hold: 'Layer 1' })), right: Array.from({ length: 22 }, () => ({ tap: 'GUI+LEFT' })), encoders: {} };
-  const blob = await context.window.soshoRenderKeymapPdf({ createdAt: 'test', layers: [layer, layer] }, canvas);
+  const blob = await context.window.soshoRenderKeymapPdf({ createdAt: 'test', layers: [layer, layer, layer] }, canvas);
   assert.equal(blob.type, 'application/pdf');
   const bytes = Buffer.from(await blob.arrayBuffer());
   const raw = bytes.toString('latin1');
   assert.ok(raw.startsWith('%PDF-1.3'));
   assert.match(raw, /\/Count 2/);
+  assert.match(raw, /\/MediaBox \[0 0 595\.28 841\.89\]/);
   assert.equal((raw.match(/\/Subtype \/Image/g) || []).length, 2);
   const start = Number(/startxref\n(\d+)/.exec(raw)[1]);
   assert.equal(raw.slice(start, start + 4), 'xref');
@@ -28,5 +29,9 @@ function canvas() {
     assert.ok(raw.slice(offset).startsWith(id + ' 0 obj\n'), 'xref offset ' + id);
   }
   await assert.rejects(() => context.window.soshoRenderKeymapPdf({ layers: [] }, canvas));
-  console.log('Local PDF page count, binary streams and xref offsets passed');
+  const pair = await context.window.soshoRenderKeymapPdf({ createdAt: 'test', layers: [layer, layer] }, canvas);
+  assert.match(await pair.text(), /\/Count 1/);
+  const eleven = await context.window.soshoRenderKeymapPdf({ createdAt: 'test', layers: Array(11).fill(layer) }, canvas);
+  assert.match(await eleven.text(), /\/Count 6/);
+  console.log('A4 portrait, two layers per page, odd layer counts and xref offsets passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });
