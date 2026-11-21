@@ -82,21 +82,63 @@
     if (this.isConnected) return Promise.resolve(true);
     if (!this.isSupported) { this._setStatus('WebSocketを利用できません'); return Promise.resolve(false); }
     if (this._connecting) return Promise.resolve(false);
+    var previous = this.socket;
+    this.socket = null;
+    if (previous) try { previous.close(); } catch (error) {}
     this._connecting = true;
     return new Promise(function (resolve, reject) {
-      self._connectResolve = function () { self._connecting = false; resolve(true); };
-      self._connectReject = function (error) { self._connecting = false; reject(error); };
+      var socket, timer, settled = false;
+      function finish(error) {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (self.socket === socket) {
+          self._connecting = false;
+          self._connectResolve = null;
+          self._connectReject = null;
+        }
+        if (error) {
+          if (self.socket === socket) self.socket = null;
+          if (socket) try { socket.close(); } catch (closeError) {}
+          reject(error);
+        } else resolve(true);
+      }
+      self._connectResolve = function () { finish(); };
+      self._connectReject = function (error) { finish(error); };
       try {
-        self.socket = new WebSocket(self._url);
-        self.socket.addEventListener('open', function () { self._setStatus('Windows BLEブリッジへ接続済み。SO-SHOを検索中…'); self._send({ op: 'connect', namePrefix: 'sosho' }); });
-        self.socket.addEventListener('message', self._handleMessage.bind(self));
-        self.socket.addEventListener('error', function () { var error = new Error('Windows BLEブリッジに接続できません。start-windows.ps1を起動してください。'); self._setStatus(error.message); if (self._connectReject) self._connectReject(error); });
-        self.socket.addEventListener('close', function () { self._handleDisconnected(); });
-        setTimeout(function () { if (self._connecting) { self._connecting = false; self._connectResolve = null; self._connectReject = null; reject(new Error('Windows BLEブリッジの接続がタイムアウトしました（ペアリング済みデバイスの検索に時間がかかっています）')); try { self.socket.close(); } catch (error) {} } }, self._timeoutMs);
-      } catch (error) { self._connecting = false; self._connectResolve = null; self._connectReject = null; reject(error); }
-    }).then(function () { return true; }).catch(function (error) { self._setStatus(error.message || String(error)); return false; });
+        socket = new WebSocket(self._url);
+        self.socket = socket;
+        socket.addEventListener('open', function () {
+          if (self.socket !== socket) return;
+          self._setStatus('Windows BLEブリッジへ接続済み。SO-SHOを検索中…');
+          self._send({ op: 'connect', namePrefix: 'sosho' });
+        });
+        socket.addEventListener('message', function (event) {
+          if (self.socket === socket) self._handleMessage(event);
+        });
+        socket.addEventListener('error', function () {
+          if (self.socket !== socket) return;
+          var error = new Error('Windows BLEブリッジに接続できません。セットアップ済みのブリッジが起動しているか確認してください。');
+          if (!settled) finish(error);
+          else self._setStatus(error.message);
+        });
+        socket.addEventListener('close', function () {
+          if (self.socket !== socket) return;
+          if (!settled) finish(new Error('Windows BLEブリッジが接続処理中に切断されました。'));
+          self._handleDisconnected();
+        });
+        timer = setTimeout(function () {
+          if (self.socket !== socket || settled) return;
+          finish(new Error('Windows BLEブリッジの接続がタイムアウトしました。SO-SHOのBluetooth接続先を確認して再接続してください。'));
+        }, self._timeoutMs);
+      } catch (error) { finish(error); }
+    }).then(function () { return true; }).catch(function (error) {
+      self._connecting = false;
+      self._setStatus(error.message || String(error));
+      return false;
+    });
   };
-  ZmkWindowsBleBridgeTransport.prototype.disconnect = async function () { try { if (this.socket && this.socket.readyState === WebSocket.OPEN) this._send({ op: 'disconnect' }); } catch (error) {} this.reading = false; this.studioAvailable = false; this._rejectPending(new Error('Windows BLEブリッジが切断されました')); if (this.socket) try { this.socket.close(); } catch (error) {} this.socket = null; this._setDevice('—'); this._setStatus('Windows BLEブリッジ切断済み'); };
+  ZmkWindowsBleBridgeTransport.prototype.disconnect = async function () { if (this._connecting && this._connectReject) this._connectReject(new Error('Windows BLE接続を中止しました')); this._connecting = false; try { if (this.socket && this.socket.readyState === WebSocket.OPEN) this._send({ op: 'disconnect' }); } catch (error) {} this.reading = false; this.studioAvailable = false; this._rejectPending(new Error('Windows BLEブリッジが切断されました')); if (this.socket) try { this.socket.close(); } catch (error) {} this.socket = null; this._setDevice('—'); this._setStatus('Windows BLEブリッジ切断済み'); };
   ZmkWindowsBleBridgeTransport.prototype.sendFramedPayload = function (payload) { this._send({ op: 'write', data: encodeBase64(global.ZmkStudioProtocol.encodeFrame(payload)) }); return Promise.resolve(); };
   ZmkWindowsBleBridgeTransport.prototype.getDiagnostics = async function () { return { platform: 'Windows localhost BLE bridge', bridgeUrl: this._url, gattConnected: this.isConnected, officialServiceUuid: global.ZmkStudioProtocol.BLE_SERVICE_UUID, officialCharacteristicUuid: global.ZmkStudioProtocol.BLE_CHARACTERISTIC_UUID, keymapRpcReady: this.canWriteKeymap }; };
 
